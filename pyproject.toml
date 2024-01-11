@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling~=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+dynamic = ["version"]
+name = "syncify-cli"
+authors = [
+  { name="George Marino", email="gm.engineer+syncify@pm.me" },
+]
+description = "CLI operations for Syncify package"
+readme = "README.md"
+license-files = { paths = ["LICENSE"] }
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: European Union Public Licence 1.2 (EUPL 1.2)",
+    "Operating System :: OS Independent",
+    "Development Status :: 2 - Pre-Alpha",
+    "Natural Language :: English",
+    "Intended Audience :: End Users/Desktop",
+]
+dependencies = [
+    "syncify~=0.3",
+    "pyyaml~=6.0",
+    "pyfiglet~=1.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest~=7.4",
+]
+
+[project.urls]
+"Source code" = "https://github.com/geo-martino/syncify-cli"
+Issues = "https://github.com/geo-martino/syncify-cli/issues"
+
+[tool.hatch.version]
+path = "src/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+include = ["src"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+addopts = "-color=yes"
