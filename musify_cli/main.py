@@ -9,19 +9,20 @@ from os.path import basename, dirname, join, relpath, splitext
 from time import perf_counter
 from typing import Any
 
-from .config import Config, ConfigLibraryDifferences, ConfigMissingTags, ConfigRemote, ConfigLocalBase
-from musify.shared.exception import ConfigError
-from musify.local.track.field import LocalTrackField
 from musify.local.collection import LocalCollection
 from musify.local.track import LocalTrack, SyncResultTrack
+from musify.local.track.field import LocalTrackField
 from musify.processors.base import DynamicProcessor, dynamicprocessormethod
+from musify.report import report_playlist_differences, report_missing_tags
+from musify.shared.exception import ConfigError
+from musify.shared.logger import MusifyLogger, STAT, CurrentTimeRotatingFileHandler
 from musify.shared.remote.api import RemoteAPI
 from musify.shared.remote.enum import RemoteObjectType
 from musify.shared.remote.object import RemoteAlbum
-from musify.report import report_playlist_differences, report_missing_tags
-from musify.shared.utils import get_user_input, to_collection
 from musify.shared.types import UnitIterable
-from musify.shared.logger import MusifyLogger, STAT, CurrentTimeRotatingFileHandler
+from musify.shared.utils import get_user_input, to_collection
+
+from musify_cli.config import Config, ConfigLibraryDifferences, ConfigMissingTags, ConfigRemote, ConfigLocalBase
 
 
 class Musify(DynamicProcessor):

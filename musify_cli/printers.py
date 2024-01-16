@@ -3,7 +3,6 @@ import random
 from collections.abc import Sequence, Collection
 
 import pyfiglet
-
 from musify import PROGRAM_NAME
 
 # noinspection SpellCheckingInspection

@@ -14,7 +14,7 @@ from os.path import isabs, join, dirname, splitext, exists
 from typing import Any, Self, get_args
 
 import yaml
-
+from musify import MODULE_ROOT as MUSIFY_ROOT
 from musify.local.exception import InvalidFileType, FileDoesNotExistError
 from musify.local.file import PathStemMapper
 from musify.local.library import MusicBee, LocalLibrary
@@ -961,7 +961,7 @@ class Config(BaseConfig):
         super().__init__({})
         self.dt = datetime.now()
         self._root_path: str = PACKAGE_ROOT
-        self.path = self._make_path_absolute(path)
+        self.path = path
         self.loaded: bool = False  # marked as True after the first load, prevents excessive overriding
 
         # general operation settings
@@ -1021,12 +1021,6 @@ class Config(BaseConfig):
         self.loaded = True
         return
 
-    def _make_path_absolute(self, path: str) -> str:
-        """Append the root path to any relative path to make it an absolute path. Do nothing if path is absolute."""
-        if not isabs(path):
-            path = join(self._root_path, path)
-        return path
-
     def _load_config(self, key: str | None = None) -> dict[Any, Any]:
         """
         Load the config file
@@ -1049,7 +1043,8 @@ class Config(BaseConfig):
 
         return config.get(key, config)
 
-    def load_log_config(self, path: str = "logging.yml", name: str | None = None, *names: str) -> None:
+    @staticmethod
+    def load_log_config(path: str = "logging.yml", name: str | None = None, *names: str) -> None:
         """
         Load logging config from the JSON or YAML file at the given ``path`` using logging.config.dictConfig.
         If relative path given, appends package root path.
@@ -1059,7 +1054,6 @@ class Config(BaseConfig):
             assign this logger's config to the module root logger.
         :param names: When given, also apply the config from ``name`` to loggers with these ``names``.
         """
-        path = self._make_path_absolute(path)
         ext = splitext(path)[1].casefold()
 
         allowed = {".yml", ".yaml", ".json"}
@@ -1081,6 +1075,7 @@ class Config(BaseConfig):
 
         if name and name in log_config.get("loggers", {}):
             log_config["loggers"][MODULE_ROOT] = log_config["loggers"][name]
+            log_config["loggers"][MUSIFY_ROOT] = log_config["loggers"][name]
             for n in names:
                 log_config["loggers"][n] = log_config["loggers"][name]
 
@@ -1098,7 +1093,7 @@ class Config(BaseConfig):
         if self._output_folder is not None:
             return self._output_folder
 
-        parent_folder = self._make_path_absolute(self._file.get("output", "_data"))
+        parent_folder = self._file.get("output", "_data")
         self._output_folder = join(parent_folder, self.dt.strftime(LOGGING_DT_FORMAT))
         os.makedirs(self._output_folder, exist_ok=True)
         return self._output_folder
