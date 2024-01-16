@@ -4,7 +4,7 @@ from collections.abc import Sequence, Collection
 
 import pyfiglet
 
-from syncify import PROGRAM_NAME
+from musify import PROGRAM_NAME
 
 # noinspection SpellCheckingInspection
 LOGO_FONTS = (
@@ -15,7 +15,7 @@ LOGO_COLOURS = (91, 93, 92, 94, 96, 95)
 
 
 def print_logo(fonts: Sequence[str] = LOGO_FONTS, colours: Collection[int] = LOGO_COLOURS) -> None:
-    """Pretty print the Syncify logo in the centre of the terminal"""
+    """Pretty print the Musify logo in the centre of the terminal"""
     colours = list(colours)
     if bool(random.getrandbits(1)):
         colours.reverse()

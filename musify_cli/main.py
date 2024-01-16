@@ -1,34 +1,30 @@
-import argparse
 import json
 import logging
 import os
 import re
 import sys
-import traceback
 from collections.abc import Mapping, Callable
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from os.path import basename, dirname, join, relpath, splitext
 from time import perf_counter
 from typing import Any
 
-from syncify import PROGRAM_NAME
-from syncify.config import Config, ConfigLibraryDifferences, ConfigMissingTags, ConfigRemote, ConfigLocalBase
-from syncify.shared.exception import ConfigError
-from syncify.local.track.field import LocalTrackField
-from syncify.local.collection import LocalCollection
-from syncify.local.track import LocalTrack, SyncResultTrack
-from syncify.processors.base import DynamicProcessor, dynamicprocessormethod
-from syncify.shared.remote.api import RemoteAPI
-from syncify.shared.remote.enum import RemoteObjectType
-from syncify.shared.remote.object import RemoteAlbum
-from syncify.report import report_playlist_differences, report_missing_tags
-from syncify.shared.utils import get_user_input, to_collection
-from syncify.shared.types import UnitIterable
-from syncify.shared.logger import SyncifyLogger, STAT, CurrentTimeRotatingFileHandler
-from syncify.printers import print_logo, print_line, print_time
+from .config import Config, ConfigLibraryDifferences, ConfigMissingTags, ConfigRemote, ConfigLocalBase
+from musify.shared.exception import ConfigError
+from musify.local.track.field import LocalTrackField
+from musify.local.collection import LocalCollection
+from musify.local.track import LocalTrack, SyncResultTrack
+from musify.processors.base import DynamicProcessor, dynamicprocessormethod
+from musify.shared.remote.api import RemoteAPI
+from musify.shared.remote.enum import RemoteObjectType
+from musify.shared.remote.object import RemoteAlbum
+from musify.report import report_playlist_differences, report_missing_tags
+from musify.shared.utils import get_user_input, to_collection
+from musify.shared.types import UnitIterable
+from musify.shared.logger import MusifyLogger, STAT, CurrentTimeRotatingFileHandler
 
 
-class Syncify(DynamicProcessor):
+class Musify(DynamicProcessor):
     """Core functionality and meta-functions for the program"""
 
     @property
@@ -60,14 +56,14 @@ class Syncify(DynamicProcessor):
     def __init__(self, config: Config, local: str, remote: str):
         self._start_time = perf_counter()  # for measuring total runtime
         # noinspection PyTypeChecker
-        self.logger: SyncifyLogger = logging.getLogger(__name__)
+        self.logger: MusifyLogger = logging.getLogger(__name__)
         sys.excepthook = self._handle_exception
         super().__init__()
 
         self.config = config
-        
+
         # ensure the config and file handler are using the same timestamp
-        # clean up output folder using the same logic for all file handlers 
+        # clean up output folder using the same logic for all file handlers
         for name in logging.getHandlerNames():
             handler = logging.getHandlerByName(name)
             if isinstance(handler, CurrentTimeRotatingFileHandler):
@@ -81,7 +77,7 @@ class Syncify(DynamicProcessor):
         self.logger.debug(f"Initialisation of {self.__class__.__name__} object: DONE")
 
     def __call__(self, *args, **kwargs):
-        main.logger.debug(f"Called processor '{self._processor_name}': START")
+        self.logger.debug(f"Called processor '{self._processor_name}': START")
         if self.local_name in self.config.reload:
             self.reload_local(*self.config.reload[self.local_name])
         if self.remote_name in self.config.reload:
@@ -91,14 +87,14 @@ class Syncify(DynamicProcessor):
 
         if self.config.pause:
             input(f"\33[93m{self.config.pause}\33[0m ")
-            main.logger.print()
+            self.logger.print()
 
-        main.logger.debug(f"Called processor '{self._processor_name}': DONE\n")
+        self.logger.debug(f"Called processor '{self._processor_name}': DONE\n")
 
     def set_processor(self, name: str) -> Callable:
         """Set the processor to use from the given name"""
         self._set_processor_name(name)
-        self.config.load(func)
+        self.config.load(name)
         return self._processor_method
 
     def _handle_exception(self, exc_type, exc_value, exc_traceback) -> None:
@@ -258,13 +254,13 @@ class Syncify(DynamicProcessor):
         """Restore library data from a backup, getting user input for the settings"""
         output_parent = dirname(self.config.output_folder)
         backup_names = (self.local_backup_name(), self.remote_backup_name())
-        
+
         available_backups: list[str] = []  # names of the folders which contain usable backups
         for path in os.walk(output_parent):
             if path[0] == output_parent:  # skip current run's data
                 continue
             folder = str(relpath(path[0], output_parent))
-            
+
             for file in path[2]:
                 if folder in available_backups:
                     break
@@ -272,7 +268,7 @@ class Syncify(DynamicProcessor):
                     if name in splitext(file)[0]:
                         available_backups.append(folder)
                         break
-        
+
         if len(available_backups) == 0:
             self.logger.info("\33[93mNo backups found, skipping.\33[0m")
             return
@@ -624,160 +620,3 @@ class Syncify(DynamicProcessor):
         log_prefix = "Would have added" if self.config.dry_run else "Added"
         self.logger.info(f"\33[92m{log_prefix} {results.added} new tracks to playlist: '{name}' \33[0m")
         self.logger.debug(f"New music playlist: DONE")
-
-
-# noinspection PyProtectedMember
-def get_parser() -> argparse.ArgumentParser:
-    """Get the terminal input parser"""
-    parser = argparse.ArgumentParser(
-        description="Sync your local library to remote libraries and other useful functions.",
-        prog=PROGRAM_NAME,
-        usage="%(prog)s [options] [function]"
-    )
-    parser._positionals.title = "Functions"
-    parser._optionals.title = "Optional arguments"
-
-    # cli function aliases and expected args in order user should give them
-    parser.add_argument(
-        "functions", nargs="*", choices=list(Syncify.__new__(Syncify).__processormethods__),
-        help=f"{PROGRAM_NAME} function to run."
-    )
-
-    runtime = parser.add_argument_group("Runtime options")
-    runtime.add_argument(
-        "-c", "--config", type=str, required=False, nargs="?", dest="config_path",
-        default="config.yml",
-        help="The path to the config file to use"
-    )
-    runtime.add_argument(
-        "-k", "--config-key", type=str, required=False, nargs="?", dest="config_key",
-        default="general",
-        help="The key for the initial config."
-    )
-    runtime.add_argument(
-        "-lc", "--log-config", type=str, required=False, nargs="?", dest="log_config_path",
-        default="logging.yml",
-        help="The path to the logging config file to use"
-    )
-    runtime.add_argument(
-        "-ln", "--log-name", type=str, required=False, nargs="?", dest="log_name",
-        help="The logger settings to use for this run as can be found in logging config file"
-    )
-    runtime.add_argument(
-        "-x", "--execute", action="store_false", dest="dry_run",
-        help="Modify user's local and remote files and playlists. Otherwise, do not affect files."
-    )
-
-    libraries = parser.add_argument_group("Library options")
-    libraries.add_argument(
-        "-l", "--local", type=str, required=True, nargs="?", dest="local",
-        help="The name of the local library to use as can be found in the config file"
-    )
-    libraries.add_argument(
-        "-r", "--remote", type=str, required=True, nargs="?", dest="remote",
-        help="The name of the remote library to use as can be found in the config file"
-    )
-
-    functions = parser.add_argument_group("Function options")
-    functions.add_argument(
-        "-bk", "--backup-key", type=str, required=False, nargs="?", dest="backup_key",
-        default=None,
-        help="When running backup operations, the key to give to backups"
-    )
-    functions.add_argument(
-        "-nmn", "--new-music-name", type=str, required=False, nargs="?", dest="new_music_name",
-        default="New Music",
-        help="When running new_music operations, the name to give to the new music playlist"
-    )
-    functions.add_argument(
-        "-nms", "--new-music-start", required=False, nargs="?", dest="new_music_start",
-        type=lambda x: datetime.strptime(x, "%Y-%m-%d"), default=datetime.now() - timedelta(weeks=4),
-        help="When running new_music operations, the earliest date to get new music for"
-    )
-    functions.add_argument(
-        "-nme", "--new-music-end", required=False, nargs="?", dest="new_music_end",
-        type=lambda x: datetime.strptime(x, "%Y-%m-%d"), default=datetime.now(),
-        help="When running new_music operations, the latest date to get new music for"
-    )
-
-    return parser
-
-
-if __name__ == "__main__":
-    print()
-    print_logo()
-    named_args = get_parser().parse_known_args()[0]
-
-    conf = Config(named_args.config_path)
-    conf.load_log_config(named_args.log_config_path, named_args.log_name, __name__)
-    conf.load(named_args.config_key)
-    conf.dry_run = named_args.dry_run
-
-    main = Syncify(config=conf, local=named_args.local, remote=named_args.remote)
-
-    # log header
-    if main.logger.file_paths:
-        main.logger.info(f"\33[90mLogs: {", ".join(main.logger.file_paths)} \33[0m")
-    main.logger.info(f"\33[90mOutput: {conf.output_folder} \33[0m")
-    main.logger.print()
-    if conf.dry_run:
-        print_line("DRY RUN ENABLED", " ")
-
-    main.api.authorise()
-    for i, func in enumerate(named_args.functions, 1):
-        title = f"{PROGRAM_NAME}: {func}"
-        if conf.dry_run:
-            title += " (DRYRUN)"
-
-        if sys.platform == "win32":
-            os.system(f"title {title}")
-        elif sys.platform == "linux" or sys.platform == "darwin":
-            os.system(f"echo '\033]2;{title}\007'")
-
-        try:  # run the functions requested by the user
-            print_line(func)
-            # initialise the libraries
-            assert main.local.library is not None
-            assert main.remote.library is not None
-
-            method = main.set_processor(func)
-            main(
-                key=named_args.backup_key,
-                name=named_args.new_music_name,
-                start=named_args.new_music_start,
-                end=named_args.new_music_end,
-            )
-        except (Exception, KeyboardInterrupt):
-            main.logger.critical(traceback.format_exc())
-            break
-
-    main.logger.debug(f"Time taken: {main.time_taken}")
-    logging.shutdown()
-    print_logo()
-    print_time(main.time_taken)
-
-
-## BIGGER ONES
-# TODO: Automatically add songs added to each remote playlist to '2get'?
-#  Then somehow update local library playlists after...
-#  Maybe add a final step that syncs remote back to library if
-#  URIs for extra songs in remote playlists found in library
-# TODO: track audio recognition when searching using Shazam like service?
-#  Maybe https://audd.io/ ?
-# TODO: add lyrics property to tracks? Possibly through a separate API
-# TODO: expand search/match functionality to include all item types
-# TODO: implement XAutoPF full update functionality
-# TODO: implement merge_playlists functions and, by extension, implement android library sync
-
-
-## SMALLER/GENERAL ONES
-# TODO: parallelize all the things
-# TODO: generally improve performance
-
-
-## SELECTED FOR DEVELOPMENT
-# TODO: expand readme + check all example functions work
-# TODO: expand docstrings everywhere
-# TODO: release to pypi + implement CI/CD structure on GitHub
-# TODO: function in main.py to open search website tabs for all songs in 2get playlist
-#  on common music stores/torrent sites

@@ -28,7 +28,7 @@ mkdir -p \
 ### FIND PORT AND CONNECT ###
 # if ANDROID_SERIAL not set
 if [ -z "$ANDROID_SERIAL" ]; then
-  export PHONE_IP=192.168.2.55
+  export PHONE_IP=192.168.2.30
 
   if [ -z "$PHONE_PORT" ]; then
     echo "\n\033[1;95m-> \033[1;97mScanning for debug port of Android device with IP address $PHONE_IP (sudo required)\033[0m"

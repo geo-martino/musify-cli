@@ -1,2 +1,2 @@
-# syncify-cli
-CLI operations built on Syncify package.
+# musify-cli
+CLI operations built on Musify package.

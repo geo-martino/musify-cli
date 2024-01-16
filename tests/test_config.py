@@ -3,34 +3,26 @@ from copy import deepcopy
 from os.path import join, dirname
 
 import pytest
-from pytest_lazyfixture import lazy_fixture
 from requests_cache import CachedSession
 
-from syncify import PACKAGE_ROOT, MODULE_ROOT
-from syncify.config import ConfigLocalBase, ConfigMusicBee, ConfigLocalLibrary
-from syncify.config import ConfigRemote, ConfigSpotify
-from syncify.config import LOCAL_CONFIG, REMOTE_CONFIG, Config, ConfigFilter, ConfigReports
-from syncify.local.exception import FileDoesNotExistError
-from syncify.local.track.field import LocalTrackField
-from syncify.shared.core.enum import TagFields
-from syncify.shared.exception import ConfigError, SyncifyError
-from syncify.shared.logger import SyncifyLogger
-from syncify.shared.remote.processors.wrangle import RemoteDataWrangler
-from tests.shared.core.misc import PrettyPrinterTester
+from musify import PACKAGE_ROOT, MODULE_ROOT
+from musify_cli.config import ConfigLocalBase, ConfigMusicBee, ConfigLocalLibrary
+from musify_cli.config import ConfigRemote, ConfigSpotify
+from musify_cli.config import LOCAL_CONFIG, REMOTE_CONFIG, Config, ConfigFilter, ConfigReports
+from musify.local.exception import FileDoesNotExistError
+from musify.local.track.field import LocalTrackField
+from musify.shared.core.enum import TagFields
+from musify.shared.exception import ConfigError, MusifyError
+from musify.shared.logger import MusifyLogger
+from musify.shared.remote.processors.wrangle import RemoteDataWrangler
 from tests.utils import path_resources, path_txt
 
 path_config = join(path_resources, "test_config.yml")
 path_logging = join(path_resources, "test_logging.yml")
 
 
-class TestConfig(PrettyPrinterTester):
-
-    @pytest.fixture(params=[
-        lazy_fixture("config_empty"),
-        lazy_fixture("config_valid"),
-    ])
-    def obj(self, request) -> Config:
-        return request.param
+# noinspection PyTestUnpassedFixture
+class TestConfig:
 
     @pytest.fixture
     def config(self, tmp_path: str) -> Config:
@@ -53,12 +45,12 @@ class TestConfig(PrettyPrinterTester):
     ## Load config
     ###########################################################################
     @pytest.mark.skip(reason="this removes all handlers hence removing ability to see logs for tests that follow this")
-    def test_load_log_config(self, config_empty: Config, tmp_path: str):
+    def test_load_log_config(self, config_empty: Config):
         with pytest.raises(ConfigError):
             config_empty.load_log_config(path_txt)
 
         config_empty.load_log_config(path_logging)
-        assert SyncifyLogger.compact
+        assert MusifyLogger.compact
 
         loggers = [logger.name for logger in logging.getLogger().getChildren()]
         assert "__main__" not in loggers
@@ -118,7 +110,7 @@ class TestConfig(PrettyPrinterTester):
         elif isinstance(config, ConfigMusicBee):
             with pytest.raises(ConfigError):
                 assert config.musicbee_folder
-            with pytest.raises(SyncifyError):
+            with pytest.raises(MusifyError):
                 assert config.library
 
     @pytest.mark.parametrize("name", REMOTE_CONFIG.keys())
@@ -136,7 +128,7 @@ class TestConfig(PrettyPrinterTester):
             assert config.searcher
         with pytest.raises(ConfigError):
             assert config.checker
-        with pytest.raises(SyncifyError):
+        with pytest.raises(MusifyError):
             assert config.library
 
         assert config.playlists.sync.kind == "new"
@@ -331,7 +323,7 @@ class TestConfig(PrettyPrinterTester):
     ###########################################################################
     ## Merge tests - override
     ###########################################################################
-    def test_core_override(self, config_valid: Config, tmp_path: str):
+    def test_core_override(self, config_valid: Config):
         old = deepcopy(config_valid)
         config_valid.load("core_override")
         new = config_valid
@@ -439,7 +431,7 @@ class TestConfig(PrettyPrinterTester):
     ###########################################################################
     ## Merge tests - no override
     ###########################################################################
-    def test_core_enrich(self, config_valid: Config, tmp_path: str):
+    def test_core_enrich(self, config_valid: Config):
         old = deepcopy(config_valid)
         config_valid.load("core_enrich")
         new = config_valid

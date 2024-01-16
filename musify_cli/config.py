@@ -15,37 +15,38 @@ from typing import Any, Self, get_args
 
 import yaml
 
-from syncify import PACKAGE_ROOT, MODULE_ROOT
-from syncify.local.exception import InvalidFileType, FileDoesNotExistError
-from syncify.local.file import PathStemMapper
-from syncify.local.library import MusicBee, LocalLibrary
-from syncify.local.track.field import LocalTrackField
-from syncify.processors.compare import Comparer
-from syncify.processors.filter import FilterComparers
-from syncify.report import report_missing_tags
-from syncify.shared.api.authorise import APIAuthoriser
-from syncify.shared.api.request import RequestHandler
-from syncify.shared.core.base import Nameable
-from syncify.shared.core.enum import TagField
-from syncify.shared.core.misc import PrettyPrinter
-from syncify.shared.core.object import Library
-from syncify.shared.exception import ConfigError, SyncifyError
-from syncify.shared.logger import LOGGING_DT_FORMAT, SyncifyLogger
-from syncify.shared.remote.api import RemoteAPI
-from syncify.shared.remote.base import RemoteObject
-from syncify.shared.remote.library import RemoteLibrary
-from syncify.shared.remote.object import PLAYLIST_SYNC_KINDS, RemotePlaylist
-from syncify.shared.remote.processors.check import RemoteItemChecker
-from syncify.shared.remote.processors.search import RemoteItemSearcher
-from syncify.shared.remote.processors.wrangle import RemoteDataWrangler
-from syncify.shared.utils import to_collection
-from syncify.spotify import SPOTIFY_NAME
-from syncify.spotify.api import SpotifyAPI
-from syncify.spotify.base import SpotifyObject
-from syncify.spotify.library import SpotifyLibrary
-from syncify.spotify.object import SpotifyPlaylist
-from syncify.spotify.processors.processors import SpotifyItemChecker, SpotifyItemSearcher
-from syncify.spotify.processors.wrangle import SpotifyDataWrangler
+from musify.local.exception import InvalidFileType, FileDoesNotExistError
+from musify.local.file import PathStemMapper
+from musify.local.library import MusicBee, LocalLibrary
+from musify.local.track.field import LocalTrackField
+from musify.processors.compare import Comparer
+from musify.processors.filter import FilterComparers
+from musify.report import report_missing_tags
+from musify.shared.api.authorise import APIAuthoriser
+from musify.shared.api.request import RequestHandler
+from musify.shared.core.base import Nameable
+from musify.shared.core.enum import TagField
+from musify.shared.core.misc import PrettyPrinter
+from musify.shared.core.object import Library
+from musify.shared.exception import ConfigError, MusifyError
+from musify.shared.logger import LOGGING_DT_FORMAT, MusifyLogger
+from musify.shared.remote.api import RemoteAPI
+from musify.shared.remote.base import RemoteObject
+from musify.shared.remote.library import RemoteLibrary
+from musify.shared.remote.object import PLAYLIST_SYNC_KINDS, RemotePlaylist
+from musify.shared.remote.processors.check import RemoteItemChecker
+from musify.shared.remote.processors.search import RemoteItemSearcher
+from musify.shared.remote.processors.wrangle import RemoteDataWrangler
+from musify.shared.utils import to_collection
+from musify.spotify import SPOTIFY_NAME
+from musify.spotify.api import SpotifyAPI
+from musify.spotify.base import SpotifyObject
+from musify.spotify.library import SpotifyLibrary
+from musify.spotify.object import SpotifyPlaylist
+from musify.spotify.processors.processors import SpotifyItemChecker, SpotifyItemSearcher
+from musify.spotify.processors.wrangle import SpotifyDataWrangler
+
+from musify_cli import PACKAGE_ROOT, MODULE_ROOT
 
 
 def _get_local_track_tags(tags: Any) -> tuple[LocalTrackField, ...]:
@@ -92,7 +93,7 @@ class BaseConfig(PrettyPrinter, metaclass=ABCMeta):
                 try:
                     if not isinstance(getattr(self, k), BaseConfig):
                         continue
-                except SyncifyError:
+                except MusifyError:
                     continue
             elif k in self.__reset__:
                 setattr(self, k, None)
@@ -100,14 +101,14 @@ class BaseConfig(PrettyPrinter, metaclass=ABCMeta):
 
             try:
                 v_self = getattr(self, k.lstrip("_"))
-            except SyncifyError:
+            except MusifyError:
                 v_self = None
 
             force = False
             try:
                 force = not override and k in self.__override__ and getattr(other, k) is not None
                 v_other = getattr(other, k.lstrip("_"))
-            except SyncifyError:
+            except MusifyError:
                 v_other = None
 
             if isinstance(v_self, BaseConfig) and isinstance(v_other, v_self.__class__):
@@ -285,7 +286,7 @@ class ConfigLibrary(BaseConfig):
     def as_dict(self) -> dict[str, Any]:
         try:
             library = self.library
-        except SyncifyError:
+        except MusifyError:
             library = None
         return {"library": library, "playlists": self.playlists}
 
@@ -613,7 +614,7 @@ class ConfigRemote(ConfigLibrary):
     @property
     def source(self) -> str:
         return self._classes.source
-    
+
     @property
     def library(self) -> RemoteLibrary:
         if self._library is not None and isinstance(self._library, self._classes.library):
@@ -671,7 +672,7 @@ class ConfigRemote(ConfigLibrary):
                 "checker": self.checker,
                 "searcher": self.searcher,
             } | super().as_dict()
-        except SyncifyError:
+        except MusifyError:
             return {
                 "api": None,
                 "wrangler": bool(self.wrangler.source),  # just check it loaded
@@ -689,7 +690,7 @@ class ConfigRemote(ConfigLibrary):
 
         def __init__(self, settings: dict[Any, Any]):
             super().__init__(settings=settings)
-            
+
             self.sync = self.ConfigPlaylistsSync(settings=self._file)
 
         def as_dict(self) -> dict[str, Any]:
@@ -871,7 +872,7 @@ class ConfigSpotify(ConfigAPI):
         if self._api is not None:
             # noinspection PyTypeChecker
             return self._api
-        
+
         if not self.client_id or not self.client_secret:
             raise ConfigError("Cannot create API object without client ID and client secret")
 
@@ -1073,7 +1074,7 @@ class Config(BaseConfig):
             elif ext in {".json"}:
                 log_config = json.load(file)
 
-        SyncifyLogger.compact = log_config.pop("compact", False)
+        MusifyLogger.compact = log_config.pop("compact", False)
 
         for formatter in log_config["formatters"].values():  # ensure ANSI colour codes in format are recognised
             formatter["format"] = formatter["format"].replace(r"\33", "\33")
