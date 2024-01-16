@@ -526,9 +526,7 @@ class Musify(DynamicProcessor):
             self.reload_local("playlists")
 
         playlists = self.local.library.get_filtered_playlists(
-            include=self.remote.playlists.include,
-            exclude=self.remote.playlists.exclude,
-            **self.remote.playlists.sync.filter
+            playlist_filter=self.remote.playlists.filter, **self.remote.playlists.sync.filter
         )
 
         results = self.remote.library.sync(

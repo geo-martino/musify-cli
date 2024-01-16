@@ -317,7 +317,11 @@ class ConfigFilter[T: str | Nameable](BaseConfig, FilterComparers[T]):
         self.match_all = self._file.pop("match_all", self.match_all)
         self.comparers = tuple(Comparer(condition=cond, expected=exp) for cond, exp in self._file.items())
 
-        self.transform = lambda value: value.name if isinstance(value, Nameable) else value
+        # TODO: why does this need to be a method? Most likely an issue with the `merge` logic
+        # self.transform = lambda value: value.name if isinstance(value, Nameable) else value
+
+    def transform(self, value: str | Nameable) -> str:
+        return value.name if isinstance(value, Nameable) else value
 
 
 class ConfigPlaylists(BaseConfig):

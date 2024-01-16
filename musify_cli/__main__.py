@@ -143,4 +143,5 @@ print_logo()
 if main.logger.file_paths:
     print(f"\33[90mLogs: {", ".join(main.logger.file_paths)} \33[0m")
 print(f"\33[90mOutput: {conf.output_folder} \33[0m")
+print()
 print_time(main.time_taken)
