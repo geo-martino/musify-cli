@@ -308,7 +308,7 @@ class Musify(DynamicProcessor):
             restored.append(self.remote.source)
 
         if not restored:
-            self.logger.info(f"No libraries restored.")
+            self.logger.info("No libraries restored.")
             return
         self.logger.info(f"Successfully restored libraries: {", ".join(restored)}")
 
@@ -542,7 +542,7 @@ class Musify(DynamicProcessor):
     @dynamicprocessormethod
     def new_music(self, name: str, start: date | datetime, end: date | datetime = datetime.now(), *_, **__):
         """Create a new music playlist for followed artists with music released between ``start`` and ``end``"""
-        self.logger.debug(f"New music playlist: START")
+        self.logger.debug("New music playlist: START")
 
         if isinstance(start, datetime):
             start = start.date()
@@ -618,4 +618,4 @@ class Musify(DynamicProcessor):
         self.remote.library.log_sync({name: results})
         log_prefix = "Would have added" if self.config.dry_run else "Added"
         self.logger.info(f"\33[92m{log_prefix} {results.added} new tracks to playlist: '{name}' \33[0m")
-        self.logger.debug(f"New music playlist: DONE")
+        self.logger.debug("New music playlist: DONE")

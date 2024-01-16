@@ -30,6 +30,11 @@ dependencies = [
 test = [
     "pytest~=7.4",
 ]
+dev = [
+    "musify_cli[test]",
+    "flake8",
+    "grip~=4.6",
+]
 
 [project.urls]
 "Source code" = "https://github.com/geo-martino/musify-cli"
