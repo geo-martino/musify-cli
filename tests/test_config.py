@@ -5,7 +5,7 @@ from os.path import join, dirname
 import pytest
 from requests_cache import CachedSession
 
-from musify import PACKAGE_ROOT, MODULE_ROOT
+from musify import MODULE_ROOT
 from musify_cli.config import ConfigLocalBase, ConfigMusicBee, ConfigLocalLibrary
 from musify_cli.config import ConfigRemote, ConfigSpotify
 from musify_cli.config import LOCAL_CONFIG, REMOTE_CONFIG, Config, ConfigFilter, ConfigReports
@@ -36,7 +36,7 @@ class TestConfig:
         filename = "test_file.yml"
 
         config = Config(filename)
-        assert config.path == join(PACKAGE_ROOT, filename)
+        assert config.path == filename
 
         config = Config(join(dirname(__file__), filename))
         assert config.path == join(join(dirname(__file__), filename))
@@ -83,7 +83,7 @@ class TestConfig:
         return config
 
     def test_empty_core(self, config_empty: Config, tmp_path: str):
-        assert config_empty.output_folder.startswith(join(tmp_path, "_data"))
+        assert config_empty.output_folder.startswith("_data")
         assert config_empty.reload == {}
         assert config_empty.pause is None
 
@@ -171,7 +171,7 @@ class TestConfig:
         return config
 
     def test_load_core(self, config_valid: Config, tmp_path: str):
-        assert config_valid.output_folder.startswith(join(tmp_path, "test_folder"))
+        assert config_valid.output_folder.startswith("test_folder")
         assert config_valid.reload == {"main": ("tracks", "playlists"), "spotify": tuple()}
         assert config_valid.pause == "this is a test message"
 
