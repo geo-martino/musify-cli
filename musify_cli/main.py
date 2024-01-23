@@ -3,7 +3,7 @@ import logging
 import os
 import re
 import sys
-from collections.abc import Mapping, Callable
+from collections.abc import Mapping, Callable, Collection
 from datetime import date, datetime
 from os.path import basename, dirname, join, relpath, splitext
 from time import perf_counter
@@ -14,15 +14,16 @@ from musify.local.track import LocalTrack, SyncResultTrack
 from musify.local.track.field import LocalTrackField
 from musify.processors.base import DynamicProcessor, dynamicprocessormethod
 from musify.report import report_playlist_differences, report_missing_tags
-from musify.shared.exception import ConfigError
-from musify.shared.logger import MusifyLogger, STAT, CurrentTimeRotatingFileHandler
+from musify.shared.handlers import CurrentTimeRotatingFileHandler
+from musify.shared.logger import MusifyLogger, STAT
 from musify.shared.remote.api import RemoteAPI
 from musify.shared.remote.enum import RemoteObjectType
-from musify.shared.remote.object import RemoteAlbum
+from musify.shared.remote.object import RemoteAlbum, RemotePlaylist
 from musify.shared.types import UnitIterable
 from musify.shared.utils import get_user_input, to_collection
 
 from musify_cli.config import Config, ConfigLibraryDifferences, ConfigMissingTags, ConfigRemote, ConfigLocalBase
+from musify_cli.exception import ConfigError
 
 
 class Musify(DynamicProcessor):
@@ -341,7 +342,8 @@ class Musify(DynamicProcessor):
         backup = self._load_json(self.local_backup_name(key), folder)
 
         # restore and save
-        self.local.library.restore_tracks(backup["tracks"], tags=LocalTrackField.from_name(*restore_tags))
+        tracks = {track["path"]: track for track in backup["tracks"]}
+        self.local.library.restore_tracks(tracks, tags=LocalTrackField.from_name(*restore_tags))
         results = self.local.library.save_tracks(tags=tags, replace=True, dry_run=self.config.dry_run)
 
         self.local.library.log_sync_result(results)
@@ -363,8 +365,8 @@ class Musify(DynamicProcessor):
         # restore and sync
         self.remote.library.restore_playlists(backup["playlists"])
         results = self.remote.library.sync(kind="refresh", reload=False, dry_run=self.config.dry_run)
-        self.remote.library.log_sync(results)
 
+        self.remote.library.log_sync(results)
         self.logger.debug(f"Restore {self.remote.source}: DONE")
 
     @dynamicprocessormethod
@@ -540,7 +542,7 @@ class Musify(DynamicProcessor):
         self.logger.debug(f"Sync {self.remote.source}: DONE")
 
     @dynamicprocessormethod
-    def new_music(self, name: str, start: date | datetime, end: date | datetime = datetime.now(), *_, **__):
+    def new_music(self, name: str, start: date | datetime, end: date | datetime = datetime.now(), *_, **__) -> None:
         """Create a new music playlist for followed artists with music released between ``start`` and ``end``"""
         self.logger.debug("New music playlist: START")
 
@@ -564,7 +566,7 @@ class Musify(DynamicProcessor):
             self.remote.library.enrich_saved_artists(types=("album", "single"))
 
         def match_date(alb: RemoteAlbum) -> bool:
-            """Match start and end dates to the release date of this given ``album``"""
+            """Match start and end dates to the release date of the given ``alb``"""
             if alb.date:
                 return start <= alb.date <= end
             if alb.month:
@@ -619,3 +621,28 @@ class Musify(DynamicProcessor):
         log_prefix = "Would have added" if self.config.dry_run else "Added"
         self.logger.info(f"\33[92m{log_prefix} {results.added} new tracks to playlist: '{name}' \33[0m")
         self.logger.debug("New music playlist: DONE")
+
+    @dynamicprocessormethod
+    def download(self, *_, **__):
+        """Run the :py:class:`ItemDownloadHelper`"""
+        self.logger.debug("Download helper: START")
+
+        user_playlists_responses = self.api.get_user_items(
+            kind=RemoteObjectType.PLAYLIST, use_cache=self.remote.api.use_cache
+        )
+        user_playlists: Collection[RemotePlaylist] = self.config.download.filter(list(map(
+            lambda response: self.remote.classes.playlist(response=response, api=self.api, skip_checks=True),
+            user_playlists_responses
+        )))
+        self.api.get_items(
+            [pl.response for pl in user_playlists], kind=RemoteObjectType.PLAYLIST, use_cache=self.remote.api.use_cache
+        )
+        for pl in user_playlists:
+            pl.refresh()
+
+        self.config.download.helper(user_playlists)
+
+        self.logger.debug("Download helper: DONE")
+
+    def as_dict(self) -> dict[str, Any]:
+        return {}

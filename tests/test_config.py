@@ -9,10 +9,11 @@ from musify import MODULE_ROOT
 from musify_cli.config import ConfigLocalBase, ConfigMusicBee, ConfigLocalLibrary
 from musify_cli.config import ConfigRemote, ConfigSpotify
 from musify_cli.config import LOCAL_CONFIG, REMOTE_CONFIG, Config, ConfigFilter, ConfigReports
+from musify_cli.exception import ConfigError
 from musify.local.exception import FileDoesNotExistError
 from musify.local.track.field import LocalTrackField
 from musify.shared.core.enum import TagFields
-from musify.shared.exception import ConfigError, MusifyError
+from musify.shared.exception import MusifyError
 from musify.shared.logger import MusifyLogger
 from musify.shared.remote.processors.wrangle import RemoteDataWrangler
 from tests.utils import path_resources, path_txt
@@ -119,7 +120,7 @@ class TestConfig:
         if not isinstance(config, ConfigRemote):
             raise TypeError("Config is not a RemoteLibrary config")
 
-        assert config.kind == config._classes.source
+        assert config.kind == config.classes.source
         assert config._library is None
         assert config.wrangler
 

@@ -20,15 +20,16 @@ from musify.local.file import PathStemMapper
 from musify.local.library import MusicBee, LocalLibrary
 from musify.local.track.field import LocalTrackField
 from musify.processors.compare import Comparer
+from musify.processors.download import ItemDownloadHelper
 from musify.processors.filter import FilterComparers
 from musify.report import report_missing_tags
 from musify.shared.api.authorise import APIAuthoriser
 from musify.shared.api.request import RequestHandler
 from musify.shared.core.base import Nameable
-from musify.shared.core.enum import TagField
+from musify.shared.core.enum import TagField, TagFields
 from musify.shared.core.misc import PrettyPrinter
 from musify.shared.core.object import Library
-from musify.shared.exception import ConfigError, MusifyError
+from musify.shared.exception import MusifyError
 from musify.shared.logger import LOGGING_DT_FORMAT, MusifyLogger
 from musify.shared.remote.api import RemoteAPI
 from musify.shared.remote.base import RemoteObject
@@ -47,16 +48,17 @@ from musify.spotify.processors.processors import SpotifyItemChecker, SpotifyItem
 from musify.spotify.processors.wrangle import SpotifyDataWrangler
 
 from musify_cli import PACKAGE_ROOT, MODULE_ROOT
+from musify_cli.exception import ConfigError
 
 
-def _get_local_track_tags(tags: Any) -> tuple[LocalTrackField, ...]:
+def _get_tags[T: TagField](tags: Any, cls: type[T] = LocalTrackField) -> tuple[T, ...]:
     values = to_collection(tags, tuple)
     if not values:
-        return tuple(LocalTrackField.all(only_tags=True))
+        return tuple(cls.all(only_tags=True))
 
-    tags = LocalTrackField.to_tags(LocalTrackField.from_name(*values))
-    order = LocalTrackField.all()
-    return tuple(sorted(LocalTrackField.from_name(*tags), key=lambda x: order.index(x)))
+    tags = cls.to_tags(cls.from_name(*values))
+    order = cls.all()
+    return tuple(sorted(cls.from_name(*tags), key=lambda x: order.index(x)))
 
 
 def _get_default_args(func: Callable):
@@ -68,6 +70,7 @@ def _get_default_args(func: Callable):
     }
 
 
+# TODO: pause logic persists on to next task
 class BaseConfig(PrettyPrinter, metaclass=ABCMeta):
     """Base config section representing a config block from the file"""
 
@@ -220,7 +223,7 @@ class ConfigMissingTags(ConfigReportBase):
             return self._tags
 
         default = to_collection(_get_default_args(report_missing_tags)["tags"])
-        self._tags = _get_local_track_tags(self._file["tags"]) if "tags" in self._file else default
+        self._tags = _get_tags(self._file["tags"]) if "tags" in self._file else default
         return self._tags
 
     @property
@@ -240,6 +243,80 @@ class ConfigMissingTags(ConfigReportBase):
         return super().as_dict() | {
             "tags": list(sorted([t for tag in self.tags for t in tag.to_tag()], key=lambda x: order.index(x))),
             "match_all": self.match_all,
+        }
+
+
+###########################################################################
+## Download
+###########################################################################
+class ConfigDownload(BaseConfig):
+    """
+    Set the settings for the download helper from a config file.
+    See :py:class:`Config` for more documentation regarding operation.
+
+    :param settings: The loaded config from the config file.
+    """
+
+    def __init__(self, settings: dict[Any, Any]):
+        super().__init__(settings=settings, key="download")
+
+        self._defaults = _get_default_args(ItemDownloadHelper)
+
+        self._helper: ItemDownloadHelper | None = None
+        self._urls: tuple[str, ...] | None = None
+        self._tags: tuple[TagFields, ...] | None = None
+        self._interval: int | None = None
+
+        self.filter = ConfigFilter(settings=self._file)
+
+    @property
+    def helper(self) -> ItemDownloadHelper:
+        """An initialised download helper"""
+        if self._helper is not None:
+            return self._helper
+
+        self._helper = ItemDownloadHelper(
+            urls=self.urls,
+            fields=self.tags,
+            interval=self.interval,
+        )
+        return self._helper
+
+    @property
+    def urls(self) -> tuple[str, ...]:
+        """`DEFAULT = ()` | The URLs to open for each item."""
+        if self._urls is not None:
+            return self._urls
+
+        self._urls = to_collection(self._file.get("urls")) or ()
+        return self._urls
+
+    @property
+    def tags(self) -> tuple[TagFields, ...]:
+        """`DEFAULT = (<all TagFields>)` | The tags to be updated."""
+        if self._tags is not None:
+            return self._tags
+
+        self._tags = _get_tags(self._file["tags"], cls=TagFields) if "tags" in self._file else TagFields.all()
+        return self._tags
+
+    @property
+    def interval(self) -> int:
+        """`DEFAULT = 1` | The number of items to open sites for before pausing for user input."""
+        if self._interval is not None:
+            return self._interval
+
+        self._interval = int(self._file.get("interval", self._defaults["interval"]))
+        return self._interval
+
+    def as_dict(self) -> dict[str, Any]:
+        order = [field.name.lower() for field in TagFields.all(only_tags=True)]
+        return {
+            "filter": self.filter,
+            "urls": self.urls,
+            "tags": list(sorted([t for tag in self.tags for t in tag.to_tag()], key=lambda x: order.index(x))),
+            "interval": self.interval,
+            "helper": self.helper,
         }
 
 
@@ -427,7 +504,7 @@ class ConfigLocalBase(ConfigLibrary, metaclass=ABCMeta):
                 return self._tags
 
             default = to_collection(self._defaults["tags"])
-            self._tags = _get_local_track_tags(self._file["tags"]) if "tags" in self._file else default
+            self._tags = _get_tags(self._file["tags"]) if "tags" in self._file else default
             return self._tags
 
         @property
@@ -604,7 +681,7 @@ class ConfigRemote(ConfigLibrary):
                 key=self.kind, value=settings,
             )
 
-        self.api: ConfigAPI = self._classes.api(settings=self._file)
+        self.api: ConfigAPI = self.classes.api(settings=self._file)
         self.playlists = self.ConfigPlaylists(settings=self._file)
 
         self._wrangler: RemoteDataWrangler | None = None
@@ -612,19 +689,19 @@ class ConfigRemote(ConfigLibrary):
         self._searcher: RemoteItemSearcher | None = None
 
     @property
-    def _classes(self) -> RemoteClasses:
+    def classes(self) -> RemoteClasses:
         return REMOTE_CONFIG[self.kind]
 
     @property
     def source(self) -> str:
-        return self._classes.source
+        return self.classes.source
 
     @property
     def library(self) -> RemoteLibrary:
-        if self._library is not None and isinstance(self._library, self._classes.library):
+        if self._library is not None and isinstance(self._library, self.classes.library):
             return self._library
 
-        self._library = self._classes.library(
+        self._library = self.classes.library(
             api=self.api.api,
             use_cache=self.api.use_cache,
             playlist_filter=self.playlists.filter,
@@ -634,25 +711,25 @@ class ConfigRemote(ConfigLibrary):
     @property
     def playlist(self) -> type[RemotePlaylist]:
         """The :py:class:`RemotePlaylist` class for this remote library type"""
-        return self._classes.playlist
+        return self.classes.playlist
 
     @property
     def wrangler(self) -> RemoteDataWrangler:
         """An initialised remote wrangler"""
-        if self._wrangler is not None and isinstance(self._wrangler, self._classes.wrangler):
+        if self._wrangler is not None and isinstance(self._wrangler, self.classes.wrangler):
             return self._wrangler
-        self._wrangler = self._classes.wrangler()
+        self._wrangler = self.classes.wrangler()
         return self._wrangler
 
     @property
     def checker(self) -> RemoteItemChecker:
         """An initialised remote wrangler"""
-        if self._checker is not None and isinstance(self._checker, self._classes.checker):
+        if self._checker is not None and isinstance(self._checker, self.classes.checker):
             return self._checker
 
-        defaults = _get_default_args(self._classes.checker)
+        defaults = _get_default_args(self.classes.checker)
         settings = self._file.get("check", {})
-        self._checker = self._classes.checker(
+        self._checker = self.classes.checker(
             api=self.api.api,
             interval=settings.get("interval", defaults["interval"]),
             allow_karaoke=settings.get("allow_karaoke", defaults["allow_karaoke"])
@@ -662,10 +739,10 @@ class ConfigRemote(ConfigLibrary):
     @property
     def searcher(self) -> RemoteItemSearcher:
         """An initialised remote wrangler"""
-        if self._searcher is not None and isinstance(self._checker, self._classes.searcher):
+        if self._searcher is not None and isinstance(self._checker, self.classes.searcher):
             return self._searcher
 
-        self._searcher = self._classes.searcher(api=self.api.api, use_cache=self.api.use_cache)
+        self._searcher = self.classes.searcher(api=self.api.api, use_cache=self.api.use_cache)
         return self._searcher
 
     def as_dict(self) -> dict[str, Any]:
@@ -977,6 +1054,7 @@ class Config(BaseConfig):
         self.libraries: dict[str, ConfigLibrary] = {}
         self.filter: ConfigFilter | None = None
         self.reports: ConfigReports | None = None
+        self.download: ConfigDownload | None = None
 
     def load(self, key: str | None = None):
         """
@@ -996,6 +1074,7 @@ class Config(BaseConfig):
 
         self.filter = ConfigFilter(settings=self._file)
         self.reports = ConfigReports(settings=self._file)
+        self.download = ConfigDownload(settings=self._file)
 
         for name, settings in self._file.get("libraries", {}).items():
             if "type" not in settings and name in self.libraries:
@@ -1149,13 +1228,18 @@ class Config(BaseConfig):
             "libraries": {name: config for name, config in self.libraries.items()},
             "filter": self.filter,
             "reports": self.reports,
+            "download": self.download,
         }
 
 
 if __name__ == "__main__":
     conf = Config()
     conf.load_log_config("logging.yml")
-    conf.load("general")
 
+    conf.load("general")
+    print(conf)
+    print(json.dumps(conf.json(), indent=2))
+
+    conf.load("download")
     print(conf)
     print(json.dumps(conf.json(), indent=2))
