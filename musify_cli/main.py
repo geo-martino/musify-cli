@@ -3,13 +3,13 @@ import logging
 import os
 import re
 import sys
-from collections.abc import Mapping, Callable, Collection
+from collections.abc import Mapping, Callable, Collection, Iterable
 from datetime import date, datetime
-from os.path import basename, dirname, join, relpath, splitext
+from os.path import basename, dirname, join, relpath, splitext, sep
 from time import perf_counter
 from typing import Any
 
-from musify.local.collection import LocalCollection
+from musify.local.collection import LocalCollection, LocalFolder
 from musify.local.track import LocalTrack, SyncResultTrack
 from musify.local.track.field import LocalTrackField
 from musify.processors.base import DynamicProcessor, dynamicprocessormethod
@@ -131,6 +131,9 @@ class Musify(DynamicProcessor):
 
         return data
 
+    def as_dict(self) -> dict[str, Any]:
+        return {}
+
     ###########################################################################
     ## Utilities
     ###########################################################################
@@ -217,6 +220,22 @@ class Musify(DynamicProcessor):
         bar = self.logger.get_progress_bar(iterable=tracks, desc="Updating tracks", unit="tracks")
         results = {track: track.save(tags=tags, replace=replace, dry_run=self.config.dry_run) for track in bar}
         return {track: result for track, result in results.items() if result.updated}
+
+    @staticmethod
+    def set_compilation_tags(collections: Iterable[LocalFolder]) -> None:
+        """Modify tags for tracks in the given compilation ``collections``"""
+        for collection in collections:
+            tracks = sorted(collection.tracks, key=lambda x: x.path)
+            album = " - ".join(collection.name.split(sep))
+
+            for i, track in enumerate(tracks, 1):  # set tags
+                track.album = album
+                track.album_artist = "Various"
+                track.track_number = i
+                track.track_total = len(tracks)
+                track.disc_number = 1
+                track.disc_total = 1
+                track.compilation = True
 
     ###########################################################################
     ## Backup/Restore
@@ -435,6 +454,11 @@ class Musify(DynamicProcessor):
     @dynamicprocessormethod
     def search(self, *_, **__) -> None:
         """Run all methods for searching, checking, and saving URI associations for local files."""
+        def finalise():
+            """Finalise function operation"""
+            self.logger.print()
+            self.logger.debug("Search and match: DONE")
+
         self.logger.debug("Search and match: START")
 
         albums = self.local.library.albums
@@ -447,7 +471,9 @@ class Musify(DynamicProcessor):
             return
 
         self.remote.searcher(albums)
-        self.remote.checker(albums)
+        if not self.remote.checker(albums):
+            finalise()
+            return
 
         self.logger.info(f"\33[1;95m ->\33[1;97m Updating tags for {len(self.local.library)} tracks: uri \33[0m")
         results = self.save_tracks(collections=albums, tags=LocalTrackField.URI, replace=True)
@@ -458,8 +484,7 @@ class Musify(DynamicProcessor):
         log_prefix = "Would have set" if self.config.dry_run else "Set"
         self.logger.info(f"\33[92m{log_prefix} tags for {len(results)} tracks \33[0m")
 
-        self.logger.print()
-        self.logger.debug("Search and match: DONE")
+        finalise()
 
     ###########################################################################
     ## Miscellaneous library operations
@@ -501,14 +526,13 @@ class Musify(DynamicProcessor):
             self.reload_local("tracks")
 
         folders = self.config.filter.process(self.local.library.folders)
+
         self.logger.info(
             f"\33[1;95m ->\33[1;97m Setting and saving compilation style tags "
             f"for {sum(len(folder) for folder in folders)} tracks in {len(folders)} folders\n"
             f"\33[0;90m    Tags: {', '.join(t.name.lower() for t in self.local.update.tags)} \33[0m"
         )
-
-        for folder in folders:
-            folder.set_compilation_tags()
+        self.set_compilation_tags(folders)
         results = self.save_tracks(collections=folders, tags=self.local.update.tags, replace=self.local.update.replace)
 
         if results:
@@ -643,6 +667,3 @@ class Musify(DynamicProcessor):
         self.config.download.helper(user_playlists)
 
         self.logger.debug("Download helper: DONE")
-
-    def as_dict(self) -> dict[str, Any]:
-        return {}

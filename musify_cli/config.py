@@ -1119,7 +1119,7 @@ class Config(BaseConfig):
         elif not exists(self.path):
             raise FileDoesNotExistError(f"Config file not found: {self.path}")
 
-        with open(self.path, 'r') as file:
+        with open(self.path, 'r', encoding="utf-8") as file:
             config = yaml.full_load(file)
         if key and key not in config:
             raise ConfigError("Unrecognised config name: {key} | Available: {value}", key=key, value=config)
@@ -1145,7 +1145,7 @@ class Config(BaseConfig):
                 "Unrecognised log config file type: {key}. Valid: {value}", key=ext, value=allowed
             )
 
-        with open(path, "r") as file:
+        with open(path, "r", encoding="utf-8") as file:
             if ext in {".yml", ".yaml"}:
                 log_config = yaml.full_load(file)
             elif ext in {".json"}:
