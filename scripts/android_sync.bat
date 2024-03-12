@@ -4,13 +4,13 @@
 
 @REM adb connect %ANDROID_SERIAL%
 @REM adb shell "mkdir -p /storage/E42C-0EA8/Music/___Playlists"
-@REM adb pull "/storage/E42C-0EA8/Music/___Playlists" D:\Music
+@REM adb pull "/storage/E42C-0EA8/Music/___Playlists" M:\Music
 
-"D:\Coding\musify\.venv\Scripts\python.exe" "D:\Coding\musify\main.py" -cfg main
-"D:\Coding\musify\.venv\Scripts\python.exe" "D:\Coding\musify\main.py" -cfg update_tags
+"P:\musify\.venv\Scripts\python.exe" "P:\musify\main.py" -cfg main
+"P:\musify\.venv\Scripts\python.exe" "P:\musify\main.py" -cfg update_tags
 echo Metadata sync complete. Update playlists now, then press any key to sync playlists with Spotify
 pause
-"D:\Coding\musify\.venv\Scripts\python.exe" "D:\Coding\musify\main.py" -cfg update_spotify
+"P:\musify\.venv\Scripts\python.exe" "P:\musify\main.py" -cfg update_spotify
 
 @REM adb shell "rm -rf /storage/E42C-0EA8/Music/___Playlists"
 @REM adb push D:\Music\___Playlists "/storage/E42C-0EA8/Music"

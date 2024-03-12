@@ -4,15 +4,15 @@ import re
 from glob import glob
 from os.path import join, splitext, basename
 
-playlists_src = "D:\\Music\\MusicBee\\ExportedPlaylists"
-playlists_trg = "D:\\___Playlists"
+playlists_src = "M:\\Music\\MusicBee\\ExportedPlaylists"
+playlists_trg = "M:\\___Playlists"
 
 playlist_names = [splitext(basename(path))[0] for path in glob(join(f"{playlists_src}", "*.m3u"))]
 
 
 def clean_path(path: str) -> str:
     path = re.sub(r"^\.\./", "", path)
-    path = re.sub(r"D:\\Music", "", path)
+    path = re.sub(r"M:\\Music", "", path)
     name = splitext(basename(path.replace("/", "\\")).rstrip())[0]
     return re.sub(r"^\d{2} - ", "", name).rstrip().casefold()
 

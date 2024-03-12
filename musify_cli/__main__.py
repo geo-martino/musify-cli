@@ -13,6 +13,15 @@ from musify_cli.config import Config
 from musify_cli.main import Musify
 from musify_cli.printers import print_logo, print_line, print_time
 
+
+def set_title(title: str) -> None:
+    if sys.platform == "win32":
+        os.system(f"title {title}")
+    elif sys.platform == "linux" or sys.platform == "darwin":
+        os.system(f"echo '\033]2;{title}\007'")
+
+
+set_title(PROGRAM_NAME)
 print()
 print_logo()
 
@@ -110,11 +119,7 @@ for i, func in enumerate(named_args.functions, 1):
     title = f"{PROGRAM_NAME}: {func}"
     if conf.dry_run:
         title += " (DRYRUN)"
-
-    if sys.platform == "win32":
-        os.system(f"title {title}")
-    elif sys.platform == "linux" or sys.platform == "darwin":
-        os.system(f"echo '\033]2;{title}\007'")
+    set_title(title)
 
     try:  # run the functions requested by the user
         print_line(func)

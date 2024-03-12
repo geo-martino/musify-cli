@@ -54,7 +54,7 @@ handlers:
     level: DEBUG
     formatter: extended
     filters: ["file"]
-    filename: 'D:\Coding\musify-cli\_logs\{}.log'
+    filename: 'D:\Projects\musify-cli\_logs\{}.log'
     encoding: "utf-8"
     delay: False
     when: "m"

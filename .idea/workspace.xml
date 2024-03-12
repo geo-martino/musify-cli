@@ -9,7 +9,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2a13fb3e-78ea-4819-9408-81519e5f5090" name="Changes" comment="" />
+    <list default="true" id="2a13fb3e-78ea-4819-9408-81519e5f5090" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/musify-cli.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/musify-cli.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/logging.yml" beforeDir="false" afterPath="$PROJECT_DIR$/logging.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/__main__.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/__main__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/android_sync.bat" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/android_sync.bat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/check.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/check.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/move.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/move.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -55,10 +65,16 @@
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/Projects/musify-cli&quot;,
     &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
 }</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\Coding\musify-cli\scripts" />
+    </key>
+  </component>
   <component name="RunManager" selected="Python tests.Run all tests">
     <configuration name="Config check" type="PythonConfigurationType" factoryName="Python">
       <module name="musify-cli" />
@@ -88,7 +104,6 @@
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SDK_HOME" value="D:\Coding\musify-cli\.venv\Scripts\python.exe" />
-      <option name="SDK_NAME" value="Python 3.12 (.venv)" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
@@ -108,7 +123,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-50da183f06c8-d3b881c8e49f-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-233.13135.95" />
+        <option value="bundled-python-sdk-d68999036c7f-d3b881c8e49f-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-233.14475.56" />
       </set>
     </attachedChunks>
   </component>
@@ -122,5 +137,16 @@
       <updated>1705450435037</updated>
     </task>
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
 </project>

@@ -161,7 +161,7 @@ def replace_files(library: LocalLibrary, staging: LocalLibrary) -> None:
 if __name__ == "__main__":
     remote_wrangler = SpotifyDataWrangler()
 
-    lib = MusicBee("D:\\Music\\MusicBee", remote_wrangler=remote_wrangler)
+    lib = MusicBee("M:\\Music\\MusicBee", remote_wrangler=remote_wrangler)
     lib.load_tracks()
 
     # downloads = LocalLibrary("D:\\Music - Downloads", remote_wrangler=remote_wrangler)
