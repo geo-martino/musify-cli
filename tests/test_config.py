@@ -10,12 +10,12 @@ from musify_cli.config import ConfigLocalBase, ConfigMusicBee, ConfigLocalLibrar
 from musify_cli.config import ConfigRemote, ConfigSpotify
 from musify_cli.config import LOCAL_CONFIG, REMOTE_CONFIG, Config, ConfigFilter, ConfigReports
 from musify_cli.exception import ConfigError
-from musify.local.exception import FileDoesNotExistError
-from musify.local.track.field import LocalTrackField
-from musify.shared.core.enum import TagFields
-from musify.shared.exception import MusifyError
-from musify.shared.logger import MusifyLogger
-from musify.shared.remote.processors.wrangle import RemoteDataWrangler
+from musify.libraries.local.track.field import LocalTrackField
+from musify.core.enum import TagFields
+from musify.exception import MusifyError
+from musify.file.exception import FileDoesNotExistError
+from musify.log.logger import MusifyLogger
+from musify.libraries.remote.core.processors.wrangle import RemoteDataWrangler
 from tests.utils import path_resources, path_txt
 
 path_config = join(path_resources, "test_config.yml")
@@ -227,19 +227,19 @@ class TestConfig:
         if not isinstance(config, ConfigRemote):
             raise TypeError("Config is not a RemoteLibrary config")
 
-        assert config.library.source == config.source
+        assert config.library.api.wrangler.source == config.source
         assert config.library.api == config.api.api
         assert config.library.use_cache == config.api.use_cache
         assert config.library.playlist_filter == config.playlists.filter
 
         assert config.wrangler.source == config.source
 
-        assert config.checker.source == config.source
+        assert config.checker.api.wrangler.source == config.source
         assert config.checker.api == config.api.api
         assert config.checker.interval == 200
         assert config.checker.allow_karaoke
 
-        assert config.searcher.source == config.source
+        assert config.searcher.api.wrangler.source == config.source
         assert config.searcher.api == config.api.api
         assert config.searcher.use_cache == config.api.use_cache
 
@@ -359,10 +359,11 @@ class TestConfig:
         assert new.kind == old.kind == name
 
         # overriden values
-        assert new.playlists.filter.comparers[0].condition == "is_in"
-        assert new.playlists.filter.comparers[0].expected == ["new playlist to include", "include me now too"]
-        assert new.playlists.filter.comparers[1].condition == "is_not"
-        assert new.playlists.filter.comparers[1].expected == ["and don't include me"]
+        comparers = list(new.playlists.filter.comparers)
+        assert comparers[0].condition == "is_in"
+        assert comparers[0].expected == ["new playlist to include", "include me now too"]
+        assert comparers[1].condition == "is_not"
+        assert comparers[1].expected == ["and don't include me"]
 
         assert new.update.tags == (LocalTrackField.GENRES,)
         assert new.update.replace
@@ -400,8 +401,9 @@ class TestConfig:
         assert new.checker.interval == 100
         assert not new.checker.allow_karaoke
 
-        assert new.playlists.filter.comparers[0].condition == "is_not"
-        assert new.playlists.filter.comparers[0].expected == ["terrible playlist"]
+        comparers = list(new.playlists.filter.comparers)
+        assert comparers[0].condition == "is_not"
+        assert comparers[0].expected == ["terrible playlist"]
         assert new.playlists.sync.kind == "refresh"
         assert new.playlists.sync.reload
         assert new.playlists.sync.filter == {
@@ -413,8 +415,8 @@ class TestConfig:
 
         # old values
         assert new.wrangler.source == old.wrangler.source
-        assert new.checker.source == old.checker.source
-        assert new.searcher.source == old.searcher.source
+        assert new.checker.api.wrangler.source == old.checker.api.wrangler.source
+        assert new.searcher.api.wrangler.source == old.searcher.api.wrangler.source
 
         # the library and api were instantiated already so the new library and api should be forcibly overriden
         assert id(old_library) == id(new.library)
@@ -474,10 +476,11 @@ class TestConfig:
         assert new.kind == old.kind == name
 
         # overriden values
-        assert new.playlists.filter.comparers[0].condition == "is_in"
-        assert new.playlists.filter.comparers[0].expected == ["new playlist to include", "include me now too"]
-        assert new.playlists.filter.comparers[1].condition == "is_not"
-        assert new.playlists.filter.comparers[1].expected == ["and don't include me"]
+        comparers = list(new.playlists.filter.comparers)
+        assert comparers[0].condition == "is_in"
+        assert comparers[0].expected == ["new playlist to include", "include me now too"]
+        assert comparers[1].condition == "is_not"
+        assert comparers[1].expected == ["and don't include me"]
 
         # kept values
         assert new.stems == old.stems
@@ -509,19 +512,20 @@ class TestConfig:
             raise TypeError("Config is not a RemoteLibrary config")
 
         # new values
-        assert new.playlists.filter.comparers[0].condition == "is_not"
-        assert new.playlists.filter.comparers[0].expected == ["terrible playlist"]
+        comparers = list(new.playlists.filter.comparers)
+        assert comparers[0].condition == "is_not"
+        assert comparers[0].expected == ["terrible playlist"]
 
         # kept values
         assert new.api.use_cache == old.api.use_cache
 
         assert new.wrangler.source == old.wrangler.source
 
-        assert new.checker.source == old.checker.source
+        assert new.checker.api.wrangler.source == old.checker.api.wrangler.source
         assert new.checker.interval == old.checker.interval
         assert new.checker.allow_karaoke == old.checker.allow_karaoke
 
-        assert new.searcher.source == old.searcher.source
+        assert new.searcher.api.wrangler.source == old.searcher.api.wrangler.source
         assert new.searcher.use_cache == old.searcher.use_cache
 
         assert new.playlists.sync.kind == old.playlists.sync.kind

@@ -1,8 +1,8 @@
 from collections.abc import Iterable
 from typing import Any
 
-from musify.shared.exception import MusifyError
-from musify.shared.utils import SafeDict
+from musify.exception import MusifyError
+from musify.utils import SafeDict
 
 
 class ConfigError(MusifyError):

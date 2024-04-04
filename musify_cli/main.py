@@ -9,18 +9,19 @@ from os.path import basename, dirname, join, relpath, splitext, sep
 from time import perf_counter
 from typing import Any
 
-from musify.local.collection import LocalCollection, LocalFolder
-from musify.local.track import LocalTrack, SyncResultTrack
-from musify.local.track.field import LocalTrackField
+from musify.libraries.local.collection import LocalCollection, LocalFolder
+from musify.libraries.local.track import LocalTrack, SyncResultTrack
+from musify.libraries.local.track.field import LocalTrackField
 from musify.processors.base import DynamicProcessor, dynamicprocessormethod
 from musify.report import report_playlist_differences, report_missing_tags
-from musify.shared.handlers import CurrentTimeRotatingFileHandler
-from musify.shared.logger import MusifyLogger, STAT
-from musify.shared.remote.api import RemoteAPI
-from musify.shared.remote.enum import RemoteObjectType
-from musify.shared.remote.object import RemoteAlbum, RemotePlaylist
-from musify.shared.types import UnitIterable
-from musify.shared.utils import get_user_input, to_collection
+from musify.log import STAT
+from musify.log.handlers import CurrentTimeRotatingFileHandler
+from musify.log.logger import MusifyLogger
+from musify.libraries.remote.core.api import RemoteAPI
+from musify.libraries.remote.core.enum import RemoteObjectType
+from musify.libraries.remote.core.object import RemoteAlbum, RemotePlaylist
+from musify.types import UnitIterable
+from musify.utils import get_user_input, to_collection
 
 from musify_cli.config import Config, ConfigLibraryDifferences, ConfigMissingTags, ConfigRemote, ConfigLocalBase
 from musify_cli.exception import ConfigError
@@ -624,16 +625,17 @@ class Musify(DynamicProcessor):
         if pl is None:  # playlist not loaded, attempt to find playlist on remote with fresh data
             responses = self.remote.api.api.get_user_items(use_cache=False)
             for response in responses:
-                pl_check = self.remote.playlist(response=response, api=self.remote.api.api, skip_checks=True)
+                pl_check = self.remote.object_factory.playlist(
+                    response=response, api=self.remote.api.api, skip_checks=True
+                )
 
                 if pl_check.name == name:
-                    self.remote.api.api.get_items(response, kind=RemoteObjectType.PLAYLIST, use_cache=False)
-                    pl_check.refresh(skip_checks=False)
+                    self.remote.api.api.get_items(pl_check, kind=RemoteObjectType.PLAYLIST, use_cache=False)
                     pl = pl_check
                     break
 
         if pl is None:  # if playlist still not found, create it
-            pl = self.remote.playlist.create(api=self.remote.api.api, name=name)
+            pl = self.remote.object_factory.playlist.create(api=self.remote.api.api, name=name)
 
         # add tracks to remote playlist
         pl.clear()
@@ -655,14 +657,10 @@ class Musify(DynamicProcessor):
             kind=RemoteObjectType.PLAYLIST, use_cache=self.remote.api.use_cache
         )
         user_playlists: Collection[RemotePlaylist] = self.config.download.filter(list(map(
-            lambda response: self.remote.classes.playlist(response=response, api=self.api, skip_checks=True),
+            lambda response: self.remote.object_factory.playlist(response=response, api=self.api, skip_checks=True),
             user_playlists_responses
         )))
-        self.api.get_items(
-            [pl.response for pl in user_playlists], kind=RemoteObjectType.PLAYLIST, use_cache=self.remote.api.use_cache
-        )
-        for pl in user_playlists:
-            pl.refresh()
+        self.api.get_items(user_playlists, kind=RemoteObjectType.PLAYLIST, use_cache=self.remote.api.use_cache)
 
         self.config.download.helper(user_playlists)
 

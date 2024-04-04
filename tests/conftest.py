@@ -1,6 +1,6 @@
 import pytest
 
-from musify.spotify.processors.wrangle import SpotifyDataWrangler
+from musify.libraries.remote.spotify.processors import SpotifyDataWrangler
 
 
 @pytest.fixture(scope="session")

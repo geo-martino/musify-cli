@@ -9,7 +9,7 @@ from os.path import basename, dirname, join, splitext
 from musify.local.library import LocalLibrary
 from musify.local.library.musicbee import XMLLibraryParser, MusicBee
 from musify.shared.logger import STAT, MusifyLogger
-from musify.spotify.processors.wrangle import SpotifyDataWrangler
+from musify.spotify.processors import SpotifyDataWrangler
 
 logging.basicConfig(format="%(message)s", level=STAT)
 

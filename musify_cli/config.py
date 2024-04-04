@@ -15,37 +15,37 @@ from typing import Any, Self, get_args
 
 import yaml
 from musify import MODULE_ROOT as MUSIFY_ROOT
-from musify.local.exception import InvalidFileType, FileDoesNotExistError
-from musify.local.file import PathStemMapper
-from musify.local.library import MusicBee, LocalLibrary
-from musify.local.track.field import LocalTrackField
+from musify.libraries.local.library import MusicBee, LocalLibrary
+from musify.libraries.local.track.field import LocalTrackField
 from musify.processors.compare import Comparer
 from musify.processors.download import ItemDownloadHelper
 from musify.processors.filter import FilterComparers
 from musify.report import report_missing_tags
-from musify.shared.api.authorise import APIAuthoriser
-from musify.shared.api.request import RequestHandler
-from musify.shared.core.base import Nameable
-from musify.shared.core.enum import TagField, TagFields
-from musify.shared.core.misc import PrettyPrinter
-from musify.shared.core.object import Library
-from musify.shared.exception import MusifyError
-from musify.shared.logger import LOGGING_DT_FORMAT, MusifyLogger
-from musify.shared.remote.api import RemoteAPI
-from musify.shared.remote.base import RemoteObject
-from musify.shared.remote.library import RemoteLibrary
-from musify.shared.remote.object import PLAYLIST_SYNC_KINDS, RemotePlaylist
-from musify.shared.remote.processors.check import RemoteItemChecker
-from musify.shared.remote.processors.search import RemoteItemSearcher
-from musify.shared.remote.processors.wrangle import RemoteDataWrangler
-from musify.shared.utils import to_collection
-from musify.spotify import SPOTIFY_NAME
-from musify.spotify.api import SpotifyAPI
-from musify.spotify.base import SpotifyObject
-from musify.spotify.library import SpotifyLibrary
-from musify.spotify.object import SpotifyPlaylist
-from musify.spotify.processors.processors import SpotifyItemChecker, SpotifyItemSearcher
-from musify.spotify.processors.wrangle import SpotifyDataWrangler
+from musify.api.authorise import APIAuthoriser
+from musify.api.request import RequestHandler
+from musify.core.base import MusifyObject
+from musify.core.enum import TagField, TagFields
+from musify.core.printer import PrettyPrinter
+from musify.libraries.core.object import Library
+from musify.exception import MusifyError
+from musify.file.exception import InvalidFileType, FileDoesNotExistError
+from musify.file.path_mapper import PathStemMapper
+from musify.log import LOGGING_DT_FORMAT
+from musify.log.logger import MusifyLogger
+from musify.libraries.remote.core.api import RemoteAPI
+from musify.libraries.remote.core.base import RemoteObject
+from musify.libraries.remote.core.factory import RemoteObjectFactory
+from musify.libraries.remote.core.library import RemoteLibrary
+from musify.libraries.remote.core.object import PLAYLIST_SYNC_KINDS, RemotePlaylist
+from musify.libraries.remote.core.processors.check import RemoteItemChecker
+from musify.libraries.remote.core.processors.search import RemoteItemSearcher
+from musify.libraries.remote.core.processors.wrangle import RemoteDataWrangler
+from musify.utils import to_collection
+from musify.libraries.remote.spotify.api import SpotifyAPI
+from musify.libraries.remote.spotify.base import SpotifyObject
+from musify.libraries.remote.spotify.factory import SpotifyObjectFactory
+from musify.libraries.remote.spotify.library import SpotifyLibrary
+from musify.libraries.remote.spotify.processors import SpotifyDataWrangler
 
 from musify_cli import PACKAGE_ROOT, MODULE_ROOT
 from musify_cli.exception import ConfigError
@@ -373,7 +373,7 @@ class ConfigLibrary(BaseConfig):
         return obj
 
 
-class ConfigFilter[T: str | Nameable](BaseConfig, FilterComparers[T]):
+class ConfigFilter[T: str | MusifyObject](BaseConfig, FilterComparers[T]):
     """
     Set the settings for granular filtering from a config file.
     See :py:class:`Config` for more documentation regarding operation.
@@ -397,10 +397,10 @@ class ConfigFilter[T: str | Nameable](BaseConfig, FilterComparers[T]):
         }
 
         # TODO: why does this need to be a method? Most likely an issue with the `merge` logic
-        # self.transform = lambda value: value.name if isinstance(value Nameable) else value
+        # self.transform = lambda value: value.name if isinstance(value MusifyObject) else value
 
-    def transform(self, value: str | Nameable) -> str:
-        return value.name if isinstance(value, Nameable) else value
+    def transform(self, value: str | MusifyObject) -> str:
+        return value.name if isinstance(value, MusifyObject) else value
 
 
 class ConfigPlaylists(BaseConfig):
@@ -686,6 +686,7 @@ class ConfigRemote(ConfigLibrary):
         self.api: ConfigAPI = self.classes.api(settings=self._file)
         self.playlists = self.ConfigPlaylists(settings=self._file)
 
+        self._object_factory: RemoteObjectFactory | None = None
         self._wrangler: RemoteDataWrangler | None = None
         self._checker: RemoteItemChecker | None = None
         self._searcher: RemoteItemSearcher | None = None
@@ -697,6 +698,14 @@ class ConfigRemote(ConfigLibrary):
     @property
     def source(self) -> str:
         return self.classes.source
+
+    @property
+    def object_factory(self) -> RemoteObjectFactory:
+        if self._object_factory is not None:
+            return self._object_factory
+
+        self._object_factory = self.classes.factory(api=self.api.api)
+        return self._object_factory
 
     @property
     def library(self) -> RemoteLibrary:
@@ -711,11 +720,6 @@ class ConfigRemote(ConfigLibrary):
         return self._library
 
     @property
-    def playlist(self) -> type[RemotePlaylist]:
-        """The :py:class:`RemotePlaylist` class for this remote library type"""
-        return self.classes.playlist
-
-    @property
     def wrangler(self) -> RemoteDataWrangler:
         """An initialised remote wrangler"""
         if self._wrangler is not None and isinstance(self._wrangler, self.classes.wrangler):
@@ -726,13 +730,13 @@ class ConfigRemote(ConfigLibrary):
     @property
     def checker(self) -> RemoteItemChecker:
         """An initialised remote wrangler"""
-        if self._checker is not None and isinstance(self._checker, self.classes.checker):
+        if self._checker is not None:
             return self._checker
 
-        defaults = _get_default_args(self.classes.checker)
+        defaults = _get_default_args(RemoteItemChecker)
         settings = self._file.get("check", {})
-        self._checker = self.classes.checker(
-            api=self.api.api,
+        self._checker = RemoteItemChecker(
+            object_factory=self.object_factory,
             interval=settings.get("interval", defaults["interval"]),
             allow_karaoke=settings.get("allow_karaoke", defaults["allow_karaoke"])
         )
@@ -741,10 +745,10 @@ class ConfigRemote(ConfigLibrary):
     @property
     def searcher(self) -> RemoteItemSearcher:
         """An initialised remote wrangler"""
-        if self._searcher is not None and isinstance(self._checker, self.classes.searcher):
+        if self._searcher is not None:
             return self._searcher
 
-        self._searcher = self.classes.searcher(api=self.api.api, use_cache=self.api.use_cache)
+        self._searcher = RemoteItemSearcher(object_factory=self.object_factory, use_cache=self.api.use_cache)
         return self._searcher
 
     def as_dict(self) -> dict[str, Any]:
@@ -986,27 +990,23 @@ class RemoteClasses:
     api: type[ConfigAPI]
     wrangler: type[RemoteDataWrangler]
     object: type[RemoteObject]
-    checker: type[RemoteItemChecker]
-    searcher: type[RemoteItemSearcher]
     library: type[RemoteLibrary]
-    playlist: type[RemotePlaylist]
+    factory: type[RemoteObjectFactory]
 
 
 SPOTIFY_CLASSES = RemoteClasses(
-    source=SPOTIFY_NAME,
+    source=SpotifyDataWrangler.source,
     api=ConfigSpotify,
     wrangler=SpotifyDataWrangler,
     object=SpotifyObject,
-    checker=SpotifyItemChecker,
-    searcher=SpotifyItemSearcher,
     library=SpotifyLibrary,
-    playlist=SpotifyPlaylist,
+    factory=SpotifyObjectFactory,
 )
 
 # map of the names of all supported library sources and their associated config
 REMOTE_CONFIG: Mapping[str, RemoteClasses] = {
-    SPOTIFY_NAME: SPOTIFY_CLASSES,
-    "spotify": SPOTIFY_CLASSES,
+    SpotifyDataWrangler.source: SPOTIFY_CLASSES,
+    SpotifyDataWrangler.source.lower(): SPOTIFY_CLASSES,
 }
 
 LOCAL_CONFIG: Mapping[str, type[ConfigLocalBase]] = {
