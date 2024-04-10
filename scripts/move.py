@@ -6,10 +6,10 @@ import shutil
 from collections.abc import Iterable
 from os.path import basename, dirname, join, splitext
 
-from musify.local.library import LocalLibrary
-from musify.local.library.musicbee import XMLLibraryParser, MusicBee
-from musify.shared.logger import STAT, MusifyLogger
-from musify.spotify.processors import SpotifyDataWrangler
+from musify.libraries.local.library import LocalLibrary
+from musify.libraries.local.library.musicbee import XMLLibraryParser, MusicBee
+from musify.log.logger import STAT, MusifyLogger
+from musify.libraries.remote.spotify.processors import SpotifyDataWrangler
 
 logging.basicConfig(format="%(message)s", level=STAT)
 

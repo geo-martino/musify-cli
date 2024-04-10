@@ -34,7 +34,7 @@ def print_logo(fonts: Sequence[str] = LOGO_FONTS, colours: Collection[int] = LOG
 
 def print_line(text: str = "", line_char: str = "-") -> None:
     """Print an aligned line with the given text in the centre of the terminal"""
-    text = text.replace("_", " ").title()
+    text = text.replace("_", " ").replace("-", " ").title()
     cols = os.get_terminal_size().columns
 
     text = f" {text} " if text else ""

@@ -36,8 +36,9 @@ parser._positionals.title = "Functions"
 parser._optionals.title = "Optional arguments"
 
 # cli function aliases and expected args in order user should give them
+processor_method_names = [name.replace("_", "-") for name in Musify.__new__(Musify).__processormethods__]
 parser.add_argument(
-    "functions", nargs="*", choices=list(Musify.__new__(Musify).__processormethods__),
+    "functions", nargs="*", choices=processor_method_names,
     help=f"{PROGRAM_NAME} function to run."
 )
 

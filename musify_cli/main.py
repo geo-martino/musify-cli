@@ -4,24 +4,28 @@ import os
 import re
 import sys
 from collections.abc import Mapping, Callable, Collection, Iterable
+from concurrent.futures import ThreadPoolExecutor
+from copy import copy
 from datetime import date, datetime
 from os.path import basename, dirname, join, relpath, splitext, sep
 from time import perf_counter
 from typing import Any
 
+from musify.libraries.core.object import Playlist
 from musify.libraries.local.collection import LocalCollection, LocalFolder
 from musify.libraries.local.track import LocalTrack, SyncResultTrack
 from musify.libraries.local.track.field import LocalTrackField
-from musify.processors.base import DynamicProcessor, dynamicprocessormethod
-from musify.report import report_playlist_differences, report_missing_tags
-from musify.log import STAT
-from musify.log.handlers import CurrentTimeRotatingFileHandler
-from musify.log.logger import MusifyLogger
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.enum import RemoteObjectType
 from musify.libraries.remote.core.object import RemoteAlbum, RemotePlaylist
+from musify.log import STAT
+from musify.log.handlers import CurrentTimeRotatingFileHandler
+from musify.log.logger import MusifyLogger
+from musify.processors.base import DynamicProcessor, dynamicprocessormethod, Filter
+from musify.processors.filter import FilterDefinedList
+from musify.report import report_playlist_differences, report_missing_tags
 from musify.types import UnitIterable
-from musify.utils import get_user_input, to_collection
+from musify.utils import get_user_input, to_collection, get_max_width, align_string
 
 from musify_cli.config import Config, ConfigLibraryDifferences, ConfigMissingTags, ConfigRemote, ConfigLocalBase
 from musify_cli.exception import ConfigError
@@ -96,6 +100,7 @@ class Musify(DynamicProcessor):
 
     def set_processor(self, name: str) -> Callable:
         """Set the processor to use from the given name"""
+        name = name.replace("-", "_")
         self._set_processor_name(name)
         self.config.load(name)
         return self._processor_method
@@ -217,10 +222,14 @@ class Musify(DynamicProcessor):
         :param replace: Destructively replace tags in each file.
         :return: A map of the :py:class:`LocalTrack` saved to its result as a :py:class:`SyncResultTrack` object
         """
-        tracks: tuple[LocalTrack, ...] = tuple(track for coll in to_collection(collections) for track in coll)
-        bar = self.logger.get_progress_bar(iterable=tracks, desc="Updating tracks", unit="tracks")
-        results = {track: track.save(tags=tags, replace=replace, dry_run=self.config.dry_run) for track in bar}
-        return {track: result for track, result in results.items() if result.updated}
+        with ThreadPoolExecutor(thread_name_prefix="track-saver") as executor:
+            futures = {
+                track: executor.submit(track.save, tags=tags, replace=replace, dry_run=self.config.dry_run)
+                for coll in to_collection(collections) for track in coll
+            }
+            bar = self.logger.get_progress_bar(futures.items(), desc="Updating tracks", unit="tracks")
+
+            return {track: future.result() for track, future in bar if future.result().updated}
 
     @staticmethod
     def set_compilation_tags(collections: Iterable[LocalFolder]) -> None:
@@ -237,6 +246,60 @@ class Musify(DynamicProcessor):
                 track.disc_number = 1
                 track.disc_total = 1
                 track.compilation = True
+
+    def filter_playlists[T: Playlist](
+            self,
+            playlists: Collection[T],
+            playlist_filter: Collection[str] | Filter[str] = (),
+            **tag_filter: dict[str, tuple[str, ...]]
+    ) -> Collection[T]:
+        """
+        Returns a filtered set of playlists in this library.
+        The playlists returned are deep copies of the playlists in the library.
+
+        :param playlists: The playlists to be filtered.
+        :param playlist_filter: An optional :py:class:`Filter` to apply or collection of playlist names.
+            Playlist names will be passed to this filter to limit which playlists are processed.
+        :param tag_filter: Provide optional kwargs of the tags and values of items to filter out of every playlist.
+            Parse a tag name as a parameter, any item matching the values given for this tag will be filtered out.
+            NOTE: Only `string` value types are currently supported.
+        :return: Filtered playlists.
+        """
+        self.logger.info(
+            f"\33[1;95m ->\33[1;97m Filtering playlists and tracks from {len(playlists)} playlists\n"
+            f"\33[0;90m    Filter out tags: {tag_filter} \33[0m"
+        )
+
+        if not isinstance(playlist_filter, Filter):
+            playlist_filter = FilterDefinedList(playlist_filter)
+        pl_filtered = playlist_filter(playlists) if playlist_filter else playlists
+
+        max_width = get_max_width([pl.name for pl in pl_filtered])
+        for pl in pl_filtered:
+            initial_count = len(pl)
+            tracks = []
+            for track in pl.tracks:
+                keep = True
+
+                for tag, values in tag_filter.items():
+                    item_val = str(track[tag])
+
+                    if any(v.strip().casefold() in item_val.strip().casefold() for v in values):
+                        keep = False
+                        break
+
+                if keep:
+                    tracks.append(track)
+
+            pl.clear()
+            pl.extend(tracks)
+
+            self.logger.debug(
+                f"{align_string(pl.name, max_width=max_width)} | Filtered out {initial_count - len(pl):>3} items"
+            )
+
+        self.logger.print()
+        return pl_filtered
 
     ###########################################################################
     ## Backup/Restore
@@ -269,7 +332,6 @@ class Musify(DynamicProcessor):
 
         self._save_json(self.local_backup_name(key), self.local.library.json())
         self._save_json(self.remote_backup_name(key), self.remote.library.json())
-        self.logger.debug("Backup libraries: DONE")
 
     @dynamicprocessormethod
     def restore(self, *_, **__) -> None:
@@ -366,7 +428,7 @@ class Musify(DynamicProcessor):
         self.local.library.restore_tracks(tracks, tags=LocalTrackField.from_name(*restore_tags))
         results = self.local.library.save_tracks(tags=tags, replace=True, dry_run=self.config.dry_run)
 
-        self.local.library.log_sync_result(results)
+        self.local.library.log_save_tracks_result(results)
         self.logger.debug("Restore local: DONE")
 
     def _restore_spotify(self, folder: str, key: str | None = None) -> None:
@@ -447,7 +509,7 @@ class Musify(DynamicProcessor):
 
         if results:
             self.logger.print(STAT)
-        self.local.library.log_sync_result(results)
+        self.local.library.log_save_tracks_result(results)
         self.logger.info(f"\33[92mSet tags for {len(results)} tracks \33[0m")
 
         finalise()
@@ -481,7 +543,7 @@ class Musify(DynamicProcessor):
 
         if results:
             self.logger.print(STAT)
-        self.local.library.log_sync_result(results)
+        self.local.library.log_save_tracks_result(results)
         log_prefix = "Would have set" if self.config.dry_run else "Set"
         self.logger.info(f"\33[92m{log_prefix} tags for {len(results)} tracks \33[0m")
 
@@ -494,10 +556,10 @@ class Musify(DynamicProcessor):
     def pull_tags(self, *_, **__) -> None:
         """Run all methods for pulling tag data from remote and updating local track tags"""
         self.logger.debug("Update tags: START")
-        # if not self.local.library_loaded:
-        #     self.reload_remote("tracks")
-        # if not self.remote.library_loaded:
-        #     self.reload_remote("tracks", "playlists", "extend", "artists")
+        if not self.local.library_loaded:
+            self.reload_local("tracks")
+        if not self.remote.library_loaded:
+            self.reload_remote("tracks", "playlists", "extend", "artists")
 
         self.local.library.merge_tracks(self.remote.library, tags=self.local.update.tags)
 
@@ -512,9 +574,20 @@ class Musify(DynamicProcessor):
 
         if results:
             self.logger.print(STAT)
-        self.local.library.log_sync_result(results)
+        self.local.library.log_save_tracks_result(results)
         log_prefix = "Would have set" if self.config.dry_run else "Set"
         self.logger.info(f"\33[92m{log_prefix} tags for {len(results)} tracks \33[0m")
+
+        # TODO: why do some unavailable tracks keep getting updated?
+        #  This block is for debugging
+        max_width = get_max_width([track.path for track in results], max_width=80)
+        for track, result in results.items():
+            self.logger.stat(
+                f"\33[97m{align_string(track.path, max_width=max_width, truncate_left=True)} \33[0m| " +
+                f"\33[94m{' - '.join(
+                    f"{tag.name, condition, track[tag.name.lower()]}" for tag, condition in result.updated.items())
+                } \33[0m"
+            )
 
         self.logger.print()
         self.logger.debug("Update tags: DONE")
@@ -538,7 +611,7 @@ class Musify(DynamicProcessor):
 
         if results:
             self.logger.print(STAT)
-        self.local.library.log_sync_result(results)
+        self.local.library.log_save_tracks_result(results)
         log_prefix = "Would have set" if self.config.dry_run else "Set"
         self.logger.info(f"\33[92m{log_prefix} tags for {len(results)} tracks \33[0m")
 
@@ -549,11 +622,20 @@ class Musify(DynamicProcessor):
     def sync_remote(self, *_, **__) -> None:
         """Run all main functions for synchronising remote playlists with a local library"""
         self.logger.debug(f"Sync {self.remote.source}: START")
-        if not self.local.library_loaded:  # not a full load so don't mark the library as loaded
-            self.reload_local("playlists")
 
-        playlists = self.local.library.get_filtered_playlists(
-            playlist_filter=self.remote.playlists.filter, **self.remote.playlists.sync.filter
+        # not a full load so don't mark the libraries as loaded
+        if not self.local.library_loaded:
+            self.reload_local("playlists")
+        if not self.remote.library_loaded:
+            self.reload_remote("playlists")
+
+        playlists = copy(list(self.local.library.playlists.values()))
+        for pl in playlists:  # so filter_playlists doesn't clear the list of tracks on the original playlist objects
+            pl._tracks = pl.tracks.copy()
+        playlists = self.filter_playlists(
+            playlists=playlists,
+            playlist_filter=self.remote.playlists.filter,
+            **self.remote.playlists.sync.filter
         )
 
         results = self.remote.library.sync(

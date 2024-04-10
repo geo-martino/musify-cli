@@ -20,6 +20,7 @@ from musify.libraries.local.track.field import LocalTrackField
 from musify.processors.compare import Comparer
 from musify.processors.download import ItemDownloadHelper
 from musify.processors.filter import FilterComparers
+from musify.processors.match import ItemMatcher
 from musify.report import report_missing_tags
 from musify.api.authorise import APIAuthoriser
 from musify.api.request import RequestHandler
@@ -688,6 +689,7 @@ class ConfigRemote(ConfigLibrary):
 
         self._object_factory: RemoteObjectFactory | None = None
         self._wrangler: RemoteDataWrangler | None = None
+        self._matcher: ItemMatcher = ItemMatcher()
         self._checker: RemoteItemChecker | None = None
         self._searcher: RemoteItemSearcher | None = None
 
@@ -736,9 +738,10 @@ class ConfigRemote(ConfigLibrary):
         defaults = _get_default_args(RemoteItemChecker)
         settings = self._file.get("check", {})
         self._checker = RemoteItemChecker(
+            matcher=self._matcher,
             object_factory=self.object_factory,
             interval=settings.get("interval", defaults["interval"]),
-            allow_karaoke=settings.get("allow_karaoke", defaults["allow_karaoke"])
+            allow_karaoke=settings.get("allow_karaoke", defaults["allow_karaoke"]),
         )
         return self._checker
 
@@ -748,7 +751,11 @@ class ConfigRemote(ConfigLibrary):
         if self._searcher is not None:
             return self._searcher
 
-        self._searcher = RemoteItemSearcher(object_factory=self.object_factory, use_cache=self.api.use_cache)
+        self._searcher = RemoteItemSearcher(
+            matcher=self._matcher,
+            object_factory=self.object_factory,
+            use_cache=self.api.use_cache,
+        )
         return self._searcher
 
     def as_dict(self) -> dict[str, Any]:
