@@ -49,7 +49,7 @@ from musify.libraries.remote.spotify.library import SpotifyLibrary
 from musify.libraries.remote.spotify.processors import SpotifyDataWrangler
 
 from musify_cli import PACKAGE_ROOT, MODULE_ROOT
-from musify_cli.exception import ConfigError
+from musify_cli.exception import ParserError
 
 
 def _get_tags[T: TagField](tags: Any, cls: type[T] = LocalTrackField) -> tuple[T, ...]:
@@ -71,7 +71,6 @@ def _get_default_args(func: Callable):
     }
 
 
-# TODO: pause logic persists on to next task
 class BaseConfig(PrettyPrinter, metaclass=ABCMeta):
     """Base config section representing a config block from the file"""
 
@@ -397,11 +396,7 @@ class ConfigFilter[T: str | MusifyObject](BaseConfig, FilterComparers[T]):
             Comparer(condition=cond, expected=exp): (False, FilterComparers()) for cond, exp in self._file.items()
         }
 
-        # TODO: why does this need to be a method? Most likely an issue with the `merge` logic
-        # self.transform = lambda value: value.name if isinstance(value MusifyObject) else value
-
-    def transform(self, value: str | MusifyObject) -> str:
-        return value.name if isinstance(value, MusifyObject) else value
+        self.transform = lambda value: value.name if isinstance(value, MusifyObject) else value
 
 
 class ConfigPlaylists(BaseConfig):
@@ -452,8 +447,8 @@ class ConfigLocalBase(ConfigLibrary, metaclass=ABCMeta):
         raise NotImplementedError
 
     @property
-    def source(self):
-        return LocalLibrary.source
+    def source(self) -> str:
+        return str(LocalLibrary.source)
 
     @property
     def remote_wrangler(self) -> RemoteDataWrangler:
@@ -463,7 +458,7 @@ class ConfigLocalBase(ConfigLibrary, metaclass=ABCMeta):
     @remote_wrangler.setter
     def remote_wrangler(self, value: RemoteDataWrangler):
         if self._library is not None:
-            raise ConfigError("Cannot set the remote wrangler after the library has been initialised")
+            raise ParserError("Cannot set the remote wrangler after the library has been initialised")
         self._remote_wrangler = value
 
     ###########################################################################
@@ -494,7 +489,7 @@ class ConfigLocalBase(ConfigLibrary, metaclass=ABCMeta):
         """
 
         def __init__(self, settings: dict[Any, Any]):
-            super().__init__(settings=settings, key="update")
+            super().__init__(settings=settings, key="updater")
             self._defaults = _get_default_args(LocalLibrary.save_tracks)
 
             self._tags: tuple[LocalTrackField, ...] | None = None
@@ -570,10 +565,10 @@ class ConfigLocalLibrary(ConfigLocalBase):
                 {path: folder for key, path in self._paths["library"].items() if path and key != self._platform_key}
             )
         else:
-            raise ConfigError("Config not found", key=["local", "paths", "library"], value=self._paths)
+            raise ParserError("Config not found", key=["local", "paths", "library"], value=self._paths)
 
         if not folder:
-            raise ConfigError(
+            raise ParserError(
                 "Library folder for the current platform not given",
                 key=["local", "paths", "library", self._platform_key],
                 value=self._paths["library"]
@@ -593,7 +588,7 @@ class ConfigLocalLibrary(ConfigLocalBase):
     def as_dict(self) -> dict[str, Any]:
         try:
             library_folders = self.library_folders
-        except ConfigError:
+        except ParserError:
             library_folders = None
 
         return {"library_folders": library_folders, "playlist_folder": self.playlist_folder} | super().as_dict()
@@ -613,8 +608,8 @@ class ConfigMusicBee(ConfigLocalBase):
         self._musicbee_folder: str | None = None
 
     @property
-    def source(self):
-        return MusicBee.source
+    def source(self) -> str:
+        return str(MusicBee.source)
 
     @property
     def library(self) -> MusicBee:
@@ -640,10 +635,10 @@ class ConfigMusicBee(ConfigLocalBase):
         elif isinstance(self._paths.get("library"), dict):  # assume platform sub-keys
             folder = self._paths["library"].get(self._platform_key)
         else:
-            raise ConfigError("Config not found/invalid", key=["local", "paths", "library"], value=self._paths)
+            raise ParserError("Config not found/invalid", key=["local", "paths", "library"], value=self._paths)
 
         if not folder:
-            raise ConfigError(
+            raise ParserError(
                 "MusicBee Library folder for the current platform not given",
                 key=["local", "paths", "library", self._platform_key],
                 value=self._paths["library"]
@@ -655,7 +650,7 @@ class ConfigMusicBee(ConfigLocalBase):
     def as_dict(self) -> dict[str, Any]:
         try:
             musicbee_folder = self.musicbee_folder
-        except ConfigError:
+        except ParserError:
             musicbee_folder = None
 
         return {"musicbee_folder": musicbee_folder} | super().as_dict()
@@ -678,7 +673,7 @@ class ConfigRemote(ConfigLibrary):
         super().__init__(settings=settings)
 
         if self.kind not in REMOTE_CONFIG:
-            raise ConfigError(
+            raise ParserError(
                 "No remote configuration found for this remote source type '{key}'. Available: {value}. "
                 f"Valid source types: {", ".join(REMOTE_CONFIG)}",
                 key=self.kind, value=settings,
@@ -825,7 +820,7 @@ class ConfigRemote(ConfigLibrary):
                 valid = get_args(PLAYLIST_SYNC_KINDS)
                 kind = self._file.get("kind", self._defaults["kind"])
                 if kind not in valid:
-                    raise ConfigError("Invalid kind given: {key}. Allowed values: {value}", key=kind, value=valid)
+                    raise ParserError("Invalid kind given: {key}. Allowed values: {value}", key=kind, value=valid)
 
                 self._kind = kind
                 return self._kind
@@ -968,7 +963,7 @@ class ConfigSpotify(ConfigAPI):
             return self._api
 
         if not self.client_id or not self.client_secret:
-            raise ConfigError("Cannot create API object without client ID and client secret")
+            raise ParserError("Cannot create API object without client ID and client secret")
 
         self._api = SpotifyAPI(
             client_id=self.client_id,
@@ -1076,7 +1071,7 @@ class Config(BaseConfig):
         previous = deepcopy(self) if self.loaded else None
         try:
             self._file = self._load_config(key)
-        except ConfigError as ex:
+        except ParserError as ex:
             if previous:  # keep the same config
                 return
             raise ex
@@ -1131,7 +1126,7 @@ class Config(BaseConfig):
         with open(self.path, 'r', encoding="utf-8") as file:
             config = yaml.full_load(file)
         if key and key not in config:
-            raise ConfigError("Unrecognised config name: {key} | Available: {value}", key=key, value=config)
+            raise ParserError("Unrecognised config name: {key} | Available: {value}", key=key, value=config)
 
         return config.get(key, config)
 
@@ -1150,7 +1145,7 @@ class Config(BaseConfig):
 
         allowed = {".yml", ".yaml", ".json"}
         if ext not in allowed:
-            raise ConfigError(
+            raise ParserError(
                 "Unrecognised log config file type: {key}. Valid: {value}", key=ext, value=allowed
             )
 

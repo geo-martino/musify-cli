@@ -1,0 +1,70 @@
+#file: noinspection SpellCheckingInspection
+new_music:
+  local:
+    paths:
+      library: M:\Music
+
+main:
+  musicbee:
+    paths:
+      library:
+        win: M:\Music\MusicBee
+        lin: /media/george/Media/Music/MusicBee
+        mac:
+      map: {../: M:\Music}
+      # map: {../: M:\Music, M:\Music: /media/george/Media/Music, M:/Music: /media/george/Media/Music}
+
+spotify:
+  spotify:
+    api:
+      client_id: 67b12664c6cc47a6bda71fc266a5f64a
+      client_secret: 5efb67c39436419ea047310a2241ff67
+      scopes:
+        - user-library-read
+        - user-follow-read
+        - playlist-modify-public
+        - playlist-modify-private
+        - playlist-read-collaborative
+      token_path: token.json
+      cache_path: .spotify_cache
+      use_cache: True
+    check:
+      interval: 10
+    playlists:
+      filter:
+        - BigVibes
+        - Chill
+        - Chnz
+        - Classics 🎙️
+        - Extra Strong Mature Cheddar 🧀
+        - Facedown
+        - It Comes From Hell
+        - It Is Still 1985 🕺
+        - Jaezz
+        - Late Night
+        - Party Like It's 1999 🍾
+        - Power Ballad Salad
+        - Production Level 9000+
+        - Rage Against the Workout
+        - Real Deep
+        - Rock & Friends
+        - Smoak
+        - Snap, Crackle & Pop
+        - The Moment
+        - These Changes
+        - This Day, We Fight 🦹‍
+        - TranceyDancey
+        - Travel Chill
+        - Travelling
+        - VapourWave
+        - boogiboogi 🪩
+        - breezin' 🛶
+        - freshAFchnz
+        - it's krismuhs 🎄
+        - yer da's lit tunes 🏌️‍♂️
+        - 🥾sN🐈sN
+      sync:
+        kind: sync
+        reload: True
+        filter:
+          artist: [r. kelly, michael jackson, chris brown, kanye]

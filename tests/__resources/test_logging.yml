@@ -1,6 +1,6 @@
 version: 1
 disable_existing_loggers: True
-compact: False
+compact: True
 
 formatters:
   simple:  &formatter_base
@@ -49,21 +49,9 @@ handlers:
     filters: ["console"]
     stream: ext://sys.stdout
 
-  file:
-    class: musify.log.handlers.CurrentTimeRotatingFileHandler
-    level: DEBUG
-    formatter: extended
-    filters: ["file"]
-    filename: 'D:\Projects\musify-cli\_logs\{}.log'
-    encoding: "utf-8"
-    delay: False
-    when: "m"
-    interval: 2
-    count: 30
-
 loggers:
   prod:  &logger
-    handlers: [console_simple, file]
+    handlers: [console_simple]
     level: DEBUG
     propagate: no
 
@@ -77,4 +65,4 @@ loggers:
 
 root:
   level: DEBUG
-  handlers: [console_debug, file]
+  handlers: [console_debug]

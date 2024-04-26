@@ -1,3 +1,6 @@
+"""
+Pretty printers for objects in the CLI.
+"""
 import os
 import random
 from collections.abc import Sequence, Collection

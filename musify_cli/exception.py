@@ -1,3 +1,6 @@
+"""
+Exceptions for the entire program.
+"""
 from collections.abc import Iterable
 from typing import Any
 
@@ -5,9 +8,9 @@ from musify.exception import MusifyError
 from musify.utils import SafeDict
 
 
-class ConfigError(MusifyError):
+class ParserError(MusifyError):
     """
-    Exception raised when processing config gives an exception.
+    Exception raised when parsing config gives an exception.
 
     :param key: The key that caused the error.
     :param value: The value that caused the error.
@@ -22,7 +25,11 @@ class ConfigError(MusifyError):
         elif key:
             suffix.append(f"key='{key}'")
 
-        value = ", ".join(value) if isinstance(value, Iterable) and not isinstance(value, str) else value
+        try:
+            value = ", ".join(value) if isinstance(value, Iterable) and not isinstance(value, str) else value
+        except TypeError:
+            value = str(value)
+
         if value and "{value}" in message:
             message = message.format_map(SafeDict(value=value))
         elif value:

@@ -23,6 +23,7 @@ classifiers = [
 dependencies = [
     "musify",
     "pyyaml",
+    "jsonargparse[signatures]~=4.28",
     "pyfiglet~=1.0",
 ]
 

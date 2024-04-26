@@ -272,4 +272,3 @@ fi
 #sed -r -i "s|^LAST_EXPORT=.*|LAST_EXPORT='$THIS_EXPORT'|g" "${0:a}"
 
 echo
-

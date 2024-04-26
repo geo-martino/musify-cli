@@ -1,3 +1,6 @@
+"""
+Welcome to the Musify CLI
+"""
 from os.path import basename, dirname
 
 from musify import PROGRAM_OWNER_USER

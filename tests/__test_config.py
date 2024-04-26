@@ -1,34 +1,29 @@
-import logging
 from copy import deepcopy
 from os.path import join, dirname
+from pathlib import Path
 
 import pytest
-from requests_cache import CachedSession
-
-from musify import MODULE_ROOT
-from musify_cli.config import ConfigLocalBase, ConfigMusicBee, ConfigLocalLibrary
-from musify_cli.config import ConfigRemote, ConfigSpotify
-from musify_cli.config import LOCAL_CONFIG, REMOTE_CONFIG, Config, ConfigFilter, ConfigReports
-from musify_cli.exception import ConfigError
-from musify.libraries.local.track.field import LocalTrackField
 from musify.core.enum import TagFields
 from musify.exception import MusifyError
 from musify.file.exception import FileDoesNotExistError
-from musify.log.logger import MusifyLogger
+from musify.libraries.local.track.field import LocalTrackField
 from musify.libraries.remote.core.processors.wrangle import RemoteDataWrangler
-from tests.utils import path_resources, path_txt
+from requests_cache import CachedSession
 
-path_config = join(path_resources, "test_config.yml")
-path_logging = join(path_resources, "test_logging.yml")
+from musify_cli.__config import ConfigLocalBase, ConfigMusicBee, ConfigLocalLibrary
+from musify_cli.__config import ConfigRemote, ConfigSpotify
+from musify_cli.__config import LOCAL_CONFIG, REMOTE_CONFIG, Config, ConfigFilter, ConfigReports
+from musify_cli.exception import ParserError
+from tests.parser.utils import path_core_config
 
 
 # noinspection PyTestUnpassedFixture
 class TestConfig:
 
     @pytest.fixture
-    def config(self, tmp_path: str) -> Config:
+    def config(self, tmp_path: Path) -> Config:
         """Yields an initialised :py:class:`Config` to test as a pytest.fixture"""
-        config = Config(path_config)
+        config = Config(path_core_config)
         config._root_path = tmp_path
         return config
 
@@ -41,27 +36,6 @@ class TestConfig:
 
         config = Config(join(dirname(__file__), filename))
         assert config.path == join(join(dirname(__file__), filename))
-
-    ###########################################################################
-    ## Load config
-    ###########################################################################
-    @pytest.mark.skip(reason="this removes all handlers hence removing ability to see logs for tests that follow this")
-    def test_load_log_config(self, config_empty: Config):
-        with pytest.raises(ConfigError):
-            config_empty.load_log_config(path_txt)
-
-        config_empty.load_log_config(path_logging)
-        assert MusifyLogger.compact
-
-        loggers = [logger.name for logger in logging.getLogger().getChildren()]
-        assert "__main__" not in loggers
-
-        config_empty.load_log_config(path_logging, "test", "__main__")
-
-        loggers = [logger.name for logger in logging.getLogger().getChildren()]
-        assert "test" in loggers
-        assert "__main__" in loggers
-        assert MODULE_ROOT in loggers
 
     ###########################################################################
     ## Empty load defaults test
@@ -83,7 +57,7 @@ class TestConfig:
 
         return config
 
-    def test_empty_core(self, config_empty: Config, tmp_path: str):
+    def test_empty_core(self, config_empty: Config, tmp_path: Path):
         assert config_empty.output_folder.startswith("_data")
         assert config_empty.reload == {}
         assert config_empty.pause is None
@@ -106,10 +80,10 @@ class TestConfig:
         if isinstance(config, ConfigLocalLibrary):
             assert config.playlist_folder is None
 
-            with pytest.raises(ConfigError):
+            with pytest.raises(ParserError):
                 assert config.library_folders
         elif isinstance(config, ConfigMusicBee):
-            with pytest.raises(ConfigError):
+            with pytest.raises(ParserError):
                 assert config.musicbee_folder
             with pytest.raises(MusifyError):
                 assert config.library
@@ -125,9 +99,9 @@ class TestConfig:
         assert config.wrangler
 
         # no API config so these should fail at the Config level
-        with pytest.raises(ConfigError):
+        with pytest.raises(ParserError):
             assert config.searcher
-        with pytest.raises(ConfigError):
+        with pytest.raises(ParserError):
             assert config.checker
         with pytest.raises(MusifyError):
             assert config.library
@@ -144,7 +118,7 @@ class TestConfig:
             assert config.api.client_secret is None
             assert config.api.scopes == ()
 
-            with pytest.raises(ConfigError):
+            with pytest.raises(ParserError):
                 assert config.api.api
 
     def test_empty_filter(self, config_empty: Config):
@@ -171,7 +145,7 @@ class TestConfig:
         config.load("valid")
         return config
 
-    def test_load_core(self, config_valid: Config, tmp_path: str):
+    def test_load_core(self, config_valid: Config, tmp_path: Path):
         assert config_valid.output_folder.startswith("test_folder")
         assert config_valid.reload == {"main": ("tracks", "playlists"), "spotify": tuple()}
         assert config_valid.pause == "this is a test message"
@@ -299,7 +273,7 @@ class TestConfig:
         config._file["paths"] = {}
         config._paths["library"] = {}
         config._paths["library"][bad_platform] = "/path/to/library/on/other/platform"
-        with pytest.raises(ConfigError):
+        with pytest.raises(ParserError):
             if isinstance(config, ConfigLocalLibrary):
                 assert config.library_folders
             elif isinstance(config, ConfigMusicBee):
@@ -318,7 +292,7 @@ class TestConfig:
             raise TypeError("Config is not a RemoteLibrary config")
 
         config.playlists.sync._file["kind"] = "invalid kind"
-        with pytest.raises(ConfigError):
+        with pytest.raises(ParserError):
             assert config.playlists.sync.kind == config._file["kind"]
 
     ###########################################################################
@@ -358,7 +332,7 @@ class TestConfig:
         assert new != old
         assert new.kind == old.kind == name
 
-        # overriden values
+        # overridden values
         comparers = list(new.playlists.filter.comparers)
         assert comparers[0].condition == "is_in"
         assert comparers[0].expected == ["new playlist to include", "include me now too"]
@@ -375,7 +349,7 @@ class TestConfig:
         # kept values
         assert new.stems == old.stems
 
-        # the library was instantiated already so the new library should be forcibly overriden
+        # the library was instantiated already so the new library should be forcibly overridden
         assert id(old_library) == id(new.library)
 
         assert not new.library_loaded and not old.library_loaded
@@ -418,7 +392,7 @@ class TestConfig:
         assert new.checker.api.wrangler.source == old.checker.api.wrangler.source
         assert new.searcher.api.wrangler.source == old.searcher.api.wrangler.source
 
-        # the library and api were instantiated already so the new library and api should be forcibly overriden
+        # the library and api were instantiated already so the new library and api should be forcibly overridden
         assert id(old_library) == id(new.library)
         assert id(old_api) == id(new.api.api)
         assert new.checker.api == old.checker.api
@@ -443,7 +417,7 @@ class TestConfig:
         assert new.reload == {"spotify": ("extend",)}
         assert new.pause is None
 
-        # filter is always overriden
+        # filter is always overridden
         playlist_names = ["cool playlist 1", "awesome playlist", "terrible playlist", "other"]
         assert new.filter.process(playlist_names) == ["cool playlist 1", "awesome playlist"]
 
@@ -475,7 +449,7 @@ class TestConfig:
         assert new != old
         assert new.kind == old.kind == name
 
-        # overriden values
+        # overridden values
         comparers = list(new.playlists.filter.comparers)
         assert comparers[0].condition == "is_in"
         assert comparers[0].expected == ["new playlist to include", "include me now too"]
@@ -492,7 +466,7 @@ class TestConfig:
             assert new.library_folders == old.library_folders
             assert new.playlist_folder == old.playlist_folder
 
-        # the library was instantiated already so the new library should be forcibly overriden
+        # the library was instantiated already so the new library should be forcibly overridden
         assert id(old_library) == id(new.library)
 
         assert not new.library_loaded and not old.library_loaded
@@ -532,7 +506,7 @@ class TestConfig:
         assert new.playlists.sync.reload == old.playlists.sync.reload
         assert new.playlists.sync.filter == old.playlists.sync.filter
 
-        # the library and api were instantiated already so the new library and api should be forcibly overriden
+        # the library and api were instantiated already so the new library and api should be forcibly overridden
         assert id(old_library) == id(new.library)
         assert id(old_api) == id(new.api.api)
         assert new.checker.api == old.checker.api

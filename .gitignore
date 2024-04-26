@@ -138,8 +138,8 @@ cython_debug/
 # binary/cache files
 **.sql*
 **cache*
-config.yml
 
-# large data & log folders
+# large data/log/config folders
 _data/
 _logs/
+_config/
