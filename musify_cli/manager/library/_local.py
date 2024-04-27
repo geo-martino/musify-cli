@@ -26,7 +26,6 @@ class LocalLibraryManager(LibraryManager):
         self._library: LocalLibrary | None = None
 
         # utilities
-        self._path_mapper: PathMapper | None = None
         self._remote_wrangler: RemoteDataWrangler | None = None
 
         self.types_loaded: set[LoadTypesLocal] = set()
@@ -36,11 +35,9 @@ class LocalLibraryManager(LibraryManager):
         return str(LocalLibrary.source)
 
     @property
-    def path_mapper(self) -> PathMapper:
+    def _path_mapper(self) -> PathMapper:
         """The configured :py:class:`PathMapper` to use when instantiating a library"""
-        if self._path_mapper is None:
-            self._path_mapper = PathStemMapper(stem_map=self.config.paths.map)
-        return self._path_mapper
+        return PathStemMapper(stem_map=self.config.paths.map)
 
     @property
     def library(self) -> LocalLibrary:
@@ -50,7 +47,7 @@ class LocalLibraryManager(LibraryManager):
                 library_folders=self.config.paths.library,
                 playlist_folder=self.config.paths.playlists,
                 playlist_filter=self.playlist_filter or (),
-                path_mapper=self.path_mapper,
+                path_mapper=self._path_mapper,
                 remote_wrangler=self._remote_wrangler,
             )
         return self._library
@@ -84,15 +81,6 @@ class LocalLibraryManager(LibraryManager):
             if _check_loaded(LoadTypesLocal.playlists):
                 self.library.log_playlists()
             self.logger.print()
-
-    def merge_tracks(self, tracks: Collection[Track]) -> None:
-        """
-        Merge this collection with another collection or list of items
-        by performing an inner join on the pre-configured set of tags.
-
-        :param tracks: List of items or :py:class:`MusifyCollection` to merge with.
-        """
-        self.library.merge_tracks(tracks, tags=self.config.updater.tags)
 
     def save_tracks(self) -> dict[LocalTrack, SyncResultTrack]:
         """
@@ -135,12 +123,21 @@ class LocalLibraryManager(LibraryManager):
         collections: tuple[LocalCollection[LocalTrack]] = to_collection(collections)
         with ThreadPoolExecutor(thread_name_prefix="track-saver") as executor:
             futures = {
-                track: executor.submit(track.save, tags=tags, replace=replace, dry_run=self.config.dry_run)
+                track: executor.submit(track.save, tags=tags, replace=replace, dry_run=self.dry_run)
                 for coll in collections for track in coll
             }
             bar = self.logger.get_progress_bar(futures.items(), desc="Updating tracks", unit="tracks")
 
             return {track: future.result() for track, future in bar if future.result().updated}
+
+    def merge_tracks(self, tracks: Collection[Track]) -> None:
+        """
+        Merge this collection with another collection or list of items
+        by performing an inner join on the pre-configured set of tags.
+
+        :param tracks: List of items or :py:class:`MusifyCollection` to merge with.
+        """
+        self.library.merge_tracks(tracks, tags=self.config.updater.tags)
 
 
 class MusicBeeManager(LocalLibraryManager):
@@ -156,7 +153,7 @@ class MusicBeeManager(LocalLibraryManager):
             self._library = MusicBee(
                 musicbee_folder=self.config.paths.library,
                 playlist_filter=self.config.playlists.filter or (),
-                path_mapper=self.path_mapper,
+                path_mapper=self._path_mapper,
                 remote_wrangler=self._remote_wrangler,
             )
         return self._library

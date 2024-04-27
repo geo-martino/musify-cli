@@ -71,7 +71,7 @@ def remap_library(paths: dict[str, str], library_folder: str, staging_folder: st
     }
     # jprint(path_map_xml)
 
-    path_lib_file = join(library_folder, "MusicBee", MusicBee.xml_library_filename)
+    path_lib_file = join(library_folder, "MusicBee", MusicBee.xml_library_path)
     with open(path_lib_file, "r", encoding="utf-8") as file:
         library_data = file.read()
 

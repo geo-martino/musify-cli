@@ -13,6 +13,9 @@ from musify_cli.parser._library import LIBRARY_PARSER, LocalLibraryPaths, MusicB
 from tests.parser.utils import path_library_config, assert_local_parse, assert_musicbee_parse, assert_spotify_parse
 
 
+# TODO: add test/assertions for PathStemMapper.
+#  Should also include other platform re-mappings from the 'library' paths key
+
 def test_all_libraries_supported():
     assert len(library_sub_map) == len(LIBRARY_TYPES)
     assert all(kind.lower() in LIBRARY_TYPES for kind in library_sub_map)

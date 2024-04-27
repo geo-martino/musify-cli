@@ -286,12 +286,6 @@ class MusifyProcessor(DynamicProcessor):
         self.remote.library.log_sync(results)
         self.logger.debug(f"Restore {self.remote.source}: DONE")
 
-    @dynamicprocessormethod
-    def extract(self) -> None:
-        """Extract and save images from local or remote items"""
-        # TODO: add library-wide image extraction method
-        raise NotImplementedError
-
     ###########################################################################
     ## Report/Search functions
     ###########################################################################
@@ -388,8 +382,8 @@ class MusifyProcessor(DynamicProcessor):
         log_prefix = "Would have set" if self.manager.dry_run else "Set"
         self.logger.info(f"\33[92m{log_prefix} tags for {len(results)} tracks \33[0m")
 
-        # TODO: why do some unavailable tracks keep getting updated? (this may be resolved now...?)
-        #  This block is for debugging
+        # TODO: why do some unavailable tracks keep getting updated? This block is for debugging
+        #  Seems like this may be resolved now...? Hasn't been an issue in the last few runs
         max_width = get_max_width([track.path for track in results], max_width=80)
         for track, result in results.items():
             self.logger.stat(

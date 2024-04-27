@@ -194,7 +194,7 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
             f"\33[0;90m    Filter out tags: {tag_filter} \33[0m"
         )
 
-        pl_filtered: Collection[T] = self.playlist_filter(playlists) if self.playlist_filter.ready else playlists
+        pl_filtered: Collection[T] = self.playlist_filter(playlists) if self.playlist_filter is not None else playlists
 
         max_width = get_max_width([pl.name for pl in pl_filtered])
         for pl in pl_filtered:
