@@ -37,7 +37,7 @@ REMOTE_LIBRARY_TYPES = [source.casefold() for source in REMOTE_SOURCES]
 ## Local
 ###########################################################################
 ## Paths parsers
-class LocalLibraryPathsParser[T: Any](ABC):
+class LocalLibraryPathsParser[T: str | Collection[str] | None](ABC):
     """Base class for parsing and validating library paths config, giving platform appropriate paths."""
 
     @property
@@ -50,9 +50,18 @@ class LocalLibraryPathsParser[T: Any](ABC):
         """The path/s configured for the current platform"""
         return self.__getattribute__(self._platform_key)
 
+    @property
+    def others(self) -> list[str]:
+        """The path/s configured for the current platform"""
+        return [
+            path
+            for key in self.__annotations__ if key != self._platform_key and self.__getattribute__(key) is not None
+            for path in to_collection(self.__getattribute__(key))
+        ]
+
     @classmethod
     @abstractmethod
-    def parse_config(cls, config: MultiType[str] | Self) -> T:
+    def parse_config(cls, config: MultiType[str] | Self) -> Self:
         """Parse and validate given ``config`` and return the platform appropriate path/s"""
         raise NotImplementedError
 
@@ -82,7 +91,11 @@ class LocalLibraryPaths[T: Collection[str]](LocalLibraryPathsParser):
         return platform_map[sys.platform]
 
     @classmethod
-    def parse_config(cls, config: MultiType[str]):
+    def parse_config(cls, config: MultiType[str] | Self):
+        if isinstance(config, cls):
+            config.validate()
+            return cls
+
         kwargs = {}
         if isinstance(config, Mapping):
             for key in set(cls.__annotations__).intersection(key.casefold() for key in config):
@@ -97,8 +110,7 @@ class LocalLibraryPaths[T: Collection[str]](LocalLibraryPathsParser):
             kwargs[cls._platform_key] = config
 
         parsed = cls(**kwargs)
-        parsed.validate()
-        return parsed.paths
+        return parsed
 
 
 @dataclass(frozen=True)
@@ -111,6 +123,10 @@ class MusicBeePaths[T: str | None](LocalLibraryPaths):
 
     @classmethod
     def parse_config(cls, config: MultiType[str]):
+        if isinstance(config, cls):
+            config.validate()
+            return cls
+
         kwargs = {}
         if isinstance(config, Mapping):
             for key in set(cls.__annotations__).intersection(key.casefold() for key in config):
@@ -125,8 +141,7 @@ class MusicBeePaths[T: str | None](LocalLibraryPaths):
             kwargs[cls._platform_key] = next(iter(config), None)
 
         parsed = cls(**kwargs)
-        parsed.validate()
-        return parsed.paths
+        return parsed
 
     def validate(self) -> None:
         super().validate()
@@ -139,11 +154,19 @@ class MusicBeePaths[T: str | None](LocalLibraryPaths):
 ## Arguments builders
 def extend_local_paths_arguments(paths: ArgumentParser) -> None:
     """Extend the given ``paths`` parser with generic arguments."""
-    # TODO: this should also include other platform re-mappings from the 'library' paths key
     paths.add_argument(
         "--map", type=dict, required=False, default=get_default_args(PathStemMapper).get("stem_map"),
         help="A map of stems to be used as part of the PathStemMapper"
     )
+
+
+def link_library_map_paths(core: ArgumentParser):
+    def _extend_map_with_other_platforms(library: LocalLibraryPaths, stem_map: dict[str, str]) -> dict[str, str]:
+        actual_path = next(iter(to_collection(library.paths)))
+        stem_map.update({other_path: actual_path for other_path in library.others if other_path != actual_path})
+        return stem_map
+
+    core.link_arguments(("paths.library", "paths.map"), "paths.map", _extend_map_with_other_platforms)
 
 
 def add_local_playlists_arguments(core: ArgumentParser, source: str) -> None:
@@ -207,6 +230,7 @@ local_library_paths.add_argument(
 )
 extend_local_paths_arguments(local_library_paths)
 local_library_paths_group.add_argument("--paths", action=ActionParser(local_library_paths))
+link_library_map_paths(local_library)
 
 add_local_playlists_arguments(local_library, "Local")
 add_local_updater_arguments(local_library)
@@ -233,6 +257,7 @@ musicbee_paths.add_argument(
 )
 extend_local_paths_arguments(musicbee_paths)
 musicbee_paths_group.add_argument("--paths", action=ActionParser(musicbee_paths))
+link_library_map_paths(musicbee)
 
 add_local_playlists_arguments(musicbee, "MusicBee")
 add_local_updater_arguments(musicbee)

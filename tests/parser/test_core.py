@@ -113,3 +113,6 @@ def test_core(tmp_path: Path):
     assert parsed.new_music.name == "New Music - 2023"
     assert parsed.new_music.start == datetime(2023, 1, 1).date()
     assert parsed.new_music.end == datetime(2023, 12, 31).date()
+
+    # just check it can be dumped without failing
+    CORE_PARSER.dump(parsed)

@@ -18,6 +18,8 @@ from musify.types import UnitIterable
 
 from musify_cli.manager.library import LocalLibraryManager, MusicBeeManager
 # noinspection PyProtectedMember
+from musify_cli.parser._library import LocalLibraryPaths, MusicBeePaths
+# noinspection PyProtectedMember
 from musify_cli.parser._utils import get_comparers_filter, get_tags, LoadTypesLocal
 from tests.manager.library.testers import LibraryManagerTester
 from tests.utils import random_str
@@ -39,7 +41,7 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
 
         return Namespace(
             paths=Namespace(
-                library=(library_folder,),
+                library=LocalLibraryPaths(**{LocalLibraryPaths._platform_key: (library_folder,)}),
                 playlists=playlist_folder,
                 map={
                     "/different/folder": library_folder,
@@ -85,7 +87,7 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
         library: LocalLibrary = manager.library
         assert manager._library is not None
 
-        assert library.library_folders == list(config.paths.library)
+        assert library.library_folders == list(config.paths.library.paths)
         assert library.playlist_folder == config.paths.playlists
         assert library.playlist_filter == manager.playlist_filter == config.playlists.filter
         assert id(library.remote_wrangler) == id(wrangler)
@@ -251,7 +253,7 @@ class TestMusicBeeManager(TestLocalLibraryManager[MusicBeeManager]):
 
         return Namespace(
             paths=Namespace(
-                library=musicbee_folder,
+                library=MusicBeePaths(**{MusicBeePaths._platform_key: musicbee_folder}),
                 map={
                     "/different/folder": musicbee_folder,
                     "/another/path": musicbee_folder
@@ -283,7 +285,7 @@ class TestMusicBeeManager(TestLocalLibraryManager[MusicBeeManager]):
         assert manager._library is not None
 
         assert library.library_folders == library_folders
-        assert library.playlist_folder == join(config.paths.library, MusicBee.playlists_path)
+        assert library.playlist_folder == join(config.paths.library.paths, MusicBee.playlists_path)
         assert library.playlist_filter == manager.playlist_filter == config.playlists.filter
         assert id(library.remote_wrangler) == id(wrangler)
         assert isinstance(library.path_mapper, PathStemMapper)

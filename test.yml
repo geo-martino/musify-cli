@@ -1,9 +1,10 @@
 #file: noinspection SpellCheckingInspection
-output: test_folder
+#output: test_folder
 execute: True
+functions: ["backup"]
 
 logging:
-  name: prod
+  name: logger
 
 reload:
   local:
@@ -23,6 +24,7 @@ filter:
     - exclude me
 
 libraries:
+  config_path: test_libraries.yml
   local: local
   remote: spotify
 

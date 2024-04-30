@@ -17,6 +17,18 @@ from musify_cli.parser import CORE_PARSER
 from musify_cli.processor import MusifyProcessor
 from musify_cli.printers import print_logo, print_line, print_time
 
+# noinspection PyProtectedMember
+CORE_PARSER._positionals.title = "Functions"
+
+# TODO: why don't the choices here work?
+processor_method_names = [
+    name.replace("_", "-") for name in MusifyProcessor.__new__(MusifyProcessor).__processormethods__
+]
+CORE_PARSER.add_argument(
+    "functions", type=list[str], default=(),  # choices=processor_method_names,
+    help=f"{PROGRAM_NAME} function to run."
+)
+
 
 def set_title(value: str) -> None:
     """Set the terminal title to given ``value``"""
@@ -51,6 +63,8 @@ processor.logger.print()
 if manager.dry_run:
     print_line("DRY RUN ENABLED", " ")
 
+processor.logger.debug("Initial config:\n" + CORE_PARSER.dump(config))
+
 processor.remote.api.authorise()
 
 for i, func in enumerate(functions, 1):
@@ -61,6 +75,9 @@ for i, func in enumerate(functions, 1):
     print_line(func)
 
     # TODO: need to add a step here for loading next function config and merging with manager
+
+    func_log_name = func.replace("_", " ").replace("-", " ").title()
+    processor.logger.debug(f"{func_log_name} config:\n" + CORE_PARSER.dump(config))
 
     try:  # run the functions requested by the user
         processor.set_processor(func)

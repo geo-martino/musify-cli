@@ -11,7 +11,7 @@ path_library_config = join(path_resources, "test_libraries.yml")
 
 def assert_local_parse(parsed: Namespace, library_path: str | Path = ".") -> None:
     """Check the arguments parsed for the 'local' named library."""
-    assert parsed.paths.library == (str(library_path),)
+    assert parsed.paths.library.paths == (str(library_path),)
     assert parsed.paths.playlists == str(library_path)
     assert parsed.paths.map == {
         "/different/folder": "/path/to/library",
@@ -27,7 +27,7 @@ def assert_local_parse(parsed: Namespace, library_path: str | Path = ".") -> Non
 
 def assert_musicbee_parse(parsed: Namespace, library_path: str | Path = ".") -> None:
     """Check the arguments parsed for the 'musicbee' named library."""
-    assert parsed.paths.library == str(library_path)
+    assert parsed.paths.library.paths == str(library_path)
     assert parsed.paths.map == {"../": "/path/to/library"}
 
     assert parsed.updater.tags == (LocalTrackField.TITLE,)
