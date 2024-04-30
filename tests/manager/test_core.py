@@ -132,6 +132,7 @@ class TestMusifyManager:
     ###########################################################################
     ## Pre-/Post- operations
     ###########################################################################
+    @pytest.mark.skip(reason="Test not yet implemented")
     def test_load(self, manager: MusifyManager):
         pass  # TODO
 
@@ -151,8 +152,10 @@ class TestMusifyManager:
     ###########################################################################
     ## Operations
     ###########################################################################
+    @pytest.mark.skip(reason="Test not yet implemented")
     def test_run_download_helper(self, manager: MusifyManager):
         pass  # TODO
 
+    @pytest.mark.skip(reason="Test not yet implemented")
     def test_create_new_music_playlist(self, manager: MusifyManager):
         pass  # TODO

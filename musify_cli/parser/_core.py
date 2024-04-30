@@ -33,19 +33,9 @@ CORE_PARSER = ArgumentParser(
     formatter_class=EpilogHelpFormatter,
     epilog="==FORMATTED==" + LIBRARY_EPILOG
 )
-# # noinspection PyProtectedMember
-CORE_PARSER._positionals.title = "Functions"
+# noinspection PyProtectedMember
+CORE_PARSER._optionals.title = "Help and external config"
 
-# TODO: find a way to have dynamic processor methods from MusifyProcessor as choices
-#  Currently gives circular import when importing MusifyProcessor
-# cli function aliases and expected args in order user should give them
-# processor_method_names = [
-#     name.replace("_", "-") for name in MusifyProcessor.__new__(MusifyProcessor).__processormethods__
-# ]
-CORE_PARSER.add_argument(
-    "functions", type=list[str], default=(),  # choices=processor_method_names,
-    help=f"{PROGRAM_NAME} function to run."
-)
 
 ###########################################################################
 ## Runtime

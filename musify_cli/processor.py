@@ -366,12 +366,9 @@ class MusifyProcessor(DynamicProcessor):
         self.logger.debug("Update tags: START")
 
         self.local.load(types=LoadTypesLocal.tracks)
-        self.remote.load(
-            types=[LoadTypesRemote.saved_tracks, LoadTypesRemote.playlists],
-            extend=self.local.library,
-            enrich=True,
-            enrich_types=EnrichTypesRemote.artists
-        )
+        self.remote.load(types=[LoadTypesRemote.saved_tracks, LoadTypesRemote.playlists])
+        self.remote.library.extend(self.local.library, allow_duplicates=False)
+        self.remote.enrich(types=EnrichTypesRemote.artists)
 
         self.local.merge_tracks(self.remote.library)
         results = self.local.save_tracks()
@@ -400,7 +397,7 @@ class MusifyProcessor(DynamicProcessor):
 
     @dynamicprocessormethod
     def process_compilations(self) -> None:
-        """Run all methods for setting and updating local track tags for compilation albums"""
+        """Run all methods for setting and saving local track tags for compilation albums"""
         self.logger.debug("Update compilations: START")
 
         self.local.load(types=LoadTypesLocal.tracks)
@@ -457,10 +454,31 @@ class MusifyProcessor(DynamicProcessor):
 
     @dynamicprocessormethod
     def new_music(self) -> None:
-        """Create a new music playlist for followed artists with music released between ``start`` and ``end``"""
+        """Create a playlist of new music released by user's followed artists"""
         self.logger.debug("New music playlist: START")
 
-        name, results = self.manager.create_new_music_playlist()
+        # load saved artists and their albums with fresh data, ignoring use_cache settings
+        load_albums = any([
+            LoadTypesRemote.saved_artists not in self.remote.types_loaded,
+            EnrichTypesRemote.albums not in self.remote.types_enriched[LoadTypesRemote.saved_artists]
+        ])
+        if load_albums:
+            self.remote.library.use_cache = False
+            self.remote.load(types=[LoadTypesRemote.saved_artists])
+            self.remote.library.use_cache = self.remote.use_cache
+            self.remote.library.enrich_saved_artists(types=("album", "single"))
+
+        albums_to_extend = [album for album in self.remote.library.artists if len(album.tracks) < album.track_total]
+        self.manager.extend_albums(albums_to_extend)
+
+        # log load results
+        if load_albums or albums_to_extend:
+            self.logger.print(STAT)
+            self.remote.library.log_artists()
+            self.logger.print()
+
+        new_albums = self.manager.get_new_artist_albums()
+        name, results = self.manager.create_new_music_playlist(new_albums)
 
         self.logger.print(STAT)
         self.remote.library.log_sync({name: results})

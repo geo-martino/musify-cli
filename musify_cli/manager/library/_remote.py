@@ -1,9 +1,8 @@
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection, Iterable
+from collections.abc import Collection
 from datetime import datetime
 
 from jsonargparse import Namespace
-from musify.core.base import MusifyItem
 from musify.libraries.core.object import Playlist
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.enum import RemoteObjectType
@@ -104,86 +103,97 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
     ###########################################################################
     ## Operations
     ###########################################################################
-    def load(
-            self,
-            types: UnitCollection[LoadTypesRemote] = (),
-            force: bool = False,
-            extend: Iterable[MusifyItem] = None,
-            enrich: bool = False,
-            enrich_types: UnitCollection[EnrichTypesRemote] = (),
-    ) -> None:
-        def _check_loaded(load_type: LoadTypesRemote) -> bool:
+    def load(self, types: UnitCollection[LoadTypesRemote] = (), force: bool = False) -> None:
+        def _loaded(load_type: LoadTypesRemote) -> bool:
             return load_type in self.types_loaded
 
-        def _check_load(load_type: LoadTypesRemote) -> bool:
+        def _should_load(load_type: LoadTypesRemote) -> bool:
             selected = not types or load_type in types
-            can_be_loaded = force or not _check_loaded(load_type)
-            return selected and can_be_loaded
-
-        def _check_enriched(load_type: LoadTypesRemote) -> bool:
-            enriched = self.types_enriched.get(load_type, [])
-            return load_type in self.types_enriched or all(t in enriched for t in enrich_types)
-
-        def _check_enrich(load_type: LoadTypesRemote, enrich_type: EnrichTypesRemote) -> bool:
-            selected = not enrich_types or enrich_type in enrich_types
-            can_be_loaded = force or enrich_type not in self.types_enriched.get(load_type, [])
+            can_be_loaded = force or not _loaded(load_type)
             return selected and can_be_loaded
 
         types = to_collection(types)
-        enrich_types = to_collection(enrich_types)
 
         if not types and (force or not self.types_loaded):
             self.library.load()
             self.types_loaded.update(LoadTypesRemote.all())
-        else:
-            if _check_load(LoadTypesRemote.playlists):
-                self.library.load_playlists()
-                self.types_loaded.add(LoadTypesRemote.playlists)
-            if _check_load(LoadTypesRemote.saved_tracks):
-                self.library.load_tracks()
-                self.types_loaded.add(LoadTypesRemote.saved_tracks)
-            if _check_load(LoadTypesRemote.saved_albums):
-                self.library.load_saved_albums()
-                self.types_loaded.add(LoadTypesRemote.saved_albums)
-            if _check_load(LoadTypesRemote.saved_artists):
-                self.library.load_saved_artists()
-                self.types_loaded.add(LoadTypesRemote.saved_artists)
+            return
 
-            self.logger.print(STAT)
-            if _check_loaded(LoadTypesRemote.playlists):
-                self.library.log_playlists()
-            if _check_loaded(LoadTypesRemote.saved_tracks):
-                self.library.log_tracks()
-            if _check_loaded(LoadTypesRemote.saved_albums):
-                self.library.log_albums()
-            if _check_loaded(LoadTypesRemote.saved_artists):
-                self.library.log_albums()
-            self.logger.print()
+        if _should_load(LoadTypesRemote.playlists):
+            self.library.load_playlists()
+            self.types_loaded.add(LoadTypesRemote.playlists)
+        if _should_load(LoadTypesRemote.saved_tracks):
+            self.library.load_tracks()
+            self.types_loaded.add(LoadTypesRemote.saved_tracks)
+        if _should_load(LoadTypesRemote.saved_albums):
+            self.library.load_saved_albums()
+            self.types_loaded.add(LoadTypesRemote.saved_albums)
+        if _should_load(LoadTypesRemote.saved_artists):
+            self.library.load_saved_artists()
+            self.types_loaded.add(LoadTypesRemote.saved_artists)
 
-        if extend is not None:
-            self.library.extend(extend, allow_duplicates=False)
-        if enrich:
-            if _check_loaded(LoadTypesRemote.saved_tracks) and not _check_enriched(LoadTypesRemote.saved_tracks):
-                artists = _check_enrich(LoadTypesRemote.saved_tracks, EnrichTypesRemote.artists)
-                albums = _check_enrich(LoadTypesRemote.saved_tracks, EnrichTypesRemote.albums)
-                self.library.enrich_tracks(artists=artists, albums=albums)
+        self.logger.print(STAT)
+        if _loaded(LoadTypesRemote.playlists):
+            self.library.log_playlists()
+        if _loaded(LoadTypesRemote.saved_tracks):
+            self.library.log_tracks()
+        if _loaded(LoadTypesRemote.saved_albums):
+            self.library.log_albums()
+        if _loaded(LoadTypesRemote.saved_artists):
+            self.library.log_albums()
+        self.logger.print()
 
-                types_enriched = self.types_enriched.get(LoadTypesRemote.saved_tracks, set())
-                if artists:
-                    types_enriched.add(EnrichTypesRemote.artists)
-                if albums:
-                    types_enriched.add(EnrichTypesRemote.albums)
-                self.types_enriched[LoadTypesRemote.saved_tracks] = types_enriched
-            if _check_loaded(LoadTypesRemote.saved_albums) and not _check_enriched(LoadTypesRemote.saved_albums):
-                self.library.enrich_saved_albums()
-            if _check_loaded(LoadTypesRemote.saved_artists) and not _check_enriched(LoadTypesRemote.saved_artists):
-                tracks = _check_enrich(LoadTypesRemote.saved_artists, EnrichTypesRemote.tracks)
-                self.library.enrich_saved_artists(tracks=tracks)
+    def enrich(
+            self,
+            types: UnitCollection[LoadTypesRemote] = (),
+            enrich: UnitCollection[EnrichTypesRemote] = (),
+            force: bool = False
+    ):
+        """
+        Enrich items/collections in the instantiated library based on the given ``types``.
 
-                types_enriched = self.types_enriched.get(LoadTypesRemote.saved_artists, set())
-                if tracks:
-                    types_enriched.add(EnrichTypesRemote.tracks)
-                self.types_enriched[LoadTypesRemote.saved_artists] = types_enriched
+        :param types: The types of items/collections to enrich.
+        :param force: Whether to enrich the given ``types`` even if they have already been enriched before.
+            When False, only enrich the ``types`` that have not been enriched.
+        """
+        def _loaded(load_type: LoadTypesRemote) -> bool:
+            selected = not types or load_type in types
+            return selected and load_type in self.types_loaded
+
+        def _enriched(load_type: LoadTypesRemote) -> bool:
+            enriched = self.types_enriched.get(load_type, [])
+            return load_type in self.types_enriched or all(t in enriched for t in types or EnrichTypesRemote.all())
+
+        def _should_enrich(load_type: LoadTypesRemote, enrich_type: EnrichTypesRemote) -> bool:
+            selected = not enrich or enrich_type in enrich
+            can_be_loaded = force or enrich_type not in self.types_enriched.get(load_type, [])
+            return selected and can_be_loaded
+
+        types = to_collection(types)
+        enrich = to_collection(enrich)
+
+        if _loaded(LoadTypesRemote.saved_tracks) and (force or not _enriched(LoadTypesRemote.saved_tracks)):
+            artists = _should_enrich(LoadTypesRemote.saved_tracks, EnrichTypesRemote.artists)
+            albums = _should_enrich(LoadTypesRemote.saved_tracks, EnrichTypesRemote.albums)
+            self.library.enrich_tracks(artists=artists, albums=albums)
+
+            types_enriched = self.types_enriched.get(LoadTypesRemote.saved_tracks, set())
+            if artists:
+                types_enriched.add(EnrichTypesRemote.artists)
+            if albums:
+                types_enriched.add(EnrichTypesRemote.albums)
+            self.types_enriched[LoadTypesRemote.saved_tracks] = types_enriched
+        if _loaded(LoadTypesRemote.saved_albums) and (force or not _enriched(LoadTypesRemote.saved_albums)):
+            self.library.enrich_saved_albums()
+            self.types_enriched[LoadTypesRemote.saved_albums] = set()
+        if _loaded(LoadTypesRemote.saved_artists) and (force or not _enriched(LoadTypesRemote.saved_artists)):
+            tracks = _should_enrich(LoadTypesRemote.saved_artists, EnrichTypesRemote.tracks)
+            self.library.enrich_saved_artists(tracks=tracks)
+
+            types_enriched = self.types_enriched.get(LoadTypesRemote.saved_artists, set())
+            if tracks:
+                types_enriched.add(EnrichTypesRemote.tracks)
+            self.types_enriched[LoadTypesRemote.saved_artists] = types_enriched
 
     def _filter_playlists[T: Playlist](self, playlists: Collection[T]) -> Collection[T]:
         """
@@ -245,7 +255,7 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
     def get_or_create_playlist(self, name: str) -> RemotePlaylist:
         """
         Get the loaded playlist with the given ``name`` and return it.
-        If not found, attempt to find the playlist and load it (ignoring use_cache settings)
+        If not found, attempt to find the playlist and load it (ignoring ``use_cache`` settings)
         Otherwise, create a new playlist.
         """
         pl = self.library.playlists.get(name)

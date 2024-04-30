@@ -45,7 +45,7 @@ class LibraryManager(ABC):
         Load items/collections in the instantiated library based on the given ``types``.
 
         :param types: The types of items/collections to load.
-        :param force: Whether to reload the given ``types`` even if they have already been loaded.
+        :param force: Whether to reload the given ``types`` even if they have already been loaded before.
             When False, only load the ``types`` that have not been loaded.
         """
         raise NotImplementedError

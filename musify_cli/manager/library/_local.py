@@ -44,7 +44,7 @@ class LocalLibraryManager(LibraryManager):
         """The initialised local library"""
         if self._library is None:
             self._library = LocalLibrary(
-                library_folders=self.config.paths.library,
+                library_folders=self.config.paths.library.paths,
                 playlist_folder=self.config.paths.playlists,
                 playlist_filter=self.playlist_filter or (),
                 path_mapper=self._path_mapper,
@@ -69,20 +69,21 @@ class LocalLibraryManager(LibraryManager):
         if not types and (force or not self.types_loaded):
             self.library.load()
             self.types_loaded.update(LoadTypesLocal.all())
-        else:
-            if _check_load(LoadTypesLocal.tracks):
-                self.library.load_tracks()
-                self.types_loaded.add(LoadTypesLocal.tracks)
-            if _check_load(LoadTypesLocal.playlists):
-                self.library.load_playlists()
-                self.types_loaded.add(LoadTypesLocal.playlists)
+            return
 
-            self.logger.print(STAT)
-            if _check_loaded(LoadTypesLocal.tracks):
-                self.library.log_tracks()
-            if _check_loaded(LoadTypesLocal.playlists):
-                self.library.log_playlists()
-            self.logger.print()
+        if _check_load(LoadTypesLocal.tracks):
+            self.library.load_tracks()
+            self.types_loaded.add(LoadTypesLocal.tracks)
+        if _check_load(LoadTypesLocal.playlists):
+            self.library.load_playlists()
+            self.types_loaded.add(LoadTypesLocal.playlists)
+
+        self.logger.print(STAT)
+        if _check_loaded(LoadTypesLocal.tracks):
+            self.library.log_tracks()
+        if _check_loaded(LoadTypesLocal.playlists):
+            self.library.log_playlists()
+        self.logger.print()
 
     def save_tracks(self) -> dict[LocalTrack, SyncResultTrack]:
         """
@@ -153,7 +154,7 @@ class MusicBeeManager(LocalLibraryManager):
     def library(self) -> MusicBee:
         if self._library is None:
             self._library = MusicBee(
-                musicbee_folder=self.config.paths.library,
+                musicbee_folder=self.config.paths.library.paths,
                 playlist_filter=self.config.playlists.filter or (),
                 path_mapper=self._path_mapper,
                 remote_wrangler=self._remote_wrangler,
