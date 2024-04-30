@@ -1,7 +1,6 @@
 import logging
 import logging.config
 from abc import ABC, abstractmethod
-from collections.abc import Collection
 
 from jsonargparse import Namespace
 from musify.core.base import MusifyObject
@@ -9,6 +8,7 @@ from musify.core.enum import MusifyEnum
 from musify.libraries.core.object import Library
 from musify.log.logger import MusifyLogger
 from musify.processors.filter import FilterComparers
+from musify.types import UnitCollection
 
 
 class LibraryManager(ABC):
@@ -40,7 +40,7 @@ class LibraryManager(ABC):
         return self.config.playlists.filter if self.config.playlists.filter.ready else None
 
     @abstractmethod
-    def load(self, types: Collection[MusifyEnum], force: bool = False) -> None:
+    def load(self, types: UnitCollection[MusifyEnum] = (), force: bool = False) -> None:
         """
         Load items/collections in the instantiated library based on the given ``types``.
 

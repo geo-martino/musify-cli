@@ -18,12 +18,16 @@ from musify.types import UnitIterable
 
 from musify_cli.manager.library import LocalLibraryManager, MusicBeeManager
 # noinspection PyProtectedMember
-from musify_cli.parser._utils import get_comparers_filter, get_tags
+from musify_cli.parser._utils import get_comparers_filter, get_tags, LoadTypesLocal
 from tests.manager.library.testers import LibraryManagerTester
 from tests.utils import random_str
 
 
 class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
+
+    @pytest.fixture
+    def load_types(self) -> type[LoadTypesLocal]:
+        return LoadTypesLocal
 
     @pytest.fixture
     def config(self, tmp_path: Path) -> Namespace:
@@ -155,9 +159,6 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
         ) -> SyncResultTrack:
             self.save_args = {"tags": tags, "replace": replace, "dry_run": dry_run}
             return SyncResultTrack(saved=not dry_run, updated={tag: 0 for tag in tags})
-
-    def test_load(self, manager_mock: T):
-        pass
 
     def test_save_tracks(self, manager_mock: T, config: Namespace):
         manager_mock.dry_run = False

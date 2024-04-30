@@ -10,16 +10,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="2a13fb3e-78ea-4819-9408-81519e5f5090" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/manager/_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/_core.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/manager/library/_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/library/_core.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/musify_cli/manager/library/_local.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/library/_local.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/musify_cli/manager/library/_remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/library/_remote.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/processor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/move.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/move.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/parser/_setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/parser/_setup.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/manager/library/test_local.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/library/test_local.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/manager/library/test_remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/library/test_remote.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/manager/library/testers.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/library/testers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/parser/test_library.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/parser/test_library.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/manager/test_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/test_core.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -60,6 +61,7 @@
   &quot;keyToString&quot;: {
     &quot;Python tests.Run all tests.executor&quot;: &quot;Run&quot;,
     &quot;Python tests.Run tests.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for manager.test_core.TestMusifyManager.executor&quot;: &quot;Run&quot;,
     &quot;Python tests.pytest for parser.test_library.test_all_libraries_supported.executor&quot;: &quot;Run&quot;,
     &quot;Python tests.pytest for parser.test_library.test_local_library_paths_parser.executor&quot;: &quot;Run&quot;,
     &quot;Python tests.pytest for parser.test_library.test_musicbee_paths_parser.executor&quot;: &quot;Run&quot;,
@@ -99,7 +101,7 @@
       <recent name="D:\Projects\musify-cli\musify_cli\manager" />
     </key>
   </component>
-  <component name="RunManager" selected="Python tests.Run all tests">
+  <component name="RunManager" selected="Python tests.pytest for manager.test_core.TestMusifyManager">
     <configuration name="Config check" type="PythonConfigurationType" factoryName="Python">
       <module name="musify-cli" />
       <option name="ENV_FILES" value="" />
@@ -139,10 +141,33 @@
       <option name="_new_targetType" value="&quot;PATH&quot;" />
       <method v="2" />
     </configuration>
+    <configuration name="pytest for manager.test_core.TestMusifyManager" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="musify-cli" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;manager.test_core.TestMusifyManager&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
     <list>
       <item itemvalue="Python.Config check" />
       <item itemvalue="Python tests.Run all tests" />
+      <item itemvalue="Python tests.pytest for manager.test_core.TestMusifyManager" />
     </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python tests.pytest for manager.test_core.TestMusifyManager" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>

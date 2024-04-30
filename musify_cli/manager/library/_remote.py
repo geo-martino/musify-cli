@@ -116,19 +116,23 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
             return load_type in self.types_loaded
 
         def _check_load(load_type: LoadTypesRemote) -> bool:
-            return load_type in types and (force or not _check_loaded(load_type))
+            selected = not types or load_type in types
+            can_be_loaded = force or not _check_loaded(load_type)
+            return selected and can_be_loaded
 
         def _check_enriched(load_type: LoadTypesRemote) -> bool:
             enriched = self.types_enriched.get(load_type, [])
             return load_type in self.types_enriched or all(t in enriched for t in enrich_types)
 
         def _check_enrich(load_type: LoadTypesRemote, enrich_type: EnrichTypesRemote) -> bool:
-            return enrich_type in enrich_types and (force or enrich_type not in self.types_enriched.get(load_type, []))
+            selected = not enrich_types or enrich_type in enrich_types
+            can_be_loaded = force or enrich_type not in self.types_enriched.get(load_type, [])
+            return selected and can_be_loaded
 
         types = to_collection(types)
         enrich_types = to_collection(enrich_types)
 
-        if not types and not self.types_loaded:
+        if not types and (force or not self.types_loaded):
             self.library.load()
             self.types_loaded.update(LoadTypesRemote.all())
         else:

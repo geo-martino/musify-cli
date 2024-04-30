@@ -139,7 +139,7 @@ cython_debug/
 **.sql*
 **cache*
 
-# large data/log/config folders
-_data/
-_logs/
-_config/
+# data/log folders
+_data/*
+_logs/*
+_config/*

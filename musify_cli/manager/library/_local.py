@@ -60,11 +60,13 @@ class LocalLibraryManager(LibraryManager):
             return load_type in self.types_loaded
 
         def _check_load(load_type: LoadTypesLocal) -> bool:
-            return load_type in types and (force or not _check_loaded(load_type))
+            selected = not types or load_type in types
+            can_be_loaded = force or not _check_loaded(load_type)
+            return selected and can_be_loaded
 
         types = to_collection(types)
 
-        if not types and not self.types_loaded:
+        if not types and (force or not self.types_loaded):
             self.library.load()
             self.types_loaded.update(LoadTypesLocal.all())
         else:

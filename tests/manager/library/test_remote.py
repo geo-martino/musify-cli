@@ -22,11 +22,16 @@ from requests_cache import CachedSession
 from musify_cli.exception import ParserError
 from musify_cli.manager.library import RemoteLibraryManager, SpotifyLibraryManager
 # noinspection PyProtectedMember
-from musify_cli.parser._utils import get_comparers_filter
+from musify_cli.parser._utils import get_comparers_filter, LoadTypesRemote
 from tests.manager.library.testers import LibraryManagerTester
 
 
 class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, metaclass=ABCMeta):
+
+    @pytest.fixture
+    def load_types(self) -> type[LoadTypesRemote]:
+        return LoadTypesRemote
+
     @staticmethod
     def test_init_factory(manager: T):
         assert manager._factory is None
@@ -90,7 +95,7 @@ class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, 
             self.load_calls.append("all")
 
         def load_tracks(self):
-            self.load_calls.append("tracks")
+            self.load_calls.append("saved_tracks")
 
         def load_playlists(self):
             self.load_calls.append("playlists")
@@ -111,9 +116,11 @@ class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, 
             self.sync_args = {"playlists": playlists, "kind": kind, "reload": reload, "dry_run": dry_run}
             return {}
 
-    @staticmethod
-    def test_load(manager_mock: T):
-        pass
+    def test_load_with_extend(self, manager_mock: T):
+        pass  # TODO
+
+    def test_load_with_enrich(self, manager_mock: T):
+        pass  # TODO
 
     @staticmethod
     @pytest.mark.skip(reason="Need to enrich library with playlists for this to work")
@@ -172,11 +179,11 @@ class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, 
 
     @staticmethod
     def test_get_playlist(manager_mock: T):
-        pass
+        pass  # TODO
 
     @staticmethod
     def test_filter_artist_albums_by_date(manager_mock: T):
-        pass
+        pass  # TODO
 
 
 class TestSpotifyLibraryManager[T: RemoteLibraryManager](RemoteLibraryManagerTester):
@@ -286,4 +293,4 @@ class TestSpotifyLibraryManager[T: RemoteLibraryManager](RemoteLibraryManagerTes
             self.enrich_saved_artists_args = {"tracks": tracks, "types": types}
 
     def test_load_enrich(self, manager_mock: T):
-        pass
+        pass  # TODO

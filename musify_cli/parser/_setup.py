@@ -14,4 +14,5 @@ def setup() -> None:
         deserializer=lambda x: datetime.strptime(x, "%Y-%m-%d") if isinstance(x, str) else x,
     )
 
-    # TODO: add custom dumper for handling PrettyPrinter & Field objects
+    # TODO: add custom dumper for handling PrettyPrinter & Field objects.
+    #  config should then be dumped to logs before every function

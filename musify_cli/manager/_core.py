@@ -12,6 +12,7 @@ from typing import Any
 import yaml
 from jsonargparse import Namespace
 from musify import MODULE_ROOT as MUSIFY_ROOT
+from musify.core.base import MusifyItem
 from musify.libraries.core.collection import MusifyCollection
 from musify.libraries.remote.core.enum import RemoteObjectType
 from musify.libraries.remote.core.object import SyncResultRemotePlaylist
@@ -38,25 +39,25 @@ class ReportsManager:
         self.playlist_differences()
         self.missing_tags()
 
-    def playlist_differences(self) -> None:
+    def playlist_differences(self) -> dict[str, dict[str, tuple[MusifyItem, ...]]]:
         """Generate a report on the differences between two library's playlists."""
         config = self.config.library_differences
         if not config.enabled:
-            return
+            return {}
 
-        report_playlist_differences(
+        return report_playlist_differences(
             source=config.filter(self.parent.local.library.playlists.values()),
             reference=config.filter(self.parent.remote.library.playlists.values())
         )
 
-    def missing_tags(self) -> None:
+    def missing_tags(self) -> dict[str, dict[MusifyItem, tuple[str, ...]]]:
         """Generate a report on the items in albums from the local library that have missing tags."""
         config = self.config.missing_tags
         if not config.enabled:
-            return
+            return {}
 
         source = config.filter(self.parent.local.library.albums)
-        report_missing_tags(collections=source, tags=config.tags, match_all=config.match_all)
+        return report_missing_tags(collections=source, tags=config.tags, match_all=config.match_all)
 
 
 class MusifyManager:
