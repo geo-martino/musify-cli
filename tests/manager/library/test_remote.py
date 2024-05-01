@@ -37,6 +37,7 @@ class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, 
     def load_types(self) -> type[LoadTypesRemote]:
         return LoadTypesRemote
 
+    # noinspection PyProtectedMember
     @pytest.fixture
     def manager_mock(self, manager: T) -> T:
         """
@@ -214,6 +215,7 @@ class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, 
 
     @pytest.fixture
     def playlists(self) -> list[PlaylistMock]:
+        """Yields some mock :py:class:`RemotePlaylist` objects as a pytest.fixture"""
         playlists = [self.PlaylistMock({}) for _ in range(10)]
         for pl in playlists:
             pl.tracks.extend(self.TrackMock({}) for _ in range(50))
@@ -288,7 +290,8 @@ class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, 
 
         for _ in range(100):
             artist: RemoteLibraryManagerTester.ArtistMock = choice(library.artists)
-            artist._albums.append(self.AlbumMock({}))
+            # noinspection PyTypeChecker
+            artist.append(self.AlbumMock({}))
         albums = [album for artist in library.artists for album in artist.albums]
 
         end = datetime.now()
@@ -369,6 +372,7 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
         config.api.cache_path = "/new/path/to/cache"
         assert id(manager.api) == id(manager._api) == id(api)
 
+    # noinspection PyTestUnpassedFixture
     def test_init_library(self, manager: SpotifyLibraryManager, config: Namespace):
         assert manager._library is None
         library: SpotifyLibrary = manager.library
@@ -414,6 +418,7 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
         pass
 
     def test_enrich_all(self, manager_mock: SpotifyLibraryManager):
+        # noinspection PyTypeChecker
         library: TestSpotifyLibraryManager.LibraryMock = manager_mock.library
 
         manager_mock.types_loaded = set(LoadTypesRemote.all())
@@ -447,6 +452,7 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
         assert library.enrich_saved_artists_args
 
     def test_enrich_limited_on_load_types(self, manager_mock: SpotifyLibraryManager):
+        # noinspection PyTypeChecker
         library: TestSpotifyLibraryManager.LibraryMock = manager_mock.library
 
         manager_mock.types_loaded = {LoadTypesRemote.saved_albums, LoadTypesRemote.saved_tracks}
@@ -492,6 +498,7 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
         assert LoadTypesRemote.saved_artists not in manager_mock.types_enriched
 
     def test_enrich_limited_on_enrich_types(self, manager_mock: SpotifyLibraryManager):
+        # noinspection PyTypeChecker
         library: TestSpotifyLibraryManager.LibraryMock = manager_mock.library
 
         manager_mock.types_loaded = set(LoadTypesRemote.all())

@@ -44,7 +44,7 @@ def test_parse_library_config(tmp_path: Path):
     parsed = parse_local_library_config({"name": "local"} | config["local"])
     assert_local_parse(parsed.get(parsed.type))
 
-    parsed = parse_local_library_config(lib="musicbee", config_path=path_library_config, output_folder=tmp_path)
+    parsed = parse_local_library_config(lib="musicbee", config_path=path_library_config)
     assert_musicbee_parse(parsed.get(parsed.type))
 
     parsed = parse_remote_library_config(lib="spotify", config_path=path_library_config)

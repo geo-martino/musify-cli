@@ -202,6 +202,7 @@ class TestMusicBeeManager(TestLocalLibraryManager[MusicBeeManager]):
 
     @pytest.fixture
     def library_folders(self, tmp_path: Path) -> list[str]:
+        """The library folders to use when generating the MusicBee settings file."""
         library_folders = [join(tmp_path, "library_1"), join(tmp_path, "library_2")]
         for path in library_folders:
             os.makedirs(path, exist_ok=True)

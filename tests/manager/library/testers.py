@@ -10,6 +10,8 @@ from musify_cli.manager.library._core import LibraryManager
 
 
 class LibraryManagerTester[T: LibraryManager](ABC):
+    """Run generic tests for :py:class:`LibraryManager` implementations"""
+
     @abstractmethod
     def load_types(self) -> type[MusifyEnum]:
         """Yields the enum type that represent the load types for the current remote source as a pytest.fixture."""

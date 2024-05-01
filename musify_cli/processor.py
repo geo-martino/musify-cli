@@ -14,6 +14,7 @@ from os.path import basename, dirname, join, relpath, splitext, sep
 from time import perf_counter
 from typing import Any
 
+from jsonargparse import Namespace
 from musify.libraries.core.object import Library
 from musify.libraries.local.collection import LocalFolder
 from musify.libraries.local.track.field import LocalTrackField
@@ -77,10 +78,14 @@ class MusifyProcessor(DynamicProcessor):
 
         self.logger.debug(f"Called processor '{self._processor_name}': DONE\n")
 
-    def set_processor(self, name: str) -> Callable[[], None]:
+    def set_processor(self, name: str, config: Namespace = None) -> Callable[[], None]:
         """Set the processor to use from the given name"""
         name = name.replace("-", "_")
         self._set_processor_name(name)
+
+        if config is not None:
+            self.manager.set_config(config)
+
         return self._processor_method
 
     def _handle_exception(self, exc_type, exc_value, exc_traceback) -> None:
@@ -160,7 +165,7 @@ class MusifyProcessor(DynamicProcessor):
         key = self.manager.backup_key
         if not key:
             key = get_user_input("Enter a key for this backup. Hit return to backup without a key")
-        self.logger.print()
+            self.logger.print()
 
         self.local.load()
         self.remote.load(types=[LoadTypesRemote.playlists, LoadTypesRemote.saved_tracks])
@@ -346,8 +351,12 @@ class MusifyProcessor(DynamicProcessor):
             finalise()
             return
 
-        self.logger.info(f"\33[1;95m ->\33[1;97m Updating tags for {len(self.local.library)} tracks: uri \33[0m")
-        results = self.local.save_tracks_in_collections(collections=albums, tags=LocalTrackField.URI, replace=True)
+        self.remote.library.extend([track for album in albums for track in album], allow_duplicates=False)
+        self.remote.library.enrich_tracks(features=True, albums=True, artists=True)
+        print(self.remote.library[0])
+
+        self.local.merge_tracks(self.remote.library)
+        results = self.local.save_tracks_in_collections(collections=albums, replace=True)
 
         if results:
             self.logger.print(STAT)
@@ -366,9 +375,10 @@ class MusifyProcessor(DynamicProcessor):
         self.logger.debug("Update tags: START")
 
         self.local.load(types=LoadTypesLocal.tracks)
+
         self.remote.load(types=[LoadTypesRemote.saved_tracks, LoadTypesRemote.playlists])
         self.remote.library.extend(self.local.library, allow_duplicates=False)
-        self.remote.enrich(types=EnrichTypesRemote.artists)
+        self.remote.library.enrich_tracks(features=True, albums=True, artists=True)
 
         self.local.merge_tracks(self.remote.library)
         results = self.local.save_tracks()
@@ -435,6 +445,7 @@ class MusifyProcessor(DynamicProcessor):
         results = self.remote.sync(playlists)
 
         self.remote.library.log_sync(results)
+        self.logger.print()
         self.logger.debug(f"Sync {self.remote.source}: DONE")
 
     @dynamicprocessormethod
@@ -460,7 +471,7 @@ class MusifyProcessor(DynamicProcessor):
         # load saved artists and their albums with fresh data, ignoring use_cache settings
         load_albums = any([
             LoadTypesRemote.saved_artists not in self.remote.types_loaded,
-            EnrichTypesRemote.albums not in self.remote.types_enriched[LoadTypesRemote.saved_artists]
+            EnrichTypesRemote.albums not in self.remote.types_enriched.get(LoadTypesRemote.saved_artists, [])
         ])
         if load_albums:
             self.remote.library.use_cache = False
@@ -468,7 +479,10 @@ class MusifyProcessor(DynamicProcessor):
             self.remote.library.use_cache = self.remote.use_cache
             self.remote.library.enrich_saved_artists(types=("album", "single"))
 
-        albums_to_extend = [album for album in self.remote.library.artists if len(album.tracks) < album.track_total]
+        albums_to_extend = [
+            album for artist in self.remote.library.artists for album in artist.albums
+            if len(album.tracks) < album.track_total
+        ]
         self.manager.extend_albums(albums_to_extend)
 
         # log load results

@@ -104,6 +104,8 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
     ## Operations
     ###########################################################################
     def load(self, types: UnitCollection[LoadTypesRemote] = (), force: bool = False) -> None:
+        types = to_collection(types)
+
         def _loaded(load_type: LoadTypesRemote) -> bool:
             return load_type in self.types_loaded
 
@@ -112,9 +114,9 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
             can_be_loaded = force or not _loaded(load_type)
             return selected and can_be_loaded
 
-        types = to_collection(types)
-
-        if not types and (force or not self.types_loaded):
+        if types and self.types_loaded.intersection(types) == set(types) and not force:
+            return
+        elif not types and (force or not self.types_loaded):
             self.library.load()
             self.types_loaded.update(LoadTypesRemote.all())
             return
@@ -152,10 +154,14 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
         """
         Enrich items/collections in the instantiated library based on the given ``types``.
 
-        :param types: The types of items/collections to enrich.
+        :param types: The types of loaded items/collections to enrich.
+        :param enrich: The types of items/collections which should be enriched for each of the loaded ``types``.
         :param force: Whether to enrich the given ``types`` even if they have already been enriched before.
             When False, only enrich the ``types`` that have not been enriched.
         """
+        types = to_collection(types)
+        enrich = to_collection(enrich)
+
         def _loaded(load_type: LoadTypesRemote) -> bool:
             selected = not types or load_type in types
             return selected and load_type in self.types_loaded
@@ -168,9 +174,6 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
             selected = not enrich or enrich_type in enrich
             can_be_loaded = force or enrich_type not in self.types_enriched.get(load_type, [])
             return selected and can_be_loaded
-
-        types = to_collection(types)
-        enrich = to_collection(enrich)
 
         if _loaded(LoadTypesRemote.saved_tracks) and (force or not _enriched(LoadTypesRemote.saved_tracks)):
             artists = _should_enrich(LoadTypesRemote.saved_tracks, EnrichTypesRemote.artists)
@@ -194,6 +197,8 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
             if tracks:
                 types_enriched.add(EnrichTypesRemote.tracks)
             self.types_enriched[LoadTypesRemote.saved_artists] = types_enriched
+
+        print(self.types_enriched)
 
     def _filter_playlists[T: Playlist](self, playlists: Collection[T]) -> Collection[T]:
         """
@@ -301,6 +306,8 @@ class SpotifyLibraryManager(RemoteLibraryManager):
                 use_cache=self.use_cache,
                 playlist_filter=self.playlist_filter or (),
             )
+            self.initialised = True
+
         return self._library
 
     @property
@@ -316,6 +323,8 @@ class SpotifyLibraryManager(RemoteLibraryManager):
                 token_file_path=self.config.api.token_path,
                 cache_path=self.config.api.cache_path,
             )
+            self.initialised = True
+
         return self._api
 
     @property

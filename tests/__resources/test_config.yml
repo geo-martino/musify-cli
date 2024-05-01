@@ -3,7 +3,7 @@ output: test_folder
 execute: True
 
 logging:
-  name: prod
+  name: logger
 
 reload:
   local:

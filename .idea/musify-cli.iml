@@ -7,6 +7,8 @@
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/.venv_lin" />
       <excludeFolder url="file://$MODULE_DIR$/_config" />
+      <excludeFolder url="file://$MODULE_DIR$/_data" />
+      <excludeFolder url="file://$MODULE_DIR$/_logs" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.12 (musify-cli)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

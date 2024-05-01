@@ -10,6 +10,7 @@ from musify_cli.manager import MusifyManager
 # noinspection PyProtectedMember
 from musify_cli.manager._core import ReportsManager
 from musify_cli.parser import LOCAL_LIBRARY_TYPES, REMOTE_LIBRARY_TYPES
+# noinspection PyProtectedMember
 from musify_cli.parser._utils import get_comparers_filter
 from tests.utils import path_txt, path_logging_config
 
@@ -18,6 +19,10 @@ from tests.utils import path_txt, path_logging_config
 class TestReportsManager:
     @pytest.fixture
     def config(self) -> Namespace:
+        """
+        Yields a valid :py:class:`Namespace` representing the config
+        for the current manager as a pytest.fixture.
+        """
         return Namespace(
             execute=False,
             libraries=Namespace(
@@ -50,6 +55,10 @@ class TestReportsManager:
 class TestMusifyManager:
     @pytest.fixture
     def config(self) -> Namespace:
+        """
+        Yields a valid :py:class:`Namespace` representing the config
+        for the current manager as a pytest.fixture.
+        """
         return Namespace(
             output="/path/to/output/folder",
             execute=True,
@@ -80,8 +89,11 @@ class TestMusifyManager:
         # noinspection PyProtectedMember
         assert set(MusifyManager._remote_library_map) == set(REMOTE_LIBRARY_TYPES)
 
-    @staticmethod
-    def test_init_output_folder(manager: MusifyManager):
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_set_config(self, manager: MusifyManager):
+        pass  # TODO
+
+    def test_init_output_folder(self, manager: MusifyManager):
         assert manager._output_folder is None
         output_folder = manager.output_folder
         assert output_folder == manager.config.output
@@ -92,8 +104,7 @@ class TestMusifyManager:
         assert manager.output_folder != manager.config.output
         assert id(manager.output_folder) == id(manager._output_folder) == id(output_folder)
 
-    @staticmethod
-    def test_init_dry_run(manager: MusifyManager):
+    def test_init_dry_run(self, manager: MusifyManager):
         dry_run = manager.dry_run
         assert dry_run is not manager.config.execute
         assert not manager._dry_run
@@ -103,8 +114,7 @@ class TestMusifyManager:
         assert manager.dry_run is manager.config.execute
         assert id(manager.dry_run) == id(manager._dry_run) == id(dry_run)
 
-    @staticmethod
-    def test_init_backup_key(manager: MusifyManager):
+    def test_init_backup_key(self, manager: MusifyManager):
         assert manager.backup_key == manager.config.backup.key
 
         # always generates a new object when called twice
@@ -139,8 +149,7 @@ class TestMusifyManager:
     ###########################################################################
     ## Utilities
     ###########################################################################
-    @staticmethod
-    def test_filter(manager: MusifyManager, config: Namespace):
+    def test_filter(self, manager: MusifyManager, config: Namespace):
         playlists = [f"playlist {i}" for i in range(1, 5)]
         assert manager.filter(playlists) == config.filter(playlists) == playlists[:2]
 

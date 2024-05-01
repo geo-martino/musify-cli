@@ -161,6 +161,7 @@ def extend_local_paths_arguments(paths: ArgumentParser) -> None:
 
 
 def link_library_map_paths(core: ArgumentParser):
+    """Link the 'map' paths arguments with the 'library' paths argument/s."""
     def _extend_map_with_other_platforms(library: LocalLibraryPaths, stem_map: dict[str, str]) -> dict[str, str]:
         actual_path = next(iter(to_collection(library.paths)))
         stem_map.update({other_path: actual_path for other_path in library.others if other_path != actual_path})

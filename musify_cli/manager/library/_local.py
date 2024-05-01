@@ -50,6 +50,8 @@ class LocalLibraryManager(LibraryManager):
                 path_mapper=self._path_mapper,
                 remote_wrangler=self._remote_wrangler,
             )
+            self.initialised = True
+
         return self._library
 
     ###########################################################################
@@ -66,7 +68,9 @@ class LocalLibraryManager(LibraryManager):
 
         types = to_collection(types)
 
-        if not types and (force or not self.types_loaded):
+        if types and self.types_loaded.intersection(types) == set(types) and not force:
+            return
+        elif not types and (force or not self.types_loaded):
             self.library.load()
             self.types_loaded.update(LoadTypesLocal.all())
             return
@@ -114,7 +118,7 @@ class LocalLibraryManager(LibraryManager):
         :param replace: Destructively replace tags in each file.
         :return: A map of the :py:class:`LocalTrack` saved to its result as a :py:class:`SyncResultTrack` object
         """
-        tags = tags or self.config.updater.tags
+        tags = to_collection(tags) or self.config.updater.tags
         replace = replace if replace is not None else self.config.updater.replace
 
         self.logger.info(
@@ -159,4 +163,6 @@ class MusicBeeManager(LocalLibraryManager):
                 path_mapper=self._path_mapper,
                 remote_wrangler=self._remote_wrangler,
             )
+            self.initialised = True
+
         return self._library

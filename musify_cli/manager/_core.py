@@ -16,6 +16,7 @@ from musify.core.base import MusifyItem
 from musify.libraries.core.collection import MusifyCollection
 from musify.libraries.remote.core.enum import RemoteObjectType
 from musify.libraries.remote.core.object import RemoteAlbum, SyncResultRemotePlaylist
+from musify.log import STAT
 from musify.log.logger import MusifyLogger
 from musify.processors.download import ItemDownloadHelper
 from musify.report import report_playlist_differences, report_missing_tags
@@ -40,7 +41,7 @@ class ReportsManager:
 
     def playlist_differences(self) -> dict[str, dict[str, tuple[MusifyItem, ...]]]:
         """Generate a report on the differences between two library's playlists."""
-        config = self.config.library_differences
+        config = self.config.playlist_differences
         if not config.enabled:
             return {}
 
@@ -103,6 +104,43 @@ class MusifyManager:
 
         setup_time = perf_counter() - start_time
         self.logger.debug(f"{self.__class__.__name__} initialised. Time taken: {setup_time:.3f}")
+
+    def set_config(self, config: Namespace) -> None:
+        """Set a new config for this manager and all composite managers"""
+        self.config = config
+
+        remote_library_config: Namespace = self.config.libraries.remote
+        if remote_library_config.name != self.remote.name:
+            if self.remote.initialised:
+                raise ParserError(
+                    "New remote library given but the library manager has already been initialised | "
+                    f"Current: {self.remote.name!r} | New: {remote_library_config.name!r}"
+                )
+            self.remote = self._remote_library_map[remote_library_config.type](
+                name=remote_library_config.name,
+                config=remote_library_config.get(remote_library_config.type),
+                dry_run=self.dry_run,
+            )
+        else:
+            self.remote.config = remote_library_config.get(remote_library_config.type)
+
+        local_library_config: Namespace = self.config.libraries.local
+        if local_library_config.name != self.local.name:
+            if self.local.initialised:
+                raise ParserError(
+                    "New local library given but the library manager has already been initialised | "
+                    f"Current: {self.local.name!r} | New: {local_library_config.name!r}"
+                )
+            self.local = self._local_library_map[local_library_config.type](
+                name=local_library_config.name,
+                config=local_library_config.get(local_library_config.type),
+                dry_run=self.dry_run,
+            )
+            self.local._remote_wrangler = self.remote.wrangler
+        else:
+            self.local.config = local_library_config.get(local_library_config.type)
+
+        self.reports.config = self.config.reports
 
     @property
     def output_folder(self) -> str:
@@ -192,7 +230,8 @@ class MusifyManager:
 
             self.remote.load(types=config_remote.types or (), force=force)
             if config_remote.extend:
-                self.library.extend(self.local.library, allow_duplicates=False)
+                self.remote.library.extend(self.local.library, allow_duplicates=False)
+                self.logger.print(STAT)
             if config_remote.enrich.enabled:
                 self.remote.enrich(
                     types=config_remote.types or (),
@@ -223,7 +262,7 @@ class MusifyManager:
         end = self.config.new_music.end
         return self.remote.filter_artist_albums_by_date(start=start, end=end)
 
-    def extend_albums(self, albums: Iterable[RemoteAlbum]) -> bool:
+    def extend_albums(self, albums: Iterable[RemoteAlbum]) -> None:
         """Extend responses of given ``albums`` to include all available tracks for each album."""
         kind = RemoteObjectType.ALBUM
         key = self.remote.api.collection_item_map[kind]
@@ -272,4 +311,4 @@ class MusifyManager:
         pl = self.remote.get_or_create_playlist(name)
         pl.clear()
         pl.extend(tracks, allow_duplicates=False)
-        return name, pl.sync(kind="refresh", reload=False, dry_run=self.config.dry_run)
+        return name, pl.sync(kind="refresh", reload=False, dry_run=self.dry_run)

@@ -18,6 +18,8 @@ class LibraryManager(ABC):
         # noinspection PyTypeChecker
         self.logger: MusifyLogger = logging.getLogger(__name__)
 
+        self.initialised = False
+
         self.name = name
         self.config = config
         self.dry_run = dry_run

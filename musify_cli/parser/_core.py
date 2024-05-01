@@ -6,6 +6,7 @@ from copy import deepcopy
 from datetime import date, timedelta, datetime
 from functools import partial
 from os.path import join, isabs, sep
+from typing import Any
 
 import yaml
 from jsonargparse import ArgumentParser, ActionParser, Namespace, Path
@@ -16,6 +17,7 @@ from musify.libraries.local.track.field import LocalTrackField
 from musify.processors.download import ItemDownloadHelper
 from musify.processors.filter import FilterComparers
 from musify.report import report_missing_tags
+from musify.utils import merge_maps
 
 from musify_cli import PACKAGE_ROOT
 from musify_cli.parser._library import LIBRARY_EPILOG, LOCAL_LIBRARY_TYPES, REMOTE_LIBRARY_TYPES, LIBRARY_PARSER
@@ -245,13 +247,17 @@ def append_parent_folder(path: str | os.PathLike | Path, parent_folder: str | os
     return join(str(parent_folder).rstrip(sep), str(path).lstrip(sep))
 
 
-def parse_local_library_config(
-        lib: str | dict, config_path: Path_fr | None = None, output_folder: str | os.PathLike | Path | None = None
-) -> Namespace:
+def load_library_config(
+        lib: str | dict, config_path: Path_fr | None = None, overwrite: str | dict = None
+) -> dict[str, Any]:
     """
-    Process the given local library config ``lib`` at the ``config_path``,
-    appending ``output_folder`` to paths as appropriate.
+    Process the given library config ``lib`` at the ``config_path``.
+    Overwrite loaded config with ``overwrite``.
     """
+    if isinstance(overwrite, str):
+        lib = overwrite
+        overwrite = None
+
     if isinstance(lib, str):
         if config_path is None:
             raise ParserError("Library name given but no config path given. Provide a path to the library config file.")
@@ -263,19 +269,38 @@ def parse_local_library_config(
         if not config.get(name):
             raise ParserError(f"Library name not found: {name!r}. Available libraries: {list(config.keys())}")
 
-        return LIBRARY_PARSER.parse_object({"name": name} | config[name])
+        lib = {"name": name} | config[name]
 
-    return LIBRARY_PARSER.parse_object(lib)
+    if overwrite:
+        merge_maps(lib, overwrite, extend=False, overwrite=True)
+
+    return lib
+
+
+def parse_local_library_config(
+        lib: str | dict, config_path: Path_fr | None = None, overwrite: dict[str, Any] = None
+) -> Namespace:
+    """
+    Process the given local library config ``lib`` at the ``config_path``.
+    Overwrite loaded config with ``overwrite``.
+    """
+    data = load_library_config(lib=lib, config_path=config_path, overwrite=overwrite)
+    return LIBRARY_PARSER.parse_object(data)
 
 
 def parse_remote_library_config(
-        lib: str | dict, config_path: Path_fr | None = None, output_folder: str | os.PathLike | Path | None = None
+        lib: str | dict,
+        config_path: Path_fr | None = None,
+        output_folder: str | os.PathLike | Path | None = None,
+        overwrite: dict[str, Any] = None
 ) -> Namespace:
     """
     Process the given local library config ``lib`` at the ``config_path``,
     appending ``output_folder`` to paths as appropriate.
+    Overwrite loaded config with ``overwrite``.
     """
-    parsed = parse_local_library_config(lib=lib, config_path=config_path, output_folder=output_folder)
+    data = load_library_config(lib=lib, config_path=config_path, overwrite=overwrite)
+    parsed = LIBRARY_PARSER.parse_object(data)
     if not output_folder:
         return parsed
 
@@ -289,7 +314,7 @@ def parse_remote_library_config(
 
 
 CORE_PARSER.link_arguments(
-    ("libraries.local", "libraries.config_path", "output"),
+    ("libraries.local", "libraries.config_path"),
     "libraries.local",
     parse_local_library_config
 )

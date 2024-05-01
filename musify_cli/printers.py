@@ -16,6 +16,11 @@ LOGO_FONTS = (
 LOGO_COLOURS = (91, 93, 92, 94, 96, 95)
 
 
+def get_func_log_name(name: str) -> str:
+    """Formats the given ``name`` to be appropriate for logging"""
+    return name.replace("_", " ").replace("-", " ").title()
+
+
 def print_logo(fonts: Sequence[str] = LOGO_FONTS, colours: Collection[int] = LOGO_COLOURS) -> None:
     """Pretty print the Musify logo in the centre of the terminal"""
     colours = list(colours)
@@ -37,13 +42,13 @@ def print_logo(fonts: Sequence[str] = LOGO_FONTS, colours: Collection[int] = LOG
 
 def print_line(text: str = "", line_char: str = "-") -> None:
     """Print an aligned line with the given text in the centre of the terminal"""
-    text = text.replace("_", " ").replace("-", " ").title()
     cols = os.get_terminal_size().columns
 
     text = f" {text} " if text else ""
     amount_left = (cols - len(text)) // 2
     output_len = amount_left * 2 + len(text)
     amount_right = amount_left + (1 if output_len < cols else 0)
+
     print(f"\33[1;96m{line_char * amount_left}\33[95m{text}\33[1;96m{line_char * amount_right}\33[0m\n")
 
 

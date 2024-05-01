@@ -8,7 +8,7 @@ from typing import Any, TypeVar
 
 from jsonargparse import DefaultHelpFormatter
 from musify.core.base import MusifyObject
-from musify.core.enum import Fields, TagField, TagFields, MusifyEnum
+from musify.core.enum import Fields, TagField, MusifyEnum, Field
 from musify.libraries.local.track.field import LocalTrackField
 from musify.processors.compare import Comparer
 from musify.processors.filter import FilterComparers
@@ -69,7 +69,7 @@ def get_tags[T: TagField](
         raise ParserError("Unrecognised input type", value=tags)
 
     values = to_collection(tags, tuple)
-    if not values or (isinstance(tags, TagField) and tags.value == TagFields.ALL):
+    if not values or (isinstance(tags, Field) and tags.value == Fields.ALL):
         return tuple(cls.all(only_tags=True))
 
     tags = cls.to_tags(cls.from_name(*values))

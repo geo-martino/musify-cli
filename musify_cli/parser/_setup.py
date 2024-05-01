@@ -8,6 +8,7 @@ from typing import Any, Iterable
 import yaml
 
 from jsonargparse import Namespace, set_dumper
+# noinspection PyProtectedMember
 from jsonargparse._loaders_dumpers import dump_yaml_kwargs
 from jsonargparse.typing import register_type
 
@@ -32,7 +33,7 @@ def _make_yaml_safe(config: dict[str, Any]) -> None:
             _make_yaml_safe(value)
 
 
-def yaml_dump(data: dict[str, Any] | Namespace) -> None:
+def yaml_dump(data: dict[str, Any] | Namespace) -> str:
     data = data.as_dict() if isinstance(data, Namespace) else deepcopy(data)
     _make_yaml_safe(data)
     return yaml.safe_dump(data, **dump_yaml_kwargs)
