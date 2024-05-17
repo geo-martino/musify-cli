@@ -338,7 +338,7 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
                 ],
                 cache=Namespace(
                     type="sqlite",
-                    db="cache_db",
+                    db=join(tmp_path, "cache_db"),
                     expire_after=timedelta(days=16),
                 ),
                 token_path=join(tmp_path, "token.json"),
