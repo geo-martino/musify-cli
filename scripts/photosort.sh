@@ -5,7 +5,7 @@ setopt CAse_glob
 
 PHONE_INTERNAL=/storage/self/primary
 PHONE_SD=/storage/E42C-0EA8
-LAST_EXPORT='2023-06-28 18:22:13'
+LAST_EXPORT='2024-05-09 13:02:22'
 THIS_EXPORT=$(date '+%Y-%m-%d %H:%M:%S')
 
 ### CREATE DIRECTORIES ###
@@ -268,7 +268,7 @@ else
 	echo " · \033[93mNo files processed\033[0m" 
 fi
 
-#echo "\n\033[1;95m-> \033[1;97mUpdating last export time to $THIS_EXPORT\033[0m"
-#sed -r -i "s|^LAST_EXPORT=.*|LAST_EXPORT='$THIS_EXPORT'|g" "${0:a}"
+echo "\n\033[1;95m-> \033[1;97mUpdating last export time to $THIS_EXPORT\033[0m"
+sed -r -i "s|^LAST_EXPORT=.*|LAST_EXPORT='$THIS_EXPORT'|g" "${0:a}"
 
 echo
