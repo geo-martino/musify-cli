@@ -13,7 +13,9 @@ from typing import Any, Self
 from dateutil.relativedelta import relativedelta
 from jsonargparse import ArgumentParser, ActionParser
 from jsonargparse.typing import Path_dw, Path_fc
+from musify.api.authorise import APIAuthoriser
 from musify.api.cache.backend import CACHE_TYPES
+from musify.api.cache.backend.base import ResponseCache
 from musify.file.path_mapper import PathStemMapper
 from musify.libraries.local.library import LocalLibrary, LIBRARY_CLASSES
 from musify.libraries.local.track import LocalTrack
@@ -283,7 +285,7 @@ def add_remote_api_arguments(core: ArgumentParser, source: str, api: type[Remote
     )
     remote_api = ArgumentParser(prog=f"{source} API", formatter_class=EpilogHelpFormatter)
 
-    remote_api.add_class_arguments(api, as_group=False, skip={"cache"})
+    remote_api.add_class_arguments(api, as_group=False, skip={"cache", *set(get_default_args(APIAuthoriser))})
     remote_api.add_argument(
         "--token-path", type=str | Path_fc,  # type switched to Path_fc when linked to main config
         help="Path to use for loading and saving a token."
@@ -299,7 +301,7 @@ def add_remote_api_arguments(core: ArgumentParser, source: str, api: type[Remote
         help="The DB to connect to e.g. the URI/path for connecting to an SQLite DB."
     )
     cache.add_argument(
-        "--expire-after", type=timedelta | relativedelta,
+        "--expire-after", type=timedelta | relativedelta, default=get_default_args(ResponseCache).get("expire"),
         help="The maximum permitted expiry time allowed when looking for a response in the cache. "
              "Also configures the expiry time to apply for new responses when persisting to the cache. "
              "Value should be a number proceeded by its unit as one string e.g. '4d' is 4 days, '16min' is 16 minutes. "

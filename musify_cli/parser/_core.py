@@ -262,7 +262,7 @@ def load_library_config(
         if config_path is None:
             raise ParserError("Library name given but no config path given. Provide a path to the library config file.")
 
-        with open(config_path, "r") as file:
+        with open(config_path, "r", encoding="utf-8") as file:
             config = yaml.full_load(file)
 
         name = lib
@@ -310,7 +310,7 @@ def parse_remote_library_config(
 
     local_cache_types = ["sqlite"]
     if api.cache and api.cache.type in local_cache_types and api.cache.db:
-        api.cache.db = Path_fc(append_parent_folder(api.cache.db, parent_folder=output_folder))
+        api.cache.db = str(Path_fc(append_parent_folder(api.cache.db, parent_folder=output_folder)))
 
     return parsed
 
