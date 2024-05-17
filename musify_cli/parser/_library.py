@@ -7,10 +7,13 @@ import sys
 from abc import ABC, abstractmethod
 from collections.abc import Collection, Mapping
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any, Self
 
+from dateutil.relativedelta import relativedelta
 from jsonargparse import ArgumentParser, ActionParser
 from jsonargparse.typing import Path_dw, Path_fc
+from musify.api.cache.backend import CACHE_TYPES
 from musify.file.path_mapper import PathStemMapper
 from musify.libraries.local.library import LocalLibrary, LIBRARY_CLASSES
 from musify.libraries.local.track import LocalTrack
@@ -25,6 +28,7 @@ from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.processors.filter import FilterComparers
 from musify.utils import to_collection
 
+from musify_cli.parser._setup import TIME_MAPPER_HELP_TEXT
 from musify_cli.parser._utils import EpilogHelpFormatter, LOCAL_TRACK_TAG_NAMES, MultiType
 from musify_cli.parser._utils import get_default_args, get_tags, get_comparers_filter
 from musify_cli.exception import ParserError
@@ -273,28 +277,37 @@ def add_remote_api_arguments(core: ArgumentParser, source: str, api: type[Remote
     Create and add arguments for creating the given ``api`` for a certain ``source``
     to the given ``core`` parser.
     """
-    group = core.add_argument_group(
+    remote_api_group = core.add_argument_group(
         title=f"{source} API options",
         description=f"Configure the API for this {source} library",
     )
     remote_api = ArgumentParser(prog=f"{source} API", formatter_class=EpilogHelpFormatter)
 
-    remote_api.add_class_arguments(api, as_group=False)
+    remote_api.add_class_arguments(api, as_group=False, skip={"cache"})
     remote_api.add_argument(
         "--token-path", type=str | Path_fc,  # type switched to Path_fc when linked to main config
         help="Path to use for loading and saving a token."
     )
-    remote_api.add_argument(
-        "--cache-path", type=str | Path_fc,  # type switched to Path_fc when linked to main config
-        help="Path to use to store the requests session's sqlite cache."
-    )
-    remote_api.add_argument(
-        "--use-cache", type=bool, default=False,
-        help="Use the cache when calling the API endpoint. "
-             "When using a CachedSession, set as False to refresh the cached response."
-    )
 
-    group.add_argument("--api", action=ActionParser(remote_api))
+    cache = ArgumentParser(prog=f"{source} API cache", formatter_class=EpilogHelpFormatter)
+    cache.add_argument(
+        "--type", type=str,
+        help=f"The type of backend to connect to. Available types: {", ".join(CACHE_TYPES)}"
+    )
+    cache.add_argument(
+        "--db", type=str,
+        help="The DB to connect to e.g. the URI/path for connecting to an SQLite DB."
+    )
+    cache.add_argument(
+        "--expire-after", type=timedelta | relativedelta,
+        help="The maximum permitted expiry time allowed when looking for a response in the cache. "
+             "Also configures the expiry time to apply for new responses when persisting to the cache. "
+             "Value should be a number proceeded by its unit as one string e.g. '4d' is 4 days, '16min' is 16 minutes. "
+             f"Available time units:\n{TIME_MAPPER_HELP_TEXT}"
+    )
+    remote_api.add_argument("--cache", action=ActionParser(cache))
+
+    remote_api_group.add_argument("--api", action=ActionParser(remote_api))
 
 
 def add_remote_playlists_arguments(core: ArgumentParser, source: str) -> None:
@@ -354,11 +367,11 @@ def add_remote_processor_arguments(core: ArgumentParser, source: str) -> None:
 
     group.add_class_arguments(
         RemoteItemChecker, "check", as_group=False,
-        skip={"matcher", "object_factory", "use_cache"}
+        skip={"matcher", "object_factory"}
     )
     group.add_class_arguments(
         RemoteItemSearcher, "search", as_group=False,
-        skip={"matcher", "object_factory", "use_cache"}
+        skip={"matcher", "object_factory"}
     )
 
 

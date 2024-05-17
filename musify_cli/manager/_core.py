@@ -269,7 +269,7 @@ class MusifyManager:
 
         bar = self.logger.get_progress_bar(iterable=albums, desc="Getting album tracks", unit="albums")
         for album in bar:
-            self.remote.api.extend_items(album.response, kind=kind, key=key, use_cache=self.remote.use_cache)
+            self.remote.api.extend_items(album.response, kind=kind, key=key)
             album.refresh(skip_checks=False)
 
     ###########################################################################

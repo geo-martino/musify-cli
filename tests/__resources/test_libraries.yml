@@ -38,12 +38,14 @@ spotify:
     api:
       client_id: <CLIENT_ID>
       client_secret: <CLIENT_SECRET>
-      #token_path: /path/to/token.json
-      cache_path: cache
       scopes:
         - user-library-read
         - user-follow-read
-      use_cache: False
+      cache:
+        type: sqlite
+        db: cache_db
+        expire_after: 2w
+      #token_path: /path/to/token.json
     check:
       interval: 200
       allow_karaoke: True

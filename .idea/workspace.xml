@@ -11,6 +11,17 @@
   <component name="ChangeListManager">
     <list default="true" id="2a13fb3e-78ea-4819-9408-81519e5f5090" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/manager/_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/_core.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/manager/library/_remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/library/_remote.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/parser/_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/parser/_core.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/parser/_library.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/parser/_library.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/parser/_setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/parser/_setup.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/processor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/__resources/test_libraries.yml" beforeDir="false" afterPath="$PROJECT_DIR$/tests/__resources/test_libraries.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/manager/library/test_remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/library/test_remote.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/manager/test_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/test_core.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/parser/test_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/parser/test_core.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/parser/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/parser/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -47,37 +58,38 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Python tests.Run all tests.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Run tests.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.pytest for manager.test_core.TestMusifyManager.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.pytest for parser.test_library.test_all_libraries_supported.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.pytest for parser.test_library.test_local_library_paths_parser.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.pytest for parser.test_library.test_musicbee_paths_parser.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.pytest for parser.test_parser.test_help_text.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.pytest for parser.test_utils.TestParserTypes.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.pytest for test_manager.TestMusifyManager.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.pytest for test_parser.TestParserUtils.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.pytest in manager.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.pytest in parser.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.pytest in test_core.py.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.pytest in test_library.py.executor&quot;: &quot;Run&quot;,
-    &quot;Python.Config check.executor&quot;: &quot;Run&quot;,
-    &quot;Python._core.executor&quot;: &quot;Run&quot;,
-    &quot;Python.config.executor&quot;: &quot;Run&quot;,
-    &quot;Python.instantiate.executor&quot;: &quot;Run&quot;,
-    &quot;Python.manager.executor&quot;: &quot;Run&quot;,
-    &quot;Python.parser.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/Projects/musify-cli/tests/__resources&quot;,
-    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;Errors&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python tests.Run all tests.executor": "Run",
+    "Python tests.Run tests.executor": "Run",
+    "Python tests.pytest for manager.test_core.TestMusifyManager.executor": "Run",
+    "Python tests.pytest for parser.test_library.test_all_libraries_supported.executor": "Run",
+    "Python tests.pytest for parser.test_library.test_local_library_paths_parser.executor": "Run",
+    "Python tests.pytest for parser.test_library.test_musicbee_paths_parser.executor": "Run",
+    "Python tests.pytest for parser.test_parser.test_help_text.executor": "Run",
+    "Python tests.pytest for parser.test_utils.TestParserTypes.executor": "Run",
+    "Python tests.pytest for test_manager.TestMusifyManager.executor": "Run",
+    "Python tests.pytest for test_parser.TestParserUtils.executor": "Run",
+    "Python tests.pytest in manager.executor": "Run",
+    "Python tests.pytest in parser.executor": "Run",
+    "Python tests.pytest in test_core.py.executor": "Run",
+    "Python tests.pytest in test_library.py.executor": "Run",
+    "Python.Config check.executor": "Run",
+    "Python._core.executor": "Run",
+    "Python._setup.executor": "Run",
+    "Python.config.executor": "Run",
+    "Python.instantiate.executor": "Run",
+    "Python.manager.executor": "Run",
+    "Python.parser.executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "master",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "/Users/gmarino/Desktop/Projects/musify-cli",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\Projects\musify-cli\tests\__resources" />
@@ -91,29 +103,7 @@
       <recent name="D:\Projects\musify-cli\musify_cli\manager" />
     </key>
   </component>
-  <component name="RunManager" selected="Python tests.Run all tests">
-    <configuration name="Config check" type="PythonConfigurationType" factoryName="Python">
-      <module name="musify-cli" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="D:\Projects\musify-cli\musify_cli\__config.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
+  <component name="RunManager">
     <configuration name="Run all tests" type="tests" factoryName="py.test">
       <module name="musify-cli" />
       <option name="ENV_FILES" value="" />
@@ -127,37 +117,10 @@
       <option name="_new_keywords" value="&quot;&quot;" />
       <option name="_new_parameters" value="&quot;&quot;" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;$PROJECT_DIR$/tests&quot;" />
-      <option name="_new_targetType" value="&quot;PATH&quot;" />
-      <method v="2" />
-    </configuration>
-    <configuration name="pytest for manager.test_core.TestMusifyManager" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
-      <module name="musify-cli" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="_new_keywords" value="&quot;&quot;" />
-      <option name="_new_parameters" value="&quot;&quot;" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;manager.test_core.TestMusifyManager&quot;" />
+      <option name="_new_target" value="&quot;tests&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <list>
-      <item itemvalue="Python.Config check" />
-      <item itemvalue="Python tests.Run all tests" />
-      <item itemvalue="Python tests.pytest for manager.test_core.TestMusifyManager" />
-    </list>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Python tests.pytest for manager.test_core.TestMusifyManager" />
-      </list>
-    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>

@@ -307,8 +307,10 @@ def parse_remote_library_config(
     api = parsed.get(parsed.type).api
     if api.token_path:
         api.token_path = Path_fc(append_parent_folder(api.token_path, parent_folder=output_folder))
-    if api.cache_path:
-        api.cache_path = Path_fc(append_parent_folder(api.cache_path, parent_folder=output_folder))
+
+    local_cache_types = ["sqlite"]
+    if api.cache and api.cache.type in local_cache_types and api.cache.db:
+        api.cache.db = Path_fc(append_parent_folder(api.cache.db, parent_folder=output_folder))
 
     return parsed
 

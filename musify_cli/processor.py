@@ -129,7 +129,7 @@ class MusifyProcessor(DynamicProcessor):
     @dynamicprocessormethod
     def print(self) -> None:
         """Pretty print data from API getting input from user"""
-        self.remote.api.print_collection(use_cache=self.remote.use_cache)
+        self.remote.api.print_collection()
 
     @staticmethod
     def set_compilation_tags(collections: Iterable[LocalFolder]) -> None:
@@ -353,7 +353,6 @@ class MusifyProcessor(DynamicProcessor):
 
         self.remote.library.extend([track for album in albums for track in album], allow_duplicates=False)
         self.remote.library.enrich_tracks(features=True, albums=True, artists=True)
-        print(self.remote.library[0])
 
         self.local.merge_tracks(self.remote.library)
         results = self.local.save_tracks_in_collections(collections=albums, replace=True)
@@ -453,11 +452,11 @@ class MusifyProcessor(DynamicProcessor):
         """Run the :py:class:`ItemDownloadHelper`"""
         self.logger.debug("Download helper: START")
 
-        responses = self.remote.api.get_user_items(kind=RemoteObjectType.PLAYLIST, use_cache=self.remote.use_cache)
+        responses = self.remote.api.get_user_items(kind=RemoteObjectType.PLAYLIST)
         playlists: Collection[RemotePlaylist] = self.manager.filter(list(map(
             lambda response: self.remote.factory.playlist(response, skip_checks=True), responses
         )))
-        self.remote.api.get_items(playlists, kind=RemoteObjectType.PLAYLIST, use_cache=self.remote.use_cache)
+        self.remote.api.get_items(playlists, kind=RemoteObjectType.PLAYLIST)
 
         self.manager.run_download_helper(playlists)
 
@@ -468,15 +467,13 @@ class MusifyProcessor(DynamicProcessor):
         """Create a playlist of new music released by user's followed artists"""
         self.logger.debug("New music playlist: START")
 
-        # load saved artists and their albums with fresh data, ignoring use_cache settings
+        # load saved artists and their albums with fresh data
         load_albums = any([
             LoadTypesRemote.saved_artists not in self.remote.types_loaded,
             EnrichTypesRemote.albums not in self.remote.types_enriched.get(LoadTypesRemote.saved_artists, [])
         ])
         if load_albums:
-            self.remote.library.use_cache = False
             self.remote.load(types=[LoadTypesRemote.saved_artists])
-            self.remote.library.use_cache = self.remote.use_cache
             self.remote.library.enrich_saved_artists(types=("album", "single"))
 
         albums_to_extend = [
