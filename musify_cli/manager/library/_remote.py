@@ -66,6 +66,9 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
         """The initialised cache to use with the remote API for this remote library type"""
         if self._cache is None:
             config = self.config.api.cache
+            if config is None:
+                return
+
             cls = next(cls for cls in CACHE_CLASSES if cls.type == config.type)
             self._cache = cls.connect(value=config.db, expire=config.expire_after)
 

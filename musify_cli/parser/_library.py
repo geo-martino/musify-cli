@@ -30,6 +30,7 @@ from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.processors.filter import FilterComparers
 from musify.utils import to_collection
 
+from musify.core.printer import PrettyPrinter
 from musify_cli.parser._setup import TIME_MAPPER_HELP_TEXT
 from musify_cli.parser._utils import EpilogHelpFormatter, LOCAL_TRACK_TAG_NAMES, MultiType
 from musify_cli.parser._utils import get_default_args, get_tags, get_comparers_filter
@@ -43,7 +44,7 @@ REMOTE_LIBRARY_TYPES = [source.casefold() for source in REMOTE_SOURCES]
 ## Local
 ###########################################################################
 ## Paths parsers
-class LocalLibraryPathsParser[T: str | Collection[str] | None](ABC):
+class LocalLibraryPathsParser[T: str | Collection[str] | None](PrettyPrinter, ABC):
     """Base class for parsing and validating library paths config, giving platform appropriate paths."""
 
     @property

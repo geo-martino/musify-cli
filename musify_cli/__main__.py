@@ -19,7 +19,7 @@ from musify.utils import merge_maps
 
 from musify_cli import PROGRAM_NAME
 from musify_cli.manager import MusifyManager
-from musify_cli.parser import CORE_PARSER, load_library_config
+from musify_cli.parser import CORE_PARSER, LIBRARY_PARSER, load_library_config
 from musify_cli.printers import print_logo, print_line, print_time, get_func_log_name
 from musify_cli.processor import MusifyProcessor
 
@@ -126,8 +126,6 @@ if manager.dry_run:
 
 processor.logger.debug("Base config:\n" + CORE_PARSER.dump(cfg_base))
 
-processor.remote.api.authorise()
-
 for i, (name, config) in enumerate(cfg_functions.items(), 1):
     title = f"{PROGRAM_NAME}: {name}"
     if manager.dry_run:
@@ -136,10 +134,15 @@ for i, (name, config) in enumerate(cfg_functions.items(), 1):
 
     set_title(title)
     print_line(log_name)
-    processor.logger.debug(f"{log_name} config:\n" + CORE_PARSER.dump(config))
 
-    try:  # run the functions requested by the user
+    try:
         processor.set_processor(name, config)
+
+        processor.logger.debug(f"{log_name} core config:\n" + CORE_PARSER.dump(config))
+        processor.logger.debug(f"{log_name} local library config:\n" + LIBRARY_PARSER.dump(config.libraries.local))
+        processor.logger.debug(f"{log_name} remote library config:\n" + LIBRARY_PARSER.dump(config.libraries.remote))
+
+        processor.remote.api.authorise()
         processor()
     except (Exception, KeyboardInterrupt):
         processor.logger.critical(traceback.format_exc())
