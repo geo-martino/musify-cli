@@ -1,4 +1,5 @@
 from argparse import Namespace
+from datetime import timedelta
 from os.path import join
 from pathlib import Path
 
@@ -41,10 +42,13 @@ def assert_spotify_parse(parsed: Namespace, token_path: str | None = None) -> No
     """Check the arguments parsed for the 'spotify' named library."""
     assert parsed.api.client_id == "<CLIENT_ID>"
     assert parsed.api.client_secret == "<CLIENT_SECRET>"
-    assert parsed.api.token_path == token_path
-    assert parsed.api.cache_path == "cache"
     assert parsed.api.scopes == ["user-library-read", "user-follow-read"]
-    assert not parsed.api.use_cache
+
+    assert parsed.api.cache.type == "sqlite"
+    assert parsed.api.cache.db == "cache_db"
+    assert parsed.api.cache.expire_after == timedelta(weeks=2)
+
+    assert parsed.api.token_path == token_path
 
     playlist_names = ["cool playlist", "awesome playlist", "terrible playlist", "other"]
     assert parsed.playlists.filter(playlist_names) == ["cool playlist"]

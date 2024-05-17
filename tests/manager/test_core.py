@@ -45,9 +45,11 @@ class TestReportsManager:
         """Yields a valid :py:class:`MusifyManager` for the current remote source as a pytest.fixture."""
         return ReportsManager(config.reports, parent=MusifyManager(config))
 
+    @pytest.mark.skip(reason="Test not yet implemented")
     def test_playlist_differences(self, manager: ReportsManager):
         pass  # TODO
 
+    @pytest.mark.skip(reason="Test not yet implemented")
     def test_missing_tags(self, manager: ReportsManager):
         pass  # TODO
 

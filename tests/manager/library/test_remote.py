@@ -7,6 +7,8 @@ from typing import Mapping, Iterable, Collection, Literal, Any
 
 import pytest
 from jsonargparse import Namespace
+from musify.api.cache.backend import ResponseCache
+from musify.api.cache.session import CachedSession
 from musify.core.base import MusifyObject, MusifyItem
 from musify.libraries.core.object import Library, Playlist
 from musify.libraries.remote.core.factory import RemoteObjectFactory
@@ -21,7 +23,6 @@ from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.libraries.remote.spotify.library import SpotifyLibrary
 from musify.libraries.remote.spotify.object import SpotifyTrack, SpotifyPlaylist, SpotifyAlbum, SpotifyArtist
 from musify.processors.filter import FilterDefinedList, FilterIncludeExclude
-from requests_cache import CachedSession
 
 from musify_cli.exception import ParserError
 from musify_cli.manager.library import RemoteLibraryManager, SpotifyLibraryManager
@@ -46,7 +47,6 @@ class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, 
         """
         manager._library = self.LibraryMock(
             api=manager.library.api,
-            use_cache=manager.library.use_cache,
             playlist_filter=manager.library.playlist_filter
         )
         manager._library.factory.playlist = self.PlaylistMock
@@ -59,7 +59,22 @@ class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, 
         factory: RemoteObjectFactory = manager.factory
         assert factory.api.source == manager.source
         assert manager._factory is not None
+
+        # does not generate a new object when called twice
         assert id(manager.factory) == id(manager._factory) == id(factory)
+
+    @staticmethod
+    def test_init_cache(manager: T, config: Namespace):
+        assert manager._cache is None
+        cache: ResponseCache = manager.cache
+        assert cache.type == config.api.cache.type
+        assert cache.cache_name.startswith(config.api.cache.db)  # ignore extension
+        assert cache.expire == config.api.cache.expire_after
+        assert manager._cache is not None
+
+        # does not generate a new object when called twice even if config changes
+        config.api.cache.expire_after = timedelta(seconds=2)
+        assert id(manager.cache) == id(manager._cache) == id(cache)
 
     @staticmethod
     def test_init_wrangler(manager: T):
@@ -67,6 +82,8 @@ class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, 
         wrangler: RemoteDataWrangler = manager.wrangler
         assert wrangler.source == manager.source
         assert manager._wrangler is not None
+
+        # does not generate a new object when called twice
         assert id(manager.wrangler) == id(manager._wrangler) == id(wrangler)
 
     @staticmethod
@@ -81,14 +98,11 @@ class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, 
         assert manager.check.interval == config.check.interval
 
     @staticmethod
-    def test_init_search(manager: T, config: Namespace):
+    def test_init_search(manager: T):
         searcher: RemoteItemSearcher = manager.search
-        assert searcher.use_cache == config.api.use_cache
 
         # always generates a new object when called twice
-        config.api.use_cache = not config.api.use_cache
         assert id(searcher) != id(manager.search)
-        assert manager.search.use_cache == config.api.use_cache
 
     ###########################################################################
     ## Operations
@@ -215,7 +229,7 @@ class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, 
 
     @pytest.fixture
     def playlists(self) -> list[PlaylistMock]:
-        """Yields some mock :py:class:`RemotePlaylist` objects as a pytest.fixture"""
+        """Yields some mock :py:class:`RemotePlaylist` objects as a pytest.fixture."""
         playlists = [self.PlaylistMock({}) for _ in range(10)]
         for pl in playlists:
             pl.tracks.extend(self.TrackMock({}) for _ in range(50))
@@ -322,9 +336,12 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
                     "user-library-read",
                     "user-follow-read",
                 ],
+                cache=Namespace(
+                    type="sqlite",
+                    db=join(tmp_path, "cache_db"),
+                    expire_after=timedelta(days=16),
+                ),
                 token_path=join(tmp_path, "token.json"),
-                cache_path=join(tmp_path, "cache"),
-                use_cache=True,
             ),
             check=Namespace(
                 interval=200,
@@ -349,7 +366,6 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
 
     def test_properties(self, manager: SpotifyLibraryManager, config: Namespace):
         assert manager.source == SPOTIFY_SOURCE
-        assert manager.use_cache == config.api.use_cache
 
     def test_init_api_fails(self, manager: SpotifyLibraryManager):
         manager.config.api.client_id = None
@@ -358,18 +374,18 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
             # noinspection PyStatementEffect
             manager.api
 
+    # noinspection PyTestUnpassedFixture
     def test_init_api(self, manager: SpotifyLibraryManager, config: Namespace):
         assert manager._api is None
         api: SpotifyAPI = manager.api
         assert manager._api is not None
 
-        assert api.handler.token_file_path == config.api.token_path
+        assert api.handler.authoriser.token_file_path == config.api.token_path
         assert isinstance(api.handler.session, CachedSession)
-        assert manager.use_cache
 
         # does not generate a new object when called twice even if config changes
         config.api.token_path = "/new/path/to/token.json"
-        config.api.cache_path = "/new/path/to/cache"
+        config.api.cache.db = "/new/path/to/cache_db"
         assert id(manager.api) == id(manager._api) == id(api)
 
     # noinspection PyTestUnpassedFixture
@@ -380,7 +396,6 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
 
         assert manager._api is not None
         assert id(library.api) == id(manager.api)
-        assert library.use_cache == manager.use_cache
         assert library.playlist_filter == manager.playlist_filter == config.playlists.filter
 
         # does not generate a new object when called twice even if config changes

@@ -34,6 +34,7 @@ def test_parse_library_config_fails(tmp_path: Path):
         parse_local_library_config(lib="key does not exist", config_path=path_library_config)
 
 
+# noinspection PyTestUnpassedFixture
 def test_parse_library_config(tmp_path: Path):
     parsed = parse_local_library_config(lib="local", config_path=path_library_config)
     assert_local_parse(parsed.get(parsed.type))
@@ -53,7 +54,7 @@ def test_parse_library_config(tmp_path: Path):
     parsed = parse_remote_library_config(lib="spotify", config_path=path_library_config, output_folder=tmp_path)
     parsed_library = parsed.get(parsed.type)
     assert parsed_library.api.token_path is None
-    assert str(parsed_library.api.cache_path) == join(tmp_path, "cache")
+    assert str(parsed_library.api.cache.db) == join(tmp_path, "cache_db")
 
 
 def test_core(tmp_path: Path):

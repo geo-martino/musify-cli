@@ -3,6 +3,7 @@ from collections.abc import Collection
 from datetime import datetime
 
 from jsonargparse import Namespace
+from musify.api.cache.backend import CACHE_CLASSES, ResponseCache
 from musify.libraries.core.object import Playlist
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.enum import RemoteObjectType
@@ -36,6 +37,7 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
         self._api: RemoteAPI | None = None
 
         # utilities
+        self._cache: ResponseCache | None = None
         self._factory: RemoteObjectFactory | None = None
         self._wrangler: RemoteDataWrangler | None = None
 
@@ -60,9 +62,14 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
         raise NotImplementedError
 
     @property
-    def use_cache(self) -> bool:
-        """Whether to use the cache when calling the API endpoint"""
-        return self.config.api.use_cache
+    def cache(self) -> ResponseCache:
+        """The initialised cache to use with the remote API for this remote library type"""
+        if self._cache is None:
+            config = self.config.api.cache
+            cls = next(cls for cls in CACHE_CLASSES if cls.type == config.type)
+            self._cache = cls.connect(value=config.db, expire=config.expire_after)
+
+        return self._cache
 
     @property
     @abstractmethod
@@ -97,7 +104,6 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
         return RemoteItemSearcher(
             matcher=self.match,
             object_factory=self.factory,
-            use_cache=self.use_cache,
         )
 
     ###########################################################################
@@ -198,8 +204,6 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
                 types_enriched.add(EnrichTypesRemote.tracks)
             self.types_enriched[LoadTypesRemote.saved_artists] = types_enriched
 
-        print(self.types_enriched)
-
     def _filter_playlists[T: Playlist](self, playlists: Collection[T]) -> Collection[T]:
         """
         Returns a filtered set of the given ``playlists`` according to the config for this library.
@@ -260,17 +264,18 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
     def get_or_create_playlist(self, name: str) -> RemotePlaylist:
         """
         Get the loaded playlist with the given ``name`` and return it.
-        If not found, attempt to find the playlist and load it (ignoring ``use_cache`` settings)
+        If not found, attempt to find the playlist and load it.
         Otherwise, create a new playlist.
         """
         pl = self.library.playlists.get(name)
         if pl is None:  # playlist not loaded, attempt to find playlist on remote with fresh data
-            responses = self.api.get_user_items(use_cache=False)
+            responses = self.api.get_user_items()
             for response in responses:
                 pl_check = self.factory.playlist(response=response, skip_checks=True)
 
                 if pl_check.name == name:
-                    self.api.get_items(pl_check, kind=RemoteObjectType.PLAYLIST, use_cache=False)
+                    # TODO: this used to have use_cache=False, check if removing this caused issues
+                    self.api.get_items(pl_check, kind=RemoteObjectType.PLAYLIST)
                     pl = pl_check
                     break
 
@@ -301,11 +306,7 @@ class SpotifyLibraryManager(RemoteLibraryManager):
     @property
     def library(self) -> SpotifyLibrary:
         if self._library is None:
-            self._library = SpotifyLibrary(
-                api=self.api,
-                use_cache=self.use_cache,
-                playlist_filter=self.playlist_filter or (),
-            )
+            self._library = SpotifyLibrary(api=self.api, playlist_filter=self.playlist_filter or ())
             self.initialised = True
 
         return self._library
@@ -320,8 +321,8 @@ class SpotifyLibraryManager(RemoteLibraryManager):
                 client_id=self.config.api.client_id,
                 client_secret=self.config.api.client_secret,
                 scopes=self.config.api.scopes,
+                cache=self.cache,
                 token_file_path=self.config.api.token_path,
-                cache_path=self.config.api.cache_path,
             )
             self.initialised = True
 
