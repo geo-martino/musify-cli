@@ -3,9 +3,10 @@ from __future__ import annotations
 import json
 import logging
 import logging.config
+import os
 from collections.abc import Collection, Iterable
 from datetime import datetime
-from os.path import splitext
+from os.path import splitext, join
 from time import perf_counter
 from typing import Any
 
@@ -146,7 +147,8 @@ class MusifyManager:
     def output_folder(self) -> str:
         """Directory of the folder to use for output data"""
         if self._output_folder is None:
-            self._output_folder = self.config.output
+            self._output_folder = join(self.config.output, self.dt.strftime("%Y-%m-%d_%H.%M.%S"))
+            os.makedirs(self._output_folder, exist_ok=True)
         return self._output_folder
 
     @property

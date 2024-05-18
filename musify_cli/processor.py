@@ -256,7 +256,7 @@ class MusifyProcessor(DynamicProcessor):
             print(f"\33[91mTags entered were not recognised ({', '.join(restore_tags)}), try again\33[0m")
 
         self.logger.print()
-        self.remote.load(types=LoadTypesRemote.saved_tracks)
+        self.local.load(types=LoadTypesLocal.tracks)
 
         self.logger.info(
             f"\33[1;95m ->\33[1;97m Restoring local track tags from backup: "
@@ -374,8 +374,6 @@ class MusifyProcessor(DynamicProcessor):
         self.logger.debug("Update tags: START")
 
         self.local.load(types=LoadTypesLocal.tracks)
-
-        self.remote.load(types=[LoadTypesRemote.saved_tracks, LoadTypesRemote.playlists])
         self.remote.library.extend(self.local.library, allow_duplicates=False)
         self.remote.library.enrich_tracks(features=True, albums=True, artists=True)
 
