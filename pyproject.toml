@@ -21,7 +21,7 @@ classifiers = [
     "Intended Audience :: End Users/Desktop",
 ]
 dependencies = [
-    "musify",
+    "musify[all]",
     "pyyaml",
     "jsonargparse[signatures]~=4.28",
     "pyfiglet~=1.0",
