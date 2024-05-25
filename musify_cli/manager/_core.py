@@ -8,7 +8,7 @@ from collections.abc import Collection, Iterable
 from datetime import datetime
 from os.path import splitext, join
 from time import perf_counter
-from typing import Any
+from typing import Self
 
 import yaml
 from jsonargparse import Namespace
@@ -105,6 +105,13 @@ class MusifyManager:
 
         setup_time = perf_counter() - start_time
         self.logger.debug(f"{self.__class__.__name__} initialised. Time taken: {setup_time:.3f}")
+
+    async def __aenter__(self) -> Self:
+        await self.remote.__aenter__()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        await self.remote.__aexit__(exc_type, exc_val, exc_tb)
 
     def set_config(self, config: Namespace) -> None:
         """Set a new config for this manager and all composite managers"""
@@ -210,32 +217,32 @@ class MusifyManager:
     ###########################################################################
     ## Pre-/Post- operations
     ###########################################################################
-    def run_pre(self) -> None:
+    async def run_pre(self) -> None:
         """Run all pre-processor operations."""
-        self.load(True)
+        await self.load(True)
 
-    def run_post(self) -> None:
+    async def run_post(self) -> None:
         """Run all post-processor operations."""
         self.pause()
 
-    def load(self, force: bool = False) -> None:
+    async def load(self, force: bool = False) -> None:
         """Reload the libraries according to the configured settings."""
         config_local = self.config.reload.local
         if config_local.types:
             self.logger.debug("Load local library: START")
-            self.local.load(types=config_local.types or (), force=force)
+            await self.local.load(types=config_local.types or (), force=force)
             self.logger.debug("Load local library: DONE")
 
         config_remote = self.config.reload.remote
         if any([config_remote.types, config_remote.extend, config_remote.enrich.enabled]):
             self.logger.debug("Load remote library: START")
 
-            self.remote.load(types=config_remote.types or (), force=force)
+            await self.remote.load(types=config_remote.types or (), force=force)
             if config_remote.extend:
-                self.remote.library.extend(self.local.library, allow_duplicates=False)
+                await self.remote.library.extend(self.local.library, allow_duplicates=False)
                 self.logger.print(STAT)
             if config_remote.enrich.enabled:
-                self.remote.enrich(
+                await self.remote.enrich(
                     types=config_remote.types or (),
                     enrich=config_remote.enrich.types or (),
                     force=force
@@ -252,7 +259,7 @@ class MusifyManager:
     ###########################################################################
     ## Utilities
     ###########################################################################
-    def filter[T: Any](self, items: Collection[T]) -> Collection[T]:
+    def filter[T: Collection](self, items: T) -> T:
         """Run the generic filter on the given ``items`` if configured."""
         if self.config.filter.ready:
             return self.config.filter(items)
@@ -264,14 +271,14 @@ class MusifyManager:
         end = self.config.new_music.end
         return self.remote.filter_artist_albums_by_date(start=start, end=end)
 
-    def extend_albums(self, albums: Iterable[RemoteAlbum]) -> None:
+    async def extend_albums(self, albums: Iterable[RemoteAlbum]) -> None:
         """Extend responses of given ``albums`` to include all available tracks for each album."""
         kind = RemoteObjectType.ALBUM
         key = self.remote.api.collection_item_map[kind]
 
-        bar = self.logger.get_progress_bar(iterable=albums, desc="Getting album tracks", unit="albums")
+        bar = self.logger.get_iterator(iterable=albums, desc="Getting album tracks", unit="albums")
         for album in bar:
-            self.remote.api.extend_items(album.response, kind=kind, key=key)
+            await self.remote.api.extend_items(album.response, kind=kind, key=key)
             album.refresh(skip_checks=False)
 
     ###########################################################################
@@ -286,7 +293,7 @@ class MusifyManager:
         )
         download_helper(collections)
 
-    def create_new_music_playlist(
+    async def create_new_music_playlist(
             self, collections: UnitIterable[MusifyCollection]
     ) -> tuple[str, SyncResultRemotePlaylist]:
         """
@@ -310,7 +317,7 @@ class MusifyManager:
         )
 
         # add tracks to remote playlist
-        pl = self.remote.get_or_create_playlist(name)
+        pl = await self.remote.get_or_create_playlist(name)
         pl.clear()
         pl.extend(tracks, allow_duplicates=False)
-        return name, pl.sync(kind="refresh", reload=False, dry_run=self.dry_run)
+        return name, await pl.sync(kind="refresh", reload=False, dry_run=self.dry_run)

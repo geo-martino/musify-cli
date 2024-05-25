@@ -57,7 +57,7 @@ class LocalLibraryManager(LibraryManager):
     ###########################################################################
     ## Operations
     ###########################################################################
-    def load(self, types: UnitCollection[LoadTypesLocal] = (), force: bool = False) -> None:
+    async def load(self, types: UnitCollection[LoadTypesLocal] = (), force: bool = False) -> None:
         def _check_loaded(load_type: LoadTypesLocal) -> bool:
             return load_type in self.types_loaded
 
@@ -133,7 +133,7 @@ class LocalLibraryManager(LibraryManager):
                 track: executor.submit(track.save, tags=tags, replace=replace, dry_run=self.dry_run)
                 for coll in collections for track in coll
             }
-            bar = self.logger.get_progress_bar(futures.items(), desc="Updating tracks", unit="tracks")
+            bar = self.logger.get_iterator(futures.items(), desc="Updating tracks", unit="tracks")
 
             return {track: future.result() for track, future in bar if future.result().updated}
 

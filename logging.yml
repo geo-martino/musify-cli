@@ -1,6 +1,6 @@
 version: 1
 disable_existing_loggers: True
-compact: True
+compact: False
 
 formatters:
   simple:  &formatter_base
@@ -32,7 +32,7 @@ handlers:
 
   console_stat:
     <<: *console
-    level: REPORT
+    level: STAT
 
   console_report:
     <<: *console
@@ -41,6 +41,13 @@ handlers:
   console_info:
     <<: *console
     level: INFO_EXTRA
+
+  console_simple:
+    class: logging.StreamHandler
+    level: STAT
+    formatter: simple
+    filters: ["console"]
+    stream: ext://sys.stdout
 
   file:
     class: musify.log.handlers.CurrentTimeRotatingFileHandler
@@ -55,10 +62,14 @@ handlers:
     count: 30
 
 loggers:
-  test:  &logger
+  prod:  &logger
+    handlers: [console_simple, file]
     level: DEBUG
-    handlers: [console_info]
     propagate: no
+
+  test:
+    <<: *logger
+    handlers: [console_debug]
 
   dev:
     <<: *logger

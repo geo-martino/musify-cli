@@ -42,7 +42,7 @@ class LibraryManager(ABC):
         return self.config.playlists.filter if self.config.playlists.filter.ready else None
 
     @abstractmethod
-    def load(self, types: UnitCollection[MusifyEnum] = (), force: bool = False) -> None:
+    async def load(self, types: UnitCollection[MusifyEnum] = (), force: bool = False) -> None:
         """
         Load items/collections in the instantiated library based on the given ``types``.
 

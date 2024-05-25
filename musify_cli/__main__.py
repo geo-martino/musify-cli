@@ -3,6 +3,7 @@ Main driver of the program.
 
 User can run 'python -m musify_cli ...' to access the program from this script.
 """
+import asyncio
 import logging
 import os
 import shutil
@@ -42,8 +43,61 @@ DROP_KEYS_FROM_BASE_CONFIG: set[tuple[str]] = {
 }
 
 
+def set_title(value: str) -> None:
+    """Set the terminal title to given ``value``"""
+    if sys.platform == "win32":
+        os.system(f"title {value}")
+    elif sys.platform == "linux" or sys.platform == "darwin":
+        os.system(f"echo '\033]2;{value}\007'")
+
+
+def print_header() -> None:
+    """Print header text to the terminal."""
+    set_title(PROGRAM_NAME)
+    print()
+    print_logo()
+
+
+def print_sub_header(processor: MusifyProcessor) -> None:
+    """Print sub-header text to the terminal."""
+    if processor.logger.file_paths:
+        processor.logger.info(f"\33[90mLogs: {", ".join(processor.logger.file_paths)} \33[0m")
+    processor.logger.info(f"\33[90mOutput: {processor.manager.output_folder} \33[0m")
+    print()
+
+    if processor.manager.dry_run:
+        print_line("DRY RUN ENABLED", " ")
+
+
+def print_function_header(name: str, processor: MusifyProcessor) -> str:
+    """Set the terminal title and print the function header to the terminal."""
+    title = f"{PROGRAM_NAME}: {name}"
+    if processor.manager.dry_run:
+        title += " (DRYRUN)"
+
+    name = get_func_log_name(name)
+    set_title(title)
+    print_line(name)
+
+    return name
+
+
+def dump_config(name: str, processor: MusifyProcessor) -> None:
+    """Dump/log the current config."""
+    config = processor.manager.config
+
+    processor.logger.debug(f"{name} core config:\n" + CORE_PARSER.dump(config))
+
+    local_config_dump = LIBRARY_PARSER.dump(config.libraries.local)
+    processor.logger.debug(f"{name} local library config:\n{local_config_dump}")
+
+    remote_config_dump = LIBRARY_PARSER.dump(config.libraries.remote)
+    processor.logger.debug(f"{name} remote library config:\n{remote_config_dump}")
+
+
 def load_config(config_path: str, *function_names: str) -> tuple[Namespace, dict[str, Namespace]]:
-    """Load config from yaml file at ``config_path``, parsing config for all given ``function_names``
+    """
+    Load config from yaml file at ``config_path``, parsing config for all given ``function_names``
 
     :return: Loaded base config and the loaded functions' config.
     """
@@ -89,74 +143,63 @@ def load_config(config_path: str, *function_names: str) -> tuple[Namespace, dict
     return base, functions
 
 
-def set_title(value: str) -> None:
-    """Set the terminal title to given ``value``"""
-    if sys.platform == "win32":
-        os.system(f"title {value}")
-    elif sys.platform == "linux" or sys.platform == "darwin":
-        os.system(f"echo '\033]2;{value}\007'")
+def setup() -> tuple[Namespace, dict[str, Namespace]]:
+    """Get config and configure logger."""
+    if any(arg in sys.argv for arg in ["-h", "--help"]):
+        CORE_PARSER.print_help()
+        exit()
+    elif len(sys.argv) >= 2 and isfile(sys.argv[1]):
+        cfg_base, cfg_functions = load_config(*sys.argv[1:])
+    else:
+        cfg_base = CORE_PARSER.parse_args()
+        cfg_functions = {func: cfg_base for func in cfg_base.functions}
+
+    if cfg_base.logging.config_path and isfile(cfg_base.logging.config_path):
+        MusifyManager.configure_logging(cfg_base.logging.config_path, cfg_base.logging.name, __name__)
+
+    return cfg_base, cfg_functions
 
 
-set_title(PROGRAM_NAME)
-print()
-print_logo()
+async def main(processor: MusifyProcessor, config: dict[str, Namespace]) -> None:
+    """Main driver for CLI operations."""
+    dump_config("Base", processor)
 
-if any(arg in sys.argv for arg in ["-h", "--help"]):
-    CORE_PARSER.print_help()
-    exit()
-elif len(sys.argv) >= 2 and isfile(sys.argv[1]):
-    cfg_base, cfg_functions = load_config(*sys.argv[1:])
-else:
-    cfg_base = CORE_PARSER.parse_args()
-    cfg_functions = {func: cfg_base for func in cfg_base.functions}
+    for i, (name, cfg) in enumerate(config.items(), 1):
+        log_name = print_function_header(name, processor)
 
-if cfg_base.logging.config_path and isfile(cfg_base.logging.config_path):
-    MusifyManager.configure_logging(cfg_base.logging.config_path, cfg_base.logging.name, __name__)
+        try:
+            async with processor:
+                processor.set_processor(name, cfg)
+                dump_config(log_name, processor)
+                await processor.run()
+        except (Exception, KeyboardInterrupt):
+            processor.logger.critical(traceback.format_exc())
+            return
 
-manager = MusifyManager(config=cfg_base)
-processor = MusifyProcessor(manager=manager)
 
-# log the CLI header info
-if processor.logger.file_paths:
-    processor.logger.info(f"\33[90mLogs: {", ".join(processor.logger.file_paths)} \33[0m")
-processor.logger.info(f"\33[90mOutput: {manager.output_folder} \33[0m")
-processor.logger.print()
-if manager.dry_run:
-    print_line("DRY RUN ENABLED", " ")
+def close(processor: MusifyProcessor) -> None:
+    """Close the ``processor`` and log closing messages."""
 
-processor.logger.debug("Base config:\n" + CORE_PARSER.dump(cfg_base))
+    if not glob(join(processor.manager.output_folder, "*")):
+        shutil.rmtree(processor.manager.output_folder)
 
-for i, (name, config) in enumerate(cfg_functions.items(), 1):
-    title = f"{PROGRAM_NAME}: {name}"
-    if manager.dry_run:
-        title += " (DRYRUN)"
-    log_name = get_func_log_name(name)
+    processor.logger.debug(f"Time taken: {processor.time_taken}")
+    logging.shutdown()
 
-    set_title(title)
-    print_line(log_name)
+    if processor.logger.file_paths:
+        print(f"\33[90mLogs: {", ".join(processor.logger.file_paths)} \33[0m")
+    print(f"\33[90mOutput: {processor.manager.output_folder} \33[0m")
+    print()
+    print_time(processor.time_taken)
 
-    try:
-        processor.set_processor(name, config)
 
-        processor.logger.debug(f"{log_name} core config:\n" + CORE_PARSER.dump(config))
-        processor.logger.debug(f"{log_name} local library config:\n" + LIBRARY_PARSER.dump(config.libraries.local))
-        processor.logger.debug(f"{log_name} remote library config:\n" + LIBRARY_PARSER.dump(config.libraries.remote))
+print_header()
+config_base, config_functions = setup()
 
-        processor.remote.api.authorise()
-        processor()
-    except (Exception, KeyboardInterrupt):
-        processor.logger.critical(traceback.format_exc())
-        break
+main_processor = MusifyProcessor(manager=MusifyManager(config=config_base))
+print_sub_header(main_processor)
 
-if not glob(join(manager.output_folder, "*")):
-    shutil.rmtree(manager.output_folder)
+asyncio.run(main(main_processor, config_functions))
 
-processor.logger.debug(f"Time taken: {processor.time_taken}")
-logging.shutdown()
-
-print_logo()
-if processor.logger.file_paths:
-    print(f"\33[90mLogs: {", ".join(processor.logger.file_paths)} \33[0m")
-print(f"\33[90mOutput: {manager.output_folder} \33[0m")
-print()
-print_time(processor.time_taken)
+print_header()
+close(main_processor)

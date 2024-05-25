@@ -8,11 +8,11 @@ import logging
 import os
 import re
 import sys
-from collections.abc import Mapping, Callable, Collection, Iterable
+from collections.abc import Mapping, Callable, Iterable
 from copy import copy
 from os.path import basename, dirname, join, relpath, splitext, sep
 from time import perf_counter
-from typing import Any
+from typing import Any, AsyncContextManager, Self
 
 from jsonargparse import Namespace
 from musify.libraries.core.object import Library
@@ -31,7 +31,7 @@ from musify_cli.manager.library import LocalLibraryManager, RemoteLibraryManager
 from musify_cli.parser import LoadTypesRemote, EnrichTypesRemote, LoadTypesLocal
 
 
-class MusifyProcessor(DynamicProcessor):
+class MusifyProcessor(DynamicProcessor, AsyncContextManager):
     """Core functionality and meta-functions for the program"""
 
     @property
@@ -69,12 +69,20 @@ class MusifyProcessor(DynamicProcessor):
 
         self.logger.debug(f"{self.__class__.__name__} initialised. Time taken: {self.time_taken:.3f}")
 
-    def __call__(self, *args, **kwargs) -> Any:
+    async def __aenter__(self) -> Self:
+        await self.manager.__aenter__()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        await self.manager.__aexit__(exc_type, exc_val, exc_tb)
+
+    async def run(self) -> Any:
+        """Run the processor and any pre-/post-operations around it."""
         self.logger.debug(f"Called processor '{self._processor_name}': START")
 
-        self.manager.run_pre()
-        super().__call__(*args, **kwargs)
-        self.manager.run_post()
+        await self.manager.run_pre()
+        await super().__call__()
+        await self.manager.run_post()
 
         self.logger.debug(f"Called processor '{self._processor_name}': DONE\n")
 
@@ -127,9 +135,9 @@ class MusifyProcessor(DynamicProcessor):
     ## Utilities
     ###########################################################################
     @dynamicprocessormethod
-    def print(self) -> None:
+    async def print(self) -> None:
         """Pretty print data from API getting input from user"""
-        self.remote.api.print_collection()
+        await self.remote.api.print_collection()
 
     @staticmethod
     def set_compilation_tags(collections: Iterable[LocalFolder]) -> None:
@@ -158,7 +166,7 @@ class MusifyProcessor(DynamicProcessor):
         return name
 
     @dynamicprocessormethod
-    def backup(self) -> None:
+    async def backup(self) -> None:
         """Backup data for all tracks and playlists in all libraries"""
         self.logger.debug("Backup libraries: START")
 
@@ -167,8 +175,8 @@ class MusifyProcessor(DynamicProcessor):
             key = get_user_input("Enter a key for this backup. Hit return to backup without a key")
             self.logger.print()
 
-        self.local.load()
-        self.remote.load(types=[LoadTypesRemote.playlists, LoadTypesRemote.saved_tracks])
+        await self.local.load()
+        await self.remote.load(types=[LoadTypesRemote.playlists, LoadTypesRemote.saved_tracks])
 
         self._save_json(self._library_backup_name(self.local.library, key), self.local.library.json())
         self._save_json(self._library_backup_name(self.remote.library, key), self.remote.library.json())
@@ -176,7 +184,7 @@ class MusifyProcessor(DynamicProcessor):
         self.logger.debug("Backup libraries: DONE")
 
     @dynamicprocessormethod
-    def restore(self) -> None:
+    async def restore(self) -> None:
         """Restore library data from a backup, getting user input for the settings"""
         output_parent = dirname(self.manager.output_folder)
         backup_names = (self._library_backup_name(self.local.library), self._library_backup_name(self.remote.library))
@@ -225,11 +233,11 @@ class MusifyProcessor(DynamicProcessor):
 
         restored = []
         if get_user_input(f"Restore {self.local.source} library tracks? (enter 'y')").casefold() == 'y':
-            self._restore_local(restore_from, key=key)
+            await self._restore_local(restore_from, key=key)
             restored.append(self.local.library.name)
             self.logger.print()
         if get_user_input(f"Restore {self.remote.source} library playlists? (enter 'y')").casefold() == 'y':
-            self._restore_spotify(restore_from, key=key)
+            await self._restore_spotify(restore_from, key=key)
             restored.append(self.remote.source)
 
         if not restored:
@@ -237,7 +245,7 @@ class MusifyProcessor(DynamicProcessor):
             return
         self.logger.info(f"Successfully restored libraries: {", ".join(restored)}")
 
-    def _restore_local(self, folder: str, key: str | None = None) -> None:
+    async def _restore_local(self, folder: str, key: str | None = None) -> None:
         """Restore local library data from a backup, getting user input for the settings"""
         self.logger.debug("Restore local: START")
         self.logger.print()
@@ -255,8 +263,10 @@ class MusifyProcessor(DynamicProcessor):
                 break
             print(f"\33[91mTags entered were not recognised ({', '.join(restore_tags)}), try again\33[0m")
 
+        tags = LocalTrackField.from_name(*restore_tags)
+
         self.logger.print()
-        self.local.load(types=LoadTypesLocal.tracks)
+        await self.local.load(types=LoadTypesLocal.tracks)
 
         self.logger.info(
             f"\33[1;95m ->\33[1;97m Restoring local track tags from backup: "
@@ -266,18 +276,18 @@ class MusifyProcessor(DynamicProcessor):
 
         # restore and save
         tracks = {track["path"]: track for track in backup["tracks"]}
-        self.local.library.restore_tracks(tracks, tags=LocalTrackField.from_name(*restore_tags))
+        self.local.library.restore_tracks(tracks, tags=tags)
         results = self.local.library.save_tracks(tags=tags, replace=True, dry_run=self.manager.dry_run)
 
         self.local.library.log_save_tracks_result(results)
         self.logger.debug("Restore local: DONE")
 
-    def _restore_spotify(self, folder: str, key: str | None = None) -> None:
+    async def _restore_spotify(self, folder: str, key: str | None = None) -> None:
         """Restore remote library data from a backup, getting user input for the settings"""
         self.logger.debug(f"Restore {self.remote.source}: START")
         self.logger.print()
 
-        self.remote.load(types=[LoadTypesRemote.saved_tracks, LoadTypesRemote.playlists])
+        await self.remote.load(types=[LoadTypesRemote.saved_tracks, LoadTypesRemote.playlists])
 
         self.logger.info(
             f"\33[1;95m ->\33[1;97m Restoring {self.remote.source} playlists from backup: {basename(folder)} \33[0m"
@@ -285,8 +295,8 @@ class MusifyProcessor(DynamicProcessor):
         backup = self._load_json(self._library_backup_name(self.remote.library, key), folder)
 
         # restore and sync
-        self.remote.library.restore_playlists(backup["playlists"])
-        results = self.remote.library.sync(kind="refresh", reload=False, dry_run=self.manager.dry_run)
+        await self.remote.library.restore_playlists(backup["playlists"])
+        results = await self.remote.library.sync(kind="refresh", reload=False, dry_run=self.manager.dry_run)
 
         self.remote.library.log_sync(results)
         self.logger.debug(f"Restore {self.remote.source}: DONE")
@@ -295,14 +305,14 @@ class MusifyProcessor(DynamicProcessor):
     ## Report/Search functions
     ###########################################################################
     @dynamicprocessormethod
-    def report(self) -> None:
+    async def report(self) -> None:
         """Produce various reports on loaded data"""
         self.logger.debug("Generate reports: START")
         self.manager.reports()
         self.logger.debug("Generate reports: DONE")
 
     @dynamicprocessormethod
-    def check(self) -> None:
+    async def check(self) -> None:
         """Run check on entire library by album and update URI tags on file"""
         def finalise() -> None:
             """Finalise function operation"""
@@ -310,10 +320,10 @@ class MusifyProcessor(DynamicProcessor):
             self.logger.debug("Check and update URIs: DONE")
 
         self.logger.debug("Check and update URIs: START")
-        self.local.load()
+        await self.local.load()
 
         folders = self.manager.filter(self.local.library.folders)
-        if not self.remote.check(folders):
+        if not await self.remote.check(folders):
             finalise()
             return
 
@@ -328,7 +338,7 @@ class MusifyProcessor(DynamicProcessor):
         finalise()
 
     @dynamicprocessormethod
-    def search(self) -> None:
+    async def search(self) -> None:
         """Run all methods for searching, checking, and saving URI associations for local files."""
         def finalise() -> None:
             """Finalise function operation"""
@@ -346,13 +356,13 @@ class MusifyProcessor(DynamicProcessor):
             self.logger.print()
             return
 
-        self.remote.search(albums)
-        if not self.remote.check(albums):
+        await self.remote.search(albums)
+        if not await self.remote.check(albums):
             finalise()
             return
 
-        self.remote.library.extend([track for album in albums for track in album], allow_duplicates=False)
-        self.remote.library.enrich_tracks(features=True, albums=True, artists=True)
+        await self.remote.library.extend([track for album in albums for track in album], allow_duplicates=False)
+        await self.remote.library.enrich_tracks(features=True, albums=True, artists=True)
 
         self.local.merge_tracks(self.remote.library)
         results = self.local.save_tracks_in_collections(collections=albums, replace=True)
@@ -369,13 +379,13 @@ class MusifyProcessor(DynamicProcessor):
     ## Miscellaneous library operations
     ###########################################################################
     @dynamicprocessormethod
-    def pull_tags(self) -> None:
+    async def pull_tags(self) -> None:
         """Run all methods for pulling tag data from remote and updating local track tags"""
         self.logger.debug("Update tags: START")
 
-        self.local.load(types=LoadTypesLocal.tracks)
-        self.remote.library.extend(self.local.library, allow_duplicates=False)
-        self.remote.library.enrich_tracks(features=True, albums=True, artists=True)
+        await self.local.load(types=LoadTypesLocal.tracks)
+        await self.remote.library.extend(self.local.library, allow_duplicates=False)
+        await self.remote.library.enrich_tracks(features=True, albums=True, artists=True)
 
         self.local.merge_tracks(self.remote.library)
         results = self.local.save_tracks()
@@ -403,11 +413,11 @@ class MusifyProcessor(DynamicProcessor):
         self.logger.debug("Update tags: DONE")
 
     @dynamicprocessormethod
-    def process_compilations(self) -> None:
+    async def process_compilations(self) -> None:
         """Run all methods for setting and saving local track tags for compilation albums"""
         self.logger.debug("Update compilations: START")
 
-        self.local.load(types=LoadTypesLocal.tracks)
+        await self.local.load(types=LoadTypesLocal.tracks)
 
         folders = self.manager.filter(self.local.library.folders)
 
@@ -428,40 +438,40 @@ class MusifyProcessor(DynamicProcessor):
         self.logger.debug("Update compilations: DONE")
 
     @dynamicprocessormethod
-    def sync_remote(self) -> None:
+    async def sync_remote(self) -> None:
         """Run all main functions for synchronising remote playlists with a local library"""
         self.logger.debug(f"Sync {self.remote.source}: START")
 
-        self.local.load(types=LoadTypesLocal.playlists)
-        self.remote.load(types=LoadTypesRemote.playlists)
+        await self.local.load(types=LoadTypesLocal.playlists)
+        await self.remote.load(types=LoadTypesRemote.playlists)
 
         playlists = copy(list(self.local.library.playlists.values()))
         for pl in playlists:  # so filter_playlists doesn't clear the list of tracks on the original playlist objects
             pl._tracks = pl.tracks.copy()
 
-        results = self.remote.sync(playlists)
+        results = await self.remote.sync(playlists)
 
         self.remote.library.log_sync(results)
         self.logger.print()
         self.logger.debug(f"Sync {self.remote.source}: DONE")
 
     @dynamicprocessormethod
-    def download(self) -> None:
+    async def download(self) -> None:
         """Run the :py:class:`ItemDownloadHelper`"""
         self.logger.debug("Download helper: START")
 
-        responses = self.remote.api.get_user_items(kind=RemoteObjectType.PLAYLIST)
-        playlists: Collection[RemotePlaylist] = self.manager.filter(list(map(
+        responses = await self.remote.api.get_user_items(kind=RemoteObjectType.PLAYLIST)
+        playlists: list[RemotePlaylist] = self.manager.filter(list(map(
             lambda response: self.remote.factory.playlist(response, skip_checks=True), responses
         )))
-        self.remote.api.get_items(playlists, kind=RemoteObjectType.PLAYLIST)
+        await self.remote.api.get_items(playlists, kind=RemoteObjectType.PLAYLIST)
 
         self.manager.run_download_helper(playlists)
 
         self.logger.debug("Download helper: DONE")
 
     @dynamicprocessormethod
-    def new_music(self) -> None:
+    async def new_music(self) -> None:
         """Create a playlist of new music released by user's followed artists"""
         self.logger.debug("New music playlist: START")
 
@@ -471,14 +481,14 @@ class MusifyProcessor(DynamicProcessor):
             EnrichTypesRemote.albums not in self.remote.types_enriched.get(LoadTypesRemote.saved_artists, [])
         ])
         if load_albums:
-            self.remote.load(types=[LoadTypesRemote.saved_artists])
-            self.remote.library.enrich_saved_artists(types=("album", "single"))
+            await self.remote.load(types=[LoadTypesRemote.saved_artists])
+            await self.remote.library.enrich_saved_artists(types=("album", "single"))
 
         albums_to_extend = [
             album for artist in self.remote.library.artists for album in artist.albums
             if len(album.tracks) < album.track_total
         ]
-        self.manager.extend_albums(albums_to_extend)
+        await self.manager.extend_albums(albums_to_extend)
 
         # log load results
         if load_albums or albums_to_extend:
@@ -487,7 +497,7 @@ class MusifyProcessor(DynamicProcessor):
             self.logger.print()
 
         new_albums = self.manager.get_new_artist_albums()
-        name, results = self.manager.create_new_music_playlist(new_albums)
+        name, results = await self.manager.create_new_music_playlist(new_albums)
 
         self.logger.print(STAT)
         self.remote.library.log_sync({name: results})

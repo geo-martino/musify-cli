@@ -174,12 +174,18 @@ downloader_group = CORE_PARSER.add_argument_group(
 )
 remote_downloader = ArgumentParser(prog="Remote item download", formatter_class=EpilogHelpFormatter)
 
+remote_downloader.add_class_arguments(ItemDownloadHelper, as_group=False, skip={"fields"})
+# WORKAROUND: this should be assigned in the add_class_arguments step
+#  Currently, it is not being assigned there for some unknown reason
+remote_downloader.add_argument(
+    "--urls", type=list[str], default=get_default_args(ItemDownloadHelper).get("urls"),
+    help="The template URLs for websites to open queries for. "
+         "The given sites should contain exactly 1 '{}' placeholder into which the processor can place "
+         "a query for the item being searched. e.g. *bandcamp.com/search?q={}&item_type=t*"
+)
 remote_downloader.add_argument(
     "--fields", type=partial(get_tags, cls=TagFields), default=get_default_args(ItemDownloadHelper).get("fields"),
     help=f"The tags to use when searching for items. Accepted tags: {LOCAL_TRACK_TAG_NAMES}"
-)
-remote_downloader.add_class_arguments(
-    ItemDownloadHelper, as_group=False, skip={"fields"}
 )
 
 downloader_group.add_argument("--download", action=ActionParser(remote_downloader))

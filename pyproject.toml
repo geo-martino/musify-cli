@@ -23,19 +23,21 @@ classifiers = [
 dependencies = [
     "musify[all]",
     "pyyaml",
-    "jsonargparse[signatures]~=4.28",
+    "jsonargparse[signatures]~=4.29",
     "pyfiglet~=1.0",
 ]
 
 [project.optional-dependencies]
 test = [
-    "pytest~=8.0",
-    "pytest-xdist~=3.5",
+    "pytest~=8.2",
+    "pytest-asyncio~=0.23",
+    "pytest-xdist~=3.6",
+    "aioresponses~=0.7",
 ]
 dev = [
     "musify_cli[test]",
     "flake8",
-    "grip~=4.6",
+    "grip",
 ]
 
 [project.urls]
@@ -49,6 +51,10 @@ path = "musify_cli/__init__.py"
 include = ["musify_cli"]
 
 [tool.pytest.ini_options]
-minversion = "7.0"
 testpaths = ["tests"]
 addopts = "-color=yes"
+markers = [
+    "slow: marks test as slow (deselect with '-m \"not slow\"')",
+    "manual: marks tests to be run only when manually directed to by the developer",
+]
+asyncio_mode = "auto"

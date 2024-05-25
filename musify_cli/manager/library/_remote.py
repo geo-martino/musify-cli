@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection
 from datetime import datetime
+from typing import AsyncContextManager, Self
 
 from jsonargparse import Namespace
 from musify.api.cache.backend import CACHE_CLASSES, ResponseCache
@@ -27,7 +28,7 @@ from musify_cli.manager.library._core import LibraryManager
 from musify_cli.parser import LoadTypesRemote, EnrichTypesRemote
 
 
-class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
+class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMeta):
     """Instantiates and manages a :py:class:`RemoteLibrary` and related objects from a given ``config``."""
 
     def __init__(self, name: str, config: Namespace, dry_run: bool = True):
@@ -44,6 +45,13 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
         self.types_loaded: set[LoadTypesRemote] = set()
         self.extended: bool = False
         self.types_enriched: dict[LoadTypesRemote, set[EnrichTypesRemote]] = {}
+
+    async def __aenter__(self) -> Self:
+        await self.api.__aenter__()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        await self.api.__aexit__(exc_type, exc_val, exc_tb)
 
     @property
     def source(self) -> str:
@@ -62,7 +70,7 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
         raise NotImplementedError
 
     @property
-    def cache(self) -> ResponseCache:
+    def cache(self) -> ResponseCache | None:
         """The initialised cache to use with the remote API for this remote library type"""
         if self._cache is None:
             config = self.config.api.cache
@@ -112,7 +120,7 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
     ###########################################################################
     ## Operations
     ###########################################################################
-    def load(self, types: UnitCollection[LoadTypesRemote] = (), force: bool = False) -> None:
+    async def load(self, types: UnitCollection[LoadTypesRemote] = (), force: bool = False) -> None:
         types = to_collection(types)
 
         def _loaded(load_type: LoadTypesRemote) -> bool:
@@ -126,21 +134,21 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
         if types and self.types_loaded.intersection(types) == set(types) and not force:
             return
         elif not types and (force or not self.types_loaded):
-            self.library.load()
+            await self.library.load()
             self.types_loaded.update(LoadTypesRemote.all())
             return
 
         if _should_load(LoadTypesRemote.playlists):
-            self.library.load_playlists()
+            await self.library.load_playlists()
             self.types_loaded.add(LoadTypesRemote.playlists)
         if _should_load(LoadTypesRemote.saved_tracks):
-            self.library.load_tracks()
+            await self.library.load_tracks()
             self.types_loaded.add(LoadTypesRemote.saved_tracks)
         if _should_load(LoadTypesRemote.saved_albums):
-            self.library.load_saved_albums()
+            await self.library.load_saved_albums()
             self.types_loaded.add(LoadTypesRemote.saved_albums)
         if _should_load(LoadTypesRemote.saved_artists):
-            self.library.load_saved_artists()
+            await self.library.load_saved_artists()
             self.types_loaded.add(LoadTypesRemote.saved_artists)
 
         self.logger.print(STAT)
@@ -154,7 +162,7 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
             self.library.log_albums()
         self.logger.print()
 
-    def enrich(
+    async def enrich(
             self,
             types: UnitCollection[LoadTypesRemote] = (),
             enrich: UnitCollection[EnrichTypesRemote] = (),
@@ -187,7 +195,7 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
         if _loaded(LoadTypesRemote.saved_tracks) and (force or not _enriched(LoadTypesRemote.saved_tracks)):
             artists = _should_enrich(LoadTypesRemote.saved_tracks, EnrichTypesRemote.artists)
             albums = _should_enrich(LoadTypesRemote.saved_tracks, EnrichTypesRemote.albums)
-            self.library.enrich_tracks(artists=artists, albums=albums)
+            await self.library.enrich_tracks(artists=artists, albums=albums)
 
             types_enriched = self.types_enriched.get(LoadTypesRemote.saved_tracks, set())
             if artists:
@@ -196,11 +204,11 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
                 types_enriched.add(EnrichTypesRemote.albums)
             self.types_enriched[LoadTypesRemote.saved_tracks] = types_enriched
         if _loaded(LoadTypesRemote.saved_albums) and (force or not _enriched(LoadTypesRemote.saved_albums)):
-            self.library.enrich_saved_albums()
+            await self.library.enrich_saved_albums()
             self.types_enriched[LoadTypesRemote.saved_albums] = set()
         if _loaded(LoadTypesRemote.saved_artists) and (force or not _enriched(LoadTypesRemote.saved_artists)):
             tracks = _should_enrich(LoadTypesRemote.saved_artists, EnrichTypesRemote.tracks)
-            self.library.enrich_saved_artists(tracks=tracks)
+            await self.library.enrich_saved_artists(tracks=tracks)
 
             types_enriched = self.types_enriched.get(LoadTypesRemote.saved_artists, set())
             if tracks:
@@ -249,7 +257,7 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
         self.logger.print()
         return pl_filtered
 
-    def sync(self, playlists: Collection[Playlist]) -> dict[str, SyncResultRemotePlaylist]:
+    async def sync(self, playlists: Collection[Playlist]) -> dict[str, SyncResultRemotePlaylist]:
         """
         Sync the given ``playlists`` with the instantiated remote library.
 
@@ -257,14 +265,14 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
         :return: Map of playlist name to the results of the sync as a :py:class:`SyncResultRemotePlaylist` object.
         """
         playlists = self._filter_playlists(playlists=playlists)
-        return self.library.sync(
+        return await self.library.sync(
             playlists=playlists,
             kind=self.config.playlists.sync.kind,
             reload=self.config.playlists.sync.reload,
             dry_run=self.dry_run
         )
 
-    def get_or_create_playlist(self, name: str) -> RemotePlaylist:
+    async def get_or_create_playlist(self, name: str) -> RemotePlaylist:
         """
         Get the loaded playlist with the given ``name`` and return it.
         If not found, attempt to find the playlist and load it.
@@ -272,13 +280,12 @@ class RemoteLibraryManager(LibraryManager, metaclass=ABCMeta):
         """
         pl = self.library.playlists.get(name)
         if pl is None:  # playlist not loaded, attempt to find playlist on remote with fresh data
-            responses = self.api.get_user_items()
+            responses = await self.api.get_user_items()
             for response in responses:
                 pl_check = self.factory.playlist(response=response, skip_checks=True)
 
                 if pl_check.name == name:
-                    # TODO: this used to have use_cache=False, check if removing this caused issues
-                    self.api.get_items(pl_check, kind=RemoteObjectType.PLAYLIST)
+                    await self.api.get_items(pl_check, kind=RemoteObjectType.PLAYLIST)
                     pl = pl_check
                     break
 

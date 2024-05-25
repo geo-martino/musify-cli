@@ -5,9 +5,22 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9b2127b7-24ea-430c-8f59-a341ad0474f1" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/musify-cli.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/musify-cli.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/logging.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/__main__.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/__main__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/manager/_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/_core.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/manager/library/_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/library/_core.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/manager/library/_local.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/library/_local.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/manager/library/_remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/library/_remote.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/parser/_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/parser/_core.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/processor.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/move.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/move.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/__resources/test_logging.yml" beforeDir="false" afterPath="$PROJECT_DIR$/tests/__resources/test_logging.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/conftest.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/conftest.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/manager/library/test_remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/library/test_remote.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/manager/library/testers.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/library/testers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/manager/test_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/test_core.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -16,6 +29,14 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/_config/libraries.yml" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/_config/main.yml" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/musify_cli/parser/_core.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/musify_cli/parser/_library.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tests/__resources/test_config.yml" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tests/parser/test_core.py" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
@@ -29,11 +50,13 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;Python tests.Run all tests.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for manager.library.test_remote.TestSpotifyLibraryManager.test_context_manager.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
 }</component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python tests.Run all tests">
     <configuration name="Run all tests" type="tests" factoryName="py.test">
       <module name="musify-cli" />
       <option name="ENV_FILES" value="" />
@@ -52,6 +75,28 @@
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
+    <configuration name="pytest for manager.library.test_remote.TestSpotifyLibraryManager.test_context_manager" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="musify-cli" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;manager.library.test_remote.TestSpotifyLibraryManager.test_context_manager&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python tests.pytest for manager.library.test_remote.TestSpotifyLibraryManager.test_context_manager" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>

@@ -99,8 +99,9 @@ class TestMusifyManager:
     def test_init_output_folder(self, manager: MusifyManager):
         assert manager._output_folder is None
         output_folder = manager.output_folder
-        assert output_folder == join(manager.config.output, manager.dt.strftime("%Y-%m-%d_%H.%M.%S"))
         assert manager._output_folder is not None
+
+        assert output_folder == join(manager.config.output, manager.dt.strftime("%Y-%m-%d_%H.%M.%S"))
 
         # does not generate a new object when called twice even if config changes
         manager.config.output = "/path/to/a/new/folder"
