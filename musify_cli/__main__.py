@@ -18,23 +18,25 @@ import yaml
 from jsonargparse import Namespace
 from musify.utils import merge_maps
 
-from musify_cli import PROGRAM_NAME
+from musify_cli import PROGRAM_NAME, MODULE_ROOT
+from musify_cli.exception import ParserError
 from musify_cli.manager import MusifyManager
 from musify_cli.parser import CORE_PARSER, LIBRARY_PARSER, load_library_config
 from musify_cli.printers import print_logo, print_line, print_time, get_func_log_name
 from musify_cli.processor import MusifyProcessor
 
+LOGGER = logging.getLogger(MODULE_ROOT)
+
 # noinspection PyProtectedMember
 CORE_PARSER._positionals.title = "Functions"
 
-processor_method_names = [
+PROCESSOR_METHOD_NAMES = [
     name.replace("_", "-") for name in MusifyProcessor.__new__(MusifyProcessor).__processormethods__
 ]
 ArgumentParser.add_argument(
     CORE_PARSER, "functions", type=str, nargs="*", default=[],
-    choices=processor_method_names, help=f"{PROGRAM_NAME} function to run."
+    choices=PROCESSOR_METHOD_NAMES, help=f"{PROGRAM_NAME} function to run."
 )
-
 
 DROP_KEYS_FROM_BASE_CONFIG: set[tuple[str]] = {
     ("filter",),
@@ -160,6 +162,23 @@ def setup() -> tuple[Namespace, dict[str, Namespace]]:
     return cfg_base, cfg_functions
 
 
+def check_config_is_valid(config: dict[str, Namespace]) -> None:
+    """Run validity checks against given loaded ``config``"""
+    if not config_functions:
+        message = "No function specified"
+        LOGGER.debug(message)
+        print_line(message.upper())
+        exit(0)
+
+    unknown_functions = [func for func in config if func not in PROCESSOR_METHOD_NAMES]
+    if unknown_functions:
+        print(
+            "Did not recognise some of the given function names.",
+            f"Choose from the following: {", ".join(PROCESSOR_METHOD_NAMES)}"
+        )
+        raise ParserError("Invalid function names given", key="functions", value=unknown_functions)
+
+
 async def main(processor: MusifyProcessor, config: dict[str, Namespace]) -> None:
     """Main driver for CLI operations."""
     dump_config("Base", processor)
@@ -179,7 +198,6 @@ async def main(processor: MusifyProcessor, config: dict[str, Namespace]) -> None
 
 def close(processor: MusifyProcessor) -> None:
     """Close the ``processor`` and log closing messages."""
-
     if not glob(join(processor.manager.output_folder, "*")):
         shutil.rmtree(processor.manager.output_folder)
 
@@ -195,6 +213,7 @@ def close(processor: MusifyProcessor) -> None:
 
 print_header()
 config_base, config_functions = setup()
+check_config_is_valid(config_functions)
 
 main_processor = MusifyProcessor(manager=MusifyManager(config=config_base))
 print_sub_header(main_processor)

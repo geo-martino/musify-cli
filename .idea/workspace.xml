@@ -5,22 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9b2127b7-24ea-430c-8f59-a341ad0474f1" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/logging.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/musify_cli/__main__.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/__main__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/manager/_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/_core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/manager/library/_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/library/_core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/manager/library/_local.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/library/_local.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/manager/library/_remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/library/_remote.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/parser/_core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/processor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/move.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/move.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/__resources/test_logging.yml" beforeDir="false" afterPath="$PROJECT_DIR$/tests/__resources/test_logging.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/conftest.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/conftest.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/manager/library/test_remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/library/test_remote.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/manager/library/testers.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/library/testers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/manager/test_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/test_core.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
