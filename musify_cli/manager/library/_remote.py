@@ -77,7 +77,10 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
             if config is None:
                 return
 
-            cls = next(cls for cls in CACHE_CLASSES if cls.type == config.type)
+            cls = next((cls for cls in CACHE_CLASSES if cls.type == config.type), None)
+            if not cls:
+                return
+
             self._cache = cls.connect(value=config.db, expire=config.expire_after)
 
         return self._cache
@@ -159,7 +162,7 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
         if _loaded(LoadTypesRemote.saved_albums):
             self.library.log_albums()
         if _loaded(LoadTypesRemote.saved_artists):
-            self.library.log_albums()
+            self.library.log_artists()
         self.logger.print()
 
     async def enrich(
