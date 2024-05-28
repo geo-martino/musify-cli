@@ -10,7 +10,7 @@ import re
 import sys
 from collections.abc import Mapping, Callable, Iterable
 from copy import copy
-from os.path import basename, dirname, join, relpath, splitext, sep
+from pathlib import Path
 from time import perf_counter
 from typing import Any, AsyncContextManager, Self
 
@@ -65,7 +65,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             handler = logging.getHandlerByName(name)
             if isinstance(handler, CurrentTimeRotatingFileHandler):
                 self.manager.dt = handler.dt
-                handler.rotator(join(dirname(self.manager.output_folder), "{}"), self.manager.output_folder)
+                handler.rotator(str(self.manager.output_folder.joinpath("{}")), self.manager.output_folder)
 
         self.logger.debug(f"{self.__class__.__name__} initialised. Time taken: {self.time_taken:.3f}")
 
@@ -106,22 +106,18 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             "CRITICAL ERROR: Uncaught Exception", exc_info=(exc_type, exc_value, exc_traceback)
         )
 
-    def _save_json(self, filename: str, data: Mapping[str, Any], folder: str | None = None) -> None:
+    def _save_json(self, filename: str | Path, data: Mapping[str, Any], folder: Path | None = None) -> None:
         """Save a JSON file to a given folder, or this run's folder if not given"""
-        if not filename.casefold().endswith(".json"):
-            filename += ".json"
         folder = folder or self.manager.output_folder
-        path = join(folder, filename)
+        path = folder.joinpath(filename).with_suffix(".json")
 
         with open(path, "w") as file:
             json.dump(data, file, indent=2)
 
-    def _load_json(self, filename: str, folder: str | None = None) -> dict[str, Any]:
+    def _load_json(self, filename: str | Path, folder: Path | None = None) -> dict[str, Any]:
         """Load a stored JSON file from a given folder, or this run's folder if not given"""
-        if not filename.casefold().endswith(".json"):
-            filename += ".json"
         folder = folder or self.manager.output_folder
-        path = join(folder, filename)
+        path = folder.joinpath(filename).with_suffix(".json")
 
         with open(path, "r") as file:
             data = json.load(file)
@@ -144,7 +140,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         """Modify tags for tracks in the given compilation ``collections``"""
         for collection in collections:
             tracks = sorted(collection.tracks, key=lambda x: x.path)
-            album = " - ".join(collection.name.split(sep))
+            album = " - ".join(collection.name.split(os.path.sep))
 
             for i, track in enumerate(tracks, 1):  # set tags
                 track.album = album
@@ -186,58 +182,23 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
     @dynamicprocessormethod
     async def restore(self) -> None:
         """Restore library data from a backup, getting user input for the settings"""
-        output_parent = dirname(self.manager.output_folder)
-        backup_names = (self._library_backup_name(self.local.library), self._library_backup_name(self.remote.library))
+        backup_folder = self.manager.output_folder.parent
+        available_groups = self._get_available_backup_groups(backup_folder)
 
-        available_backups: list[str] = []  # names of the folders which contain usable backups
-        for path in os.walk(output_parent):
-            if path[0] == output_parent:  # skip current run's data
-                continue
-            folder = str(relpath(path[0], output_parent))
-
-            for file in path[2]:
-                if folder in available_backups:
-                    break
-                for name in backup_names:
-                    if name in splitext(file)[0]:
-                        available_backups.append(folder)
-                        break
-
-        if len(available_backups) == 0:
+        if len(available_groups) == 0:
             self.logger.info("\33[93mNo backups found, skipping.\33[0m")
             return
 
-        self.logger.info(
-            "\33[97mAvailable backups: \n\t\33[97m- \33[94m{}\33[0m"
-            .format("\33[0m\n\t\33[97m-\33[0m \33[94m".join(available_backups))
-        )
-
-        while True:  # get valid user input
-            restore_from = get_user_input("Select the backup to use")
-            if restore_from in available_backups:  # input is valid
-                break
-            print(f"\33[91mBackup '{restore_from}' not recognised, try again\33[0m")
-        restore_from = join(output_parent, restore_from)
-        available_keys = [re.sub(r"^\[(\w+)].*", "\\1", file).casefold() for file in os.listdir(restore_from)]
-
-        self.logger.info(
-            "\33[97mAvailable backup keys: \n\t\33[97m- \33[94m{}\33[0m"
-            .format("\33[0m\n\t\33[97m-\33[0m \33[94m".join(available_keys))
-        )
-
-        while True:  # get valid user input
-            key = get_user_input("Select the backup type to use")
-            if key.casefold() in available_keys:  # input is valid
-                break
-            print(f"\33[91mBackup '{key}' not recognised, try again\33[0m")
+        restore_dir = self._get_restore_dir_from_user(backup_folder=backup_folder, available_groups=available_groups)
+        restore_key = self._get_restore_key_from_user(restore_dir)
 
         restored = []
         if get_user_input(f"Restore {self.local.source} library tracks? (enter 'y')").casefold() == 'y':
-            await self._restore_local(restore_from, key=key)
+            await self._restore_local(restore_dir, key=restore_key)
             restored.append(self.local.library.name)
             self.logger.print()
         if get_user_input(f"Restore {self.remote.source} library playlists? (enter 'y')").casefold() == 'y':
-            await self._restore_spotify(restore_from, key=key)
+            await self._restore_spotify(restore_dir, key=restore_key)
             restored.append(self.remote.source)
 
         if not restored:
@@ -245,11 +206,81 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             return
         self.logger.info(f"Successfully restored libraries: {", ".join(restored)}")
 
-    async def _restore_local(self, folder: str, key: str | None = None) -> None:
+    def _get_available_backup_groups(self, backup_folder: Path) -> list[str]:
+        backup_names = (self._library_backup_name(self.local.library), self._library_backup_name(self.remote.library))
+
+        available_backups: list[str] = []  # names of the folders which contain usable backups
+        for parent, _, filenames in backup_folder.walk():
+            if parent == backup_folder:  # skip current run's data
+                continue
+            group = parent.relative_to(backup_folder).name  # backup group is the folder name
+
+            for file in map(Path, filenames):
+                if group in available_backups:
+                    break
+                for name in backup_names:
+                    if name in file.stem:
+                        available_backups.append(group)
+                        break
+
+        return available_backups
+
+    def _get_restore_dir_from_user(self, backup_folder: Path, available_groups: list[str]) -> Path:
+        self.logger.info(
+            "\33[97mAvailable backups: \n\t\33[97m- \33[94m{}\33[0m"
+            .format("\33[0m\n\t\33[97m-\33[0m \33[94m".join(available_groups))
+        )
+
+        while True:  # get valid user input
+            group = get_user_input("Select the backup to use")
+            if group in available_groups:  # input is valid
+                break
+            print(f"\33[91mBackup '{group}' not recognised, try again\33[0m")
+
+        return backup_folder.joinpath(group)
+
+    def _get_restore_key_from_user(self, path: Path):
+        available_keys = {re.sub(r"^\[(\w+)].*", "\\1", file) for file in os.listdir(path)}
+
+        self.logger.info(
+            "\33[97mAvailable backup keys: \n\t\33[97m- \33[94m{}\33[0m"
+            .format("\33[0m\n\t\33[97m-\33[0m \33[94m".join(available_keys))
+        )
+        available_keys = {key.casefold() for key in available_keys}
+
+        while True:  # get valid user input
+            key = get_user_input("Select the backup type to use")
+            if key.casefold() in available_keys:  # input is valid
+                break
+            print(f"\33[91mBackup '{key}' not recognised, try again\33[0m")
+
+        return key
+
+    async def _restore_local(self, path: Path, key: str | None = None) -> None:
         """Restore local library data from a backup, getting user input for the settings"""
         self.logger.debug("Restore local: START")
         self.logger.print()
 
+        tags, tag_names = self._get_tags_to_restore_from_user()
+
+        self.logger.print()
+        await self.local.load(types=LoadTypesLocal.tracks)
+
+        self.logger.info(
+            f"\33[1;95m ->\33[1;97m Restoring local track tags from backup: "
+            f"{path.name} | Tags: {', '.join(tag_names)}\33[0m"
+        )
+        backup = self._load_json(self._library_backup_name(self.local.library, key), path)
+
+        # restore and save
+        tracks = {track["path"]: track for track in backup["tracks"]}
+        self.local.library.restore_tracks(tracks, tags=tags)
+        results = await self.local.library.save_tracks(tags=tags, replace=True, dry_run=self.manager.dry_run)
+
+        self.local.library.log_save_tracks_result(results)
+        self.logger.debug("Restore local: DONE")
+
+    def _get_tags_to_restore_from_user(self) -> tuple[list[LocalTrackField], list[str]]:
         tags = LocalTrackField.ALL.to_tag()
         self.logger.info(f"\33[97mAvailable tags to restore: \33[94m{', '.join(tags)}\33[0m")
         message = "Select tags to restore separated by a space (entering nothing restores all available tags)"
@@ -263,26 +294,9 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
                 break
             print(f"\33[91mTags entered were not recognised ({', '.join(restore_tags)}), try again\33[0m")
 
-        tags = LocalTrackField.from_name(*restore_tags)
+        return LocalTrackField.from_name(*restore_tags), list(restore_tags)
 
-        self.logger.print()
-        await self.local.load(types=LoadTypesLocal.tracks)
-
-        self.logger.info(
-            f"\33[1;95m ->\33[1;97m Restoring local track tags from backup: "
-            f"{basename(folder)} | Tags: {', '.join(restore_tags)}\33[0m"
-        )
-        backup = self._load_json(self._library_backup_name(self.local.library, key), folder)
-
-        # restore and save
-        tracks = {track["path"]: track for track in backup["tracks"]}
-        self.local.library.restore_tracks(tracks, tags=tags)
-        results = self.local.library.save_tracks(tags=tags, replace=True, dry_run=self.manager.dry_run)
-
-        self.local.library.log_save_tracks_result(results)
-        self.logger.debug("Restore local: DONE")
-
-    async def _restore_spotify(self, folder: str, key: str | None = None) -> None:
+    async def _restore_spotify(self, path: Path, key: str | None = None) -> None:
         """Restore remote library data from a backup, getting user input for the settings"""
         self.logger.debug(f"Restore {self.remote.source}: START")
         self.logger.print()
@@ -290,9 +304,9 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         await self.remote.load(types=[LoadTypesRemote.saved_tracks, LoadTypesRemote.playlists])
 
         self.logger.info(
-            f"\33[1;95m ->\33[1;97m Restoring {self.remote.source} playlists from backup: {basename(folder)} \33[0m"
+            f"\33[1;95m ->\33[1;97m Restoring {self.remote.source} playlists from backup: {path.name} \33[0m"
         )
-        backup = self._load_json(self._library_backup_name(self.remote.library, key), folder)
+        backup = self._load_json(self._library_backup_name(self.remote.library, key), path)
 
         # restore and sync
         await self.remote.library.restore_playlists(backup["playlists"])
@@ -328,7 +342,9 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             return
 
         self.logger.info(f"\33[1;95m ->\33[1;97m Updating tags for {len(self.local.library)} tracks: uri \33[0m")
-        results = self.local.library.save_tracks(tags=LocalTrackField.URI, replace=True, dry_run=self.manager.dry_run)
+        results = await self.local.library.save_tracks(
+            tags=LocalTrackField.URI, replace=True, dry_run=self.manager.dry_run
+        )
 
         if results:
             self.logger.print(STAT)
@@ -365,7 +381,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         await self.remote.library.enrich_tracks(features=True, albums=True, artists=True)
 
         self.local.merge_tracks(self.remote.library)
-        results = self.local.save_tracks_in_collections(collections=albums, replace=True)
+        results = await self.local.save_tracks_in_collections(collections=albums, replace=True)
 
         if results:
             self.logger.print(STAT)
@@ -388,7 +404,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         await self.remote.library.enrich_tracks(features=True, albums=True, artists=True)
 
         self.local.merge_tracks(self.remote.library)
-        results = self.local.save_tracks()
+        results = await self.local.save_tracks()
 
         if results:
             self.logger.print(STAT)
@@ -426,7 +442,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             f"for {sum(len(folder) for folder in folders)} tracks in {len(folders)} folders\n"
         )
         self.set_compilation_tags(folders)
-        results = self.local.save_tracks_in_collections(collections=folders)
+        results = await self.local.save_tracks_in_collections(collections=folders)
 
         if results:
             self.logger.print(STAT)

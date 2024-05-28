@@ -1,10 +1,11 @@
 # Remap paths in library files & playlists after restructuring files
+import asyncio
 import json
 import logging
 import os
 import shutil
 from collections.abc import Iterable
-from os.path import basename, dirname, join, splitext
+from pathlib import Path
 
 from musify.libraries.local.library import LocalLibrary
 from musify.libraries.local.library.musicbee import XMLLibraryParser, MusicBee
@@ -18,7 +19,7 @@ def jprint(data) -> None:
     print(json.dumps(data, indent=2))
 
 
-def get_mapping(actual: LocalLibrary, reference: LocalLibrary) -> dict[str, str]:
+def get_mapping(actual: LocalLibrary, reference: LocalLibrary) -> dict[Path, Path]:
     return {
         next(
             tr for tr in actual if (
@@ -30,27 +31,21 @@ def get_mapping(actual: LocalLibrary, reference: LocalLibrary) -> dict[str, str]
     }
 
 
-def check_mapping(data: dict[str, str], fail: bool = True) -> None:
+def check_mapping(data: dict[Path, Path], fail: bool = True) -> None:
     # noinspection SpellCheckingInspection
     ignore_albums = [
-        "Ministry of Sound ONE",
-        "Ministry of Sound Anthems",
-        "Trance Nation - The Collection",
-        "My Generation - The Very Best of the Who",
     ]
     # noinspection SpellCheckingInspection
     ignore_filenames = [
-        "Resurection.flac",
-        "Miserlou.flac",
     ]
 
     bad_map = {}
     for old, new in data.items():
-        if splitext(basename(old))[0] == splitext(basename(new))[0]:
+        if old.stem == new.stem:
             continue
-        elif any(basename(dirname(old)) == album for album in ignore_albums):
+        elif any(old.parent.name == album for album in ignore_albums):
             continue
-        elif any(basename(old) == filename for filename in ignore_filenames):
+        elif any(old.name == filename for filename in ignore_filenames):
             continue
         bad_map[old] = new
 
@@ -62,16 +57,16 @@ def check_mapping(data: dict[str, str], fail: bool = True) -> None:
             raise LookupError("Bad mapping found")
 
 
-def remap_library(paths: dict[str, str], library_folder: str, staging_folder: str, logger: MusifyLogger) -> None:
+def remap_library(paths: dict[Path, Path], library_folder: Path, staging_folder: Path, logger: MusifyLogger) -> None:
     """Replace library file paths"""
     paths = {
         XMLLibraryParser.to_xml_path(old):
-            XMLLibraryParser.to_xml_path(new.replace(staging_folder, library_folder))
+            XMLLibraryParser.to_xml_path(str(new).replace(str(staging_folder), str(library_folder)))
         for old, new in paths.items()
     }
     # jprint(path_map_xml)
 
-    path_lib_file = join(library_folder, "MusicBee", MusicBee.xml_library_path)
+    path_lib_file = library_folder.joinpath("MusicBee", MusicBee.xml_library_path)
     with open(path_lib_file, "r", encoding="utf-8") as file:
         library_data = file.read()
 
@@ -88,15 +83,16 @@ def remap_library(paths: dict[str, str], library_folder: str, staging_folder: st
 
 
 def remap_playlists(
-        paths: dict[str, str],
-        library_folder: str,
-        staging_folder: str,
-        playlist_paths: Iterable[str],
+        paths: dict[Path, Path],
+        library_folder: Path,
+        staging_folder: Path,
+        playlist_paths: Iterable[Path],
         logger: MusifyLogger
 ) -> None:
     """Replace playlist paths"""
     paths = {
-        old.replace(library_folder, ""): new.replace(staging_folder, "").replace("&", "&amp;")
+        str(old).replace(str(library_folder), ""):
+            str(new).replace(str(staging_folder), "").replace("&", "&amp;")
         for old, new in paths.items()
     }
     # jprint(path_map_stem)
@@ -139,7 +135,7 @@ def replace_files(library: LocalLibrary, staging: LocalLibrary) -> None:
 
     remapping = {}
     for old, new in mapping.items():
-        remapping[old] = join(dirname(old), basename(new))
+        remapping[old] = old.joinpath(new.name)
         shutil.copyfile(new, remapping[old])
         os.remove(old)
 
@@ -162,7 +158,7 @@ if __name__ == "__main__":
     remote_wrangler = SpotifyDataWrangler()
 
     lib = MusicBee("M:\\Music\\MusicBee", remote_wrangler=remote_wrangler)
-    lib.load_tracks()
+    asyncio.run(lib.load_tracks())
 
     # downloads = LocalLibrary("D:\\Music - Downloads", remote_wrangler=remote_wrangler)
     # downloads.load_tracks()
@@ -170,6 +166,6 @@ if __name__ == "__main__":
     # remap_all(lib, flac)
 
     flac = LocalLibrary("I:\\Music", remote_wrangler=remote_wrangler)
-    flac.load_tracks()
+    asyncio.run(flac.load_tracks())
 
     replace_files(lib, flac)

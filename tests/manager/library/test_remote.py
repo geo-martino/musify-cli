@@ -1,9 +1,9 @@
+from collections.abc import Mapping, Iterable, Collection
 from datetime import datetime, timedelta
 from abc import ABCMeta
-from os.path import join
 from pathlib import Path
 from random import randrange, choice
-from typing import Mapping, Iterable, Collection, Literal, Any
+from typing import Literal, Any
 
 import pytest
 from jsonargparse import Namespace
@@ -341,10 +341,10 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
                 ],
                 cache=Namespace(
                     type="sqlite",
-                    db=join(tmp_path, "cache_db"),
+                    db=str(tmp_path.joinpath("cache_db")),
                     expire_after=timedelta(days=16),
                 ),
-                token_path=join(tmp_path, "token.json"),
+                token_path=tmp_path.joinpath("token.json"),
             ),
             check=Namespace(
                 interval=200,
@@ -363,6 +363,7 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
             ),
         )
 
+    # noinspection PyMethodOverriding
     @pytest.fixture
     async def manager(self, config: Namespace) -> SpotifyLibraryManager:
         manager = SpotifyLibraryManager(name="spotify", config=config)

@@ -1,8 +1,8 @@
 from datetime import datetime
-from os.path import join
 from pathlib import Path
 from typing import Any
 
+import jsonargparse
 import pytest
 import yaml
 from musify.core.enum import TagFields
@@ -22,8 +22,8 @@ from tests.utils import path_logging_config
 def test_append_parent_folder(tmp_path: Path):
     relative_path = "i_am_a_relative_path.txt"
     absolute_path = append_parent_folder(relative_path, tmp_path)
-    assert absolute_path == join(tmp_path, relative_path)
-    assert append_parent_folder(absolute_path, join(tmp_path, "folder1", "folder2")) == absolute_path
+    assert absolute_path == tmp_path.joinpath(relative_path)
+    assert append_parent_folder(absolute_path, tmp_path.joinpath("folder1", "folder2")) == absolute_path
 
 
 def test_parse_library_config_fails(tmp_path: Path):
@@ -54,23 +54,25 @@ def test_parse_library_config(tmp_path: Path):
     parsed = parse_remote_library_config(lib="spotify", config_path=path_library_config, output_folder=tmp_path)
     parsed_library = parsed.get(parsed.type)
     assert parsed_library.api.token_path is None
-    assert str(parsed_library.api.cache.db) == join(tmp_path, "cache_db")
+    assert parsed_library.api.cache.db == str(tmp_path.joinpath("cache_db"))
 
 
 def test_core(tmp_path: Path):
     with open(path_core_config, "r") as file:
         config: dict[str, Any] = yaml.full_load(file)
 
-    config["output"] = str(tmp_path)
+    config["output"] = tmp_path
     config["logging"]["config_path"] = path_logging_config
     config["libraries"]["config_path"] = path_library_config
 
     parsed = CORE_PARSER.parse_object(config)
 
-    assert parsed.output == str(tmp_path)
+    assert isinstance(parsed.output, jsonargparse.Path)
+    assert str(parsed.output) == str(tmp_path)
     assert parsed.execute
 
-    assert parsed.logging.config_path == path_logging_config
+    assert isinstance(parsed.logging.config_path, jsonargparse.Path)
+    assert str(parsed.logging.config_path) == str(path_logging_config)
     assert parsed.logging.name == "logger"
 
     values = ["include me", "exclude me", "and me"]

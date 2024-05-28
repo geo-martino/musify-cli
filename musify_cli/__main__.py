@@ -10,8 +10,7 @@ import shutil
 import sys
 import traceback
 from argparse import ArgumentParser
-from glob import glob
-from os.path import join, isfile
+from pathlib import Path
 from typing import Any
 
 import yaml
@@ -60,13 +59,17 @@ def print_header() -> None:
     print_logo()
 
 
-def print_sub_header(processor: MusifyProcessor) -> None:
-    """Print sub-header text to the terminal."""
+def print_folders(processor: MusifyProcessor):
+    """Print the key folder locations to the terminal"""
     if processor.logger.file_paths:
-        processor.logger.info(f"\33[90mLogs: {", ".join(processor.logger.file_paths)} \33[0m")
+        processor.logger.info(f"\33[90mLogs: {", ".join(map(str, processor.logger.file_paths))} \33[0m")
     processor.logger.info(f"\33[90mOutput: {processor.manager.output_folder} \33[0m")
     print()
 
+
+def print_sub_header(processor: MusifyProcessor) -> None:
+    """Print sub-header text to the terminal."""
+    print_folders(processor)
     if processor.manager.dry_run:
         print_line("DRY RUN ENABLED", " ")
 
@@ -97,7 +100,7 @@ def dump_config(name: str, processor: MusifyProcessor) -> None:
     processor.logger.debug(f"{name} remote library config:\n{remote_config_dump}")
 
 
-def load_config(config_path: str, *function_names: str) -> tuple[Namespace, dict[str, Namespace]]:
+def load_config(config_path: str | Path, *function_names: str) -> tuple[Namespace, dict[str, Namespace]]:
     """
     Load config from yaml file at ``config_path``, parsing config for all given ``function_names``
 
@@ -150,21 +153,24 @@ def setup() -> tuple[Namespace, dict[str, Namespace]]:
     if any(arg in sys.argv for arg in ["-h", "--help"]):
         CORE_PARSER.print_help()
         exit()
-    elif len(sys.argv) >= 2 and isfile(sys.argv[1]):
+    elif len(sys.argv) >= 2 and os.path.isfile(sys.argv[1]):
         cfg_base, cfg_functions = load_config(*sys.argv[1:])
     else:
         cfg_base = CORE_PARSER.parse_args()
         cfg_functions = {func: cfg_base for func in cfg_base.functions}
 
-    if cfg_base.logging.config_path and isfile(cfg_base.logging.config_path):
-        MusifyManager.configure_logging(cfg_base.logging.config_path, cfg_base.logging.name, __name__)
+    if cfg_base.logging.config_path:
+        path = Path(cfg_base.logging.config_path)
+        if path.is_file():
+            MusifyManager.configure_logging(path, cfg_base.logging.name, __name__)
 
+    check_config_is_valid(cfg_functions)
     return cfg_base, cfg_functions
 
 
 def check_config_is_valid(config: dict[str, Namespace]) -> None:
     """Run validity checks against given loaded ``config``"""
-    if not config_functions:
+    if not config:
         message = "No function specified"
         LOGGER.debug(message)
         print_line(message.upper())
@@ -198,22 +204,18 @@ async def main(processor: MusifyProcessor, config: dict[str, Namespace]) -> None
 
 def close(processor: MusifyProcessor) -> None:
     """Close the ``processor`` and log closing messages."""
-    if not glob(join(processor.manager.output_folder, "*")):
+    if not processor.manager.output_folder.glob("*"):
         shutil.rmtree(processor.manager.output_folder)
 
     processor.logger.debug(f"Time taken: {processor.time_taken}")
     logging.shutdown()
 
-    if processor.logger.file_paths:
-        print(f"\33[90mLogs: {", ".join(processor.logger.file_paths)} \33[0m")
-    print(f"\33[90mOutput: {processor.manager.output_folder} \33[0m")
-    print()
+    print_folders(processor)
     print_time(processor.time_taken)
 
 
 print_header()
 config_base, config_functions = setup()
-check_config_is_valid(config_functions)
 
 main_processor = MusifyProcessor(manager=MusifyManager(config=config_base))
 print_sub_header(main_processor)

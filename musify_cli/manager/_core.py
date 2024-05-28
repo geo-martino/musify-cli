@@ -6,7 +6,7 @@ import logging.config
 import os
 from collections.abc import Collection, Iterable
 from datetime import datetime
-from os.path import splitext, join
+from pathlib import Path
 from time import perf_counter
 from typing import Self
 
@@ -82,7 +82,7 @@ class MusifyManager:
         self.config = config
         self.dt = datetime.now()
 
-        self._output_folder: str | None = None
+        self._output_folder: Path | None = None
         self._dry_run: bool | None = None
 
         local_library_config: Namespace = self.config.libraries.local
@@ -151,10 +151,10 @@ class MusifyManager:
         self.reports.config = self.config.reports
 
     @property
-    def output_folder(self) -> str:
+    def output_folder(self) -> Path:
         """Directory of the folder to use for output data"""
         if self._output_folder is None:
-            self._output_folder = join(self.config.output, self.dt.strftime("%Y-%m-%d_%H.%M.%S"))
+            self._output_folder = Path(self.config.output).joinpath(self.dt.strftime("%Y-%m-%d_%H.%M.%S"))
             os.makedirs(self._output_folder, exist_ok=True)
         return self._output_folder
 
@@ -174,7 +174,7 @@ class MusifyManager:
     ## Setup
     ###########################################################################
     @classmethod
-    def configure_logging(cls, path: str, name: str | None = None, *names: str) -> None:
+    def configure_logging(cls, path: Path, name: str | None = None, *names: str) -> None:
         """
         Load logging config from a configured JSON or YAML file using logging.config.dictConfig.
 
@@ -183,18 +183,16 @@ class MusifyManager:
             assign this logger's config to the module root logger.
         :param names: When given, also apply the config from ``name`` to loggers with these ``names``.
         """
-        ext = splitext(path)[1].casefold()
-
         allowed = {".yml", ".yaml", ".json"}
-        if ext not in allowed:
+        if path.suffix not in allowed:
             raise ParserError(
-                "Unrecognised log config file type: {key}. Valid: {value}", key=ext, value=allowed
+                "Unrecognised log config file type: {key}. Valid: {value}", key=path.suffix, value=allowed
             )
 
         with open(path, "r", encoding="utf-8") as file:
-            if ext in {".yml", ".yaml"}:
+            if path.suffix in {".yml", ".yaml"}:
                 log_config = yaml.full_load(file)
-            elif ext in {".json"}:
+            elif path.suffix in {".json"}:
                 log_config = json.load(file)
 
         MusifyLogger.compact = log_config.pop("compact", False)

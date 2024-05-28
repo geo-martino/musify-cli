@@ -2,10 +2,14 @@
 Operations for setting up the jsonargparse package for this program.
 """
 import re
+from collections.abc import Iterable
 from copy import deepcopy
 from datetime import date, datetime, timedelta
 from enum import Enum
-from typing import Any, Iterable
+from pathlib import PurePath
+from typing import Any
+
+import jsonargparse
 import yaml
 from dateutil.relativedelta import relativedelta
 
@@ -36,6 +40,10 @@ def _make_yaml_safe(config: dict[str, Any]) -> None:
             config[key] = value.name.lower()
         elif isinstance(value, Iterable) and all(isinstance(v, Enum) for v in value):
             config[key] = [v.name.lower() for v in value]
+        elif isinstance(value, PurePath | jsonargparse.Path):
+            config[key] = str(value)
+        elif isinstance(value, Iterable) and all(isinstance(v, PurePath | jsonargparse.Path) for v in value):
+            config[key] = [str(v) for v in value]
         elif isinstance(value, dict):
             _make_yaml_safe(value)
 

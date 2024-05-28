@@ -1,14 +1,15 @@
 import logging.config
-import re
-from os.path import join, dirname, exists
+from pathlib import Path
 from typing import Any
 
 import pytest
 import yaml
-from aioresponses import aioresponses
+from musify.api.request import RequestHandler
 
 from musify.libraries.remote.spotify.processors import SpotifyDataWrangler
 from musify.log.logger import MusifyLogger
+from pytest_mock import MockerFixture
+
 from musify_cli import MODULE_ROOT
 
 
@@ -16,8 +17,8 @@ from musify_cli import MODULE_ROOT
 @pytest.hookimpl
 def pytest_configure(config: pytest.Config):
     """Loads logging config"""
-    config_file = join(dirname(dirname(__file__)), "logging.yml")
-    if not exists(config_file):
+    config_file = Path(__file__).parent.with_stem("logging").with_suffix(".yml")
+    if not config_file.is_file():
         return
 
     with open(config_file, "r", encoding="utf-8") as file:
@@ -53,7 +54,7 @@ def spotify_wrangler() -> SpotifyDataWrangler:
 
 
 @pytest.fixture(autouse=True)
-def requests_mock(spotify_wrangler: SpotifyDataWrangler) -> aioresponses:
-    with aioresponses() as m:
-        m.get(re.compile(spotify_wrangler.url_api), payload={})
-        yield m
+async def requests_mock(mocker: MockerFixture) -> None:
+    mocker.patch.object(RequestHandler, "request", return_value={})
+    yield
+    mocker.stopall()

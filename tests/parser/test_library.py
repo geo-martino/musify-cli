@@ -1,7 +1,7 @@
 from argparse import Namespace
-from os.path import join
-from pathlib import Path
-from typing import Any, Callable
+from collections.abc import Collection, Callable
+from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
+from typing import Any
 
 import pytest
 import yaml
@@ -14,19 +14,28 @@ from tests.parser.utils import path_library_config
 from tests.parser.utils import assert_local_parse, assert_musicbee_parse, assert_spotify_parse
 
 
+@pytest.fixture
+def library_paths_platform_map() -> dict[str, Collection[PurePath]]:
+    return dict(
+        win=(PureWindowsPath(r"C:\windows\path"),),
+        lin=[PurePosixPath("/linux/path")],
+        mac={PurePosixPath("/mac/path")}
+    )
+
+
 def test_all_libraries_supported():
     assert len(library_sub_map) == len(LIBRARY_TYPES)
     assert all(kind.lower() in LIBRARY_TYPES for kind in library_sub_map)
 
 
-def test_local_library_paths_parser():
-    config = "i/am/a/path"
+def test_local_library_paths_parser(library_paths_platform_map: dict[str, Collection[PurePath]]):
+    config = Path("i/am/a/path")
     assert LocalLibraryPaths.parse_config(config).paths == (config,)
 
-    config = [config, "i/am/also/a/path"]
-    assert LocalLibraryPaths.parse_config(config).paths == config
+    config = [config, Path("i/am/also/a/path")]
+    assert LocalLibraryPaths.parse_config(config).paths == tuple(config)
 
-    config = dict(win=(r"C:\windows\path",), lin=["/linux/path"], mac={"/mac/path"})
+    config = library_paths_platform_map
     platform_key = str(LocalLibraryPaths._platform_key)
     assert LocalLibraryPaths.parse_config(config).paths == tuple(config[platform_key])
 
@@ -36,14 +45,14 @@ def test_local_library_paths_parser():
         LocalLibraryPaths.parse_config(parsed)
 
 
-def test_musicbee_paths_parser():
-    config = "i/am/a/path"
+def test_musicbee_paths_parser(library_paths_platform_map: dict[str, Collection[PurePath]]):
+    config = Path("i/am/a/path")
     assert MusicBeePaths.parse_config(config).paths == config
 
-    config = ["i/am/also/a/path", config]
+    config = [Path("i/am/also/a/path"), config]
     assert MusicBeePaths.parse_config(config).paths == config[0]
 
-    config = dict(win=(r"C:\windows\path",), lin=["/linux/path"], mac={"/mac/path"})
+    config = library_paths_platform_map
     platform_key = str(LocalLibraryPaths._platform_key)
     assert MusicBeePaths.parse_config(config).paths == next(iter(config[platform_key]))
 
@@ -72,17 +81,13 @@ def parse_library(name: str, extend_input: Callable[[dict[str, Any]], None] = la
     return parsed.get(parsed.type)
 
 
-def test_local_parser(tmp_path: Path):
+def test_local_parser(library_paths_platform_map: dict[str, Collection[PurePath]], tmp_path: Path):
     def _extend_input(config: dict[str, Any]) -> None:
-        config["paths"]["library"] = str(tmp_path)
-        config["paths"]["playlists"] = str(tmp_path)
+        config["paths"]["library"] = tmp_path
+        config["paths"]["playlists"] = tmp_path
 
     parsed = parse_library(name="local", extend_input=_extend_input)
     assert_local_parse(parsed, library_path=tmp_path)
-
-    library_paths_platform_map = dict(
-        win=(r"C:\windows\path",), lin=["/linux/path"], mac={"/mac/path"}
-    )
 
     def _extend_input(config: dict[str, Any]) -> None:
         config["paths"]["library"] = library_paths_platform_map
@@ -94,33 +99,31 @@ def test_local_parser(tmp_path: Path):
     assert parsed.paths.map == {
         "/different/folder": "/path/to/library",
         "/another/path": "/path/to/library"
-    } | {path: library_path for path in parsed.paths.library.others}
+    } | {str(path): str(library_path) for path in parsed.paths.library.others}
 
 
-def test_musicbee_parser(tmp_path: Path):
+def test_musicbee_parser(library_paths_platform_map: dict[str, Collection[PurePath]], tmp_path: Path):
     def _extend_input(config: dict[str, Any]) -> None:
-        config["paths"]["library"] = str(tmp_path)
+        config["paths"]["library"] = tmp_path
 
     parsed = parse_library(name="musicbee", extend_input=_extend_input)
     assert_musicbee_parse(parsed, library_path=tmp_path)
 
-    library_paths_platform_map = dict(
-        win=r"C:\windows\path", lin="/linux/path", mac="/mac/path"
-    )
+    library_paths_platform_map = {k: next(iter(v)) for k, v in library_paths_platform_map.items()}
 
     def _extend_input(config: dict[str, Any]) -> None:
-        config["paths"]["library"] = library_paths_platform_map
+        config["paths"]["library"] = {k: str(v) for k, v in library_paths_platform_map.items()}
 
     parsed = parse_library(name="musicbee", extend_input=_extend_input)
 
     assert parsed.paths.library == MusicBeePaths(**library_paths_platform_map)
     assert parsed.paths.map == {
         "../": "/path/to/library",
-    } | {path: parsed.paths.library.paths for path in parsed.paths.library.others}
+    } | {str(path): str(parsed.paths.library.paths) for path in parsed.paths.library.others}
 
 
 def test_spotify_parser(tmp_path: Path):
-    token_path = join(str(tmp_path), "token.json")
+    token_path = tmp_path.joinpath("token").with_suffix(".json")
 
     def _extend_input(config: dict[str, Any]) -> None:
         config["api"]["token_path"] = token_path

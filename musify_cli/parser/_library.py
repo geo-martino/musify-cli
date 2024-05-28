@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Collection, Mapping
 from dataclasses import dataclass
 from datetime import timedelta
+from pathlib import Path, PurePath, PureWindowsPath, PurePosixPath
 from typing import Any, Self
 
 from dateutil.relativedelta import relativedelta
@@ -44,11 +45,12 @@ REMOTE_LIBRARY_TYPES = [source.casefold() for source in REMOTE_SOURCES]
 ## Local
 ###########################################################################
 ## Paths parsers
-class LocalLibraryPathsParser[T: str | Collection[str] | None](PrettyPrinter, ABC):
+class LocalLibraryPathsParser[T: PurePath | Collection[PurePath] | None](PrettyPrinter, ABC):
     """Base class for parsing and validating library paths config, giving platform appropriate paths."""
 
+    @classmethod
     @property
-    def _platform_key(self) -> str:
+    def _platform_key(cls) -> str:
         platform_map = {"win32": "win", "linux": "lin", "darwin": "mac"}
         return platform_map[sys.platform]
 
@@ -58,7 +60,7 @@ class LocalLibraryPathsParser[T: str | Collection[str] | None](PrettyPrinter, AB
         return self.__getattribute__(self._platform_key)
 
     @property
-    def others(self) -> list[str]:
+    def others(self) -> list[Path]:
         """The path/s configured for the current platform"""
         return [
             path
@@ -68,7 +70,7 @@ class LocalLibraryPathsParser[T: str | Collection[str] | None](PrettyPrinter, AB
 
     @classmethod
     @abstractmethod
-    def parse_config(cls, config: MultiType[str] | Self) -> Self:
+    def parse_config(cls, config: MultiType[Path] | Self) -> Self:
         """Parse and validate given ``config`` and return the platform appropriate path/s"""
         raise NotImplementedError
 
@@ -83,19 +85,12 @@ class LocalLibraryPathsParser[T: str | Collection[str] | None](PrettyPrinter, AB
 
 
 @dataclass(frozen=True)
-class LocalLibraryPaths[T: Collection[str]](LocalLibraryPathsParser):
+class LocalLibraryPaths(LocalLibraryPathsParser[Collection[PurePath]]):
     """Parses and validates library paths for a :py:class:`LocalLibrary`, giving platform appropriate paths."""
 
-    win: T = ()
-    lin: T = ()
-    mac: T = ()
-
-    # noinspection PyPropertyDefinition
-    @classmethod
-    @property
-    def _platform_key(cls) -> str:
-        platform_map = {"win32": "win", "linux": "lin", "darwin": "mac"}
-        return platform_map[sys.platform]
+    win: Collection[PureWindowsPath] = ()
+    lin: Collection[PurePosixPath] = ()
+    mac: Collection[PurePosixPath] = ()
 
     @classmethod
     def parse_config(cls, config: MultiType[str] | Self):
@@ -107,26 +102,37 @@ class LocalLibraryPaths[T: Collection[str]](LocalLibraryPathsParser):
         if isinstance(config, Mapping):
             for key in set(cls.__annotations__).intersection(key.casefold() for key in config):
                 value = config[key.casefold()]
-                if isinstance(value, str):
+                if isinstance(value, str | PurePath):
                     kwargs[key] = (value,)
                 elif isinstance(value, Collection):
                     kwargs[key] = tuple(value)
-        elif isinstance(config, str):
+        elif isinstance(config, str | PurePath):
             kwargs[cls._platform_key] = to_collection(config)
         elif isinstance(config, Collection):
             kwargs[cls._platform_key] = config
 
+        for k, v in kwargs.items():
+            kwargs[k] = tuple(map(PureWindowsPath, v)) if k == "win" else tuple(map(PurePosixPath, v))
+
         parsed = cls(**kwargs)
         return parsed
 
+    def validate(self) -> None:
+        super().validate()
+        if not all(isinstance(path, PurePath) for path in self.paths):
+            raise ParserError(
+                "Paths are not of type 'PurePath'. Something is wrong, this shouldn't have happened.",
+                value=self.paths,
+            )
+
 
 @dataclass(frozen=True)
-class MusicBeePaths[T: str | None](LocalLibraryPaths):
+class MusicBeePaths(LocalLibraryPathsParser[PurePath]):
     """Parses and validates library paths for a :py:class:`MusicBee` library, giving platform appropriate paths."""
 
-    win: T = None
-    lin: T = None
-    mac: T = None
+    win: PureWindowsPath = None
+    lin: PurePosixPath = None
+    mac: PurePosixPath = None
 
     @classmethod
     def parse_config(cls, config: MultiType[str]):
@@ -138,23 +144,27 @@ class MusicBeePaths[T: str | None](LocalLibraryPaths):
         if isinstance(config, Mapping):
             for key in set(cls.__annotations__).intersection(key.casefold() for key in config):
                 value = config[key.casefold()]
-                if isinstance(value, str):
+                if isinstance(value, str | PurePath):
                     kwargs[key] = value
                 elif isinstance(value, Collection):
                     kwargs[key] = next(iter(value), None)
-        elif isinstance(config, str):
+        elif isinstance(config, str | PurePath):
             kwargs[cls._platform_key] = config
         elif isinstance(config, Collection):
             kwargs[cls._platform_key] = next(iter(config), None)
+
+        for k, v in kwargs.items():
+            kwargs[k] = PureWindowsPath(v) if k == "win" else PurePosixPath(v)
 
         parsed = cls(**kwargs)
         return parsed
 
     def validate(self) -> None:
         super().validate()
-        if not isinstance(self.paths, str):
+        if not isinstance(self.paths, PurePath):
             raise ParserError(
-                "Path is not a string. Something is wrong, this shouldn't have happened.", value=self.paths,
+                "Paths are not of type 'PurePath'. Something is wrong, this shouldn't have happened.",
+                value=self.paths,
             )
 
 
@@ -170,8 +180,9 @@ def extend_local_paths_arguments(paths: ArgumentParser) -> None:
 def link_library_map_paths(core: ArgumentParser):
     """Link the 'map' paths arguments with the 'library' paths argument/s."""
     def _extend_map_with_other_platforms(library: LocalLibraryPaths, stem_map: dict[str, str]) -> dict[str, str]:
-        actual_path = next(iter(to_collection(library.paths)))
-        stem_map.update({other_path: actual_path for other_path in library.others if other_path != actual_path})
+        actual_path = str(next(iter(to_collection(library.paths))))
+        other_paths = map(str, library.others)
+        stem_map.update({other_path: actual_path for other_path in other_paths if other_path != actual_path})
         return stem_map
 
     core.link_arguments(("paths.library", "paths.map"), "paths.map", _extend_map_with_other_platforms)

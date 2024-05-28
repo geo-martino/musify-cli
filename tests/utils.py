@@ -1,13 +1,13 @@
 import string
-from os.path import join, dirname
+from pathlib import Path
 from random import randrange, choice
 
-path_root = dirname(dirname(__file__))
-path_tests = dirname(__file__)
-path_resources = join(dirname(__file__), "__resources")
+path_tests = Path(__file__).parent
+path_root = path_tests.parent
+path_resources = path_tests.joinpath("__resources")
 
-path_txt = join(path_resources, "test.txt")
-path_logging_config = join(path_resources, "test_logging.yml")
+path_txt = path_resources.joinpath("test").with_suffix(".txt")
+path_logging_config = path_resources.joinpath("test_logging").with_suffix(".yml")
 
 
 def random_str(start: int = 30, stop: int = 50) -> str:

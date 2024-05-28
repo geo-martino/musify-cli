@@ -5,11 +5,11 @@ import os
 from copy import deepcopy
 from datetime import date, timedelta, datetime
 from functools import partial
-from os.path import join, isabs, sep
+from pathlib import Path
 from typing import Any
 
 import yaml
-from jsonargparse import ArgumentParser, ActionParser, Namespace, Path
+from jsonargparse import ArgumentParser, ActionParser, Namespace
 from jsonargparse.typing import Path_dc, Path_fr, Path_fc
 from musify import PROGRAM_NAME
 from musify.core.enum import TagFields
@@ -47,7 +47,7 @@ runtime_group = CORE_PARSER.add_argument_group(
     description="Runtime functionality of the program e.g. data output, logging etc."
 )
 runtime_group.add_argument(
-    "-o", "--output", type=Path_dc, default=join(PACKAGE_ROOT, "_data"),
+    "-o", "--output", type=Path_dc, default=PACKAGE_ROOT.joinpath("_data"),
     help="Directory of the folder to use for output data e.g. backups, API tokens, caches etc."
 )
 runtime_group.add_argument(
@@ -246,11 +246,11 @@ libraries.add_argument(
 libraries_group.add_argument("--libraries", action=ActionParser(libraries))
 
 
-def append_parent_folder(path: str | os.PathLike | Path, parent_folder: str | os.PathLike | Path) -> str:
+def append_parent_folder(path: str | Path, parent_folder: str | Path | os.PathLike) -> Path:
     """When the given ``path`` is relative, append the ``parent_folder`` as the parent directory"""
-    if isabs(path):
+    if os.path.isabs(path):
         return path
-    return join(str(parent_folder).rstrip(sep), str(path).lstrip(sep))
+    return Path(parent_folder).joinpath(path)
 
 
 def load_library_config(
@@ -297,7 +297,7 @@ def parse_local_library_config(
 def parse_remote_library_config(
         lib: str | dict,
         config_path: Path_fr | None = None,
-        output_folder: str | os.PathLike | Path | None = None,
+        output_folder: str | Path | None = None,
         overwrite: dict[str, Any] = None
 ) -> Namespace:
     """

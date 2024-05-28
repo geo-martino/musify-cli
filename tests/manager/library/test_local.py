@@ -1,8 +1,8 @@
 import os
-from os.path import join
+from collections.abc import Collection
 from pathlib import Path
 from random import randrange
-from typing import Collection, Any
+from typing import Any
 
 import pytest
 from jsonargparse import Namespace
@@ -33,10 +33,10 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
 
     @pytest.fixture
     def config(self, tmp_path: Path) -> Namespace:
-        library_folder = join(tmp_path, "library")
+        library_folder = tmp_path.joinpath("library")
         os.makedirs(library_folder, exist_ok=True)
 
-        playlist_folder = join(tmp_path, "playlists")
+        playlist_folder = tmp_path.joinpath("playlists")
         os.makedirs(playlist_folder, exist_ok=True)
 
         return Namespace(
@@ -44,8 +44,8 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
                 library=LocalLibraryPaths(**{LocalLibraryPaths._platform_key: (library_folder,)}),
                 playlists=playlist_folder,
                 map={
-                    "/different/folder": library_folder,
-                    "/another/path": library_folder
+                    "/different/folder": str(library_folder),
+                    "/another/path": str(library_folder),
                 }
             ),
             playlists=Namespace(
@@ -117,16 +117,16 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
             self.save_tracks_args.clear()
             self.merge_tracks_args.clear()
 
-        def load(self):
+        async def load(self):
             self.load_calls.append("all")
 
-        def load_tracks(self):
+        async def load_tracks(self):
             self.load_calls.append("tracks")
 
-        def load_playlists(self):
+        async def load_playlists(self):
             self.load_calls.append("playlists")
 
-        def save_tracks(
+        async def save_tracks(
                 self,
                 tags: UnitIterable[LocalTrackField] = LocalTrackField.ALL,
                 replace: bool = False,
@@ -153,7 +153,7 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
         def path(self):
             return random_str()
 
-        def save(
+        async def save(
                 self,
                 tags: UnitIterable[Tags] = Tags.ALL,
                 replace: bool = False,
@@ -162,24 +162,24 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
             self.save_args = {"tags": tags, "replace": replace, "dry_run": dry_run}
             return SyncResultTrack(saved=not dry_run, updated={tag: 0 for tag in tags})
 
-    def test_save_tracks(self, manager_mock: T, config: Namespace):
+    async def test_save_tracks(self, manager_mock: T, config: Namespace):
         manager_mock.dry_run = False
 
-        manager_mock.save_tracks()
+        await manager_mock.save_tracks()
 
         library_mock: TestLocalLibraryManager.LibraryMock = manager_mock.library
         assert library_mock.save_tracks_args["tags"] == config.updater.tags
         assert library_mock.save_tracks_args["replace"] == config.updater.replace
         assert library_mock.save_tracks_args["dry_run"] == manager_mock.dry_run
 
-    def test_save_tracks_in_collections(self, manager_mock: T, config: Namespace):
+    async def test_save_tracks_in_collections(self, manager_mock: T, config: Namespace):
         manager_mock.dry_run = False
 
         collections: list[BasicCollection[TestLocalLibraryManager.TrackMock]] = [
             BasicCollection(name=f"collection {i}", items=[self.TrackMock() for _ in range(randrange(2, 5))])
             for i in range(randrange(2, 5))
         ]
-        manager_mock.save_tracks_in_collections(collections)
+        await manager_mock.save_tracks_in_collections(collections)
 
         for coll in collections:
             for track in coll:
@@ -201,20 +201,20 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
 class TestMusicBeeManager(TestLocalLibraryManager[MusicBeeManager]):
 
     @pytest.fixture
-    def library_folders(self, tmp_path: Path) -> list[str]:
+    def library_folders(self, tmp_path: Path) -> list[Path]:
         """The library folders to use when generating the MusicBee settings file."""
-        library_folders = [join(tmp_path, "library_1"), join(tmp_path, "library_2")]
+        library_folders = [tmp_path.joinpath("library_1"), tmp_path.joinpath("library_2")]
         for path in library_folders:
             os.makedirs(path, exist_ok=True)
         return library_folders
 
     # noinspection PyMethodOverriding
     @pytest.fixture
-    def config(self, tmp_path: Path, library_folders: list[str]) -> Namespace:
-        musicbee_folder = join(tmp_path, "library")
+    def config(self, tmp_path: Path, library_folders: list[Path]) -> Namespace:
+        musicbee_folder = tmp_path.joinpath("library")
         os.makedirs(musicbee_folder, exist_ok=True)
 
-        playlists_folder = join(musicbee_folder, MusicBee.playlists_path)
+        playlists_folder = musicbee_folder.joinpath(MusicBee.playlists_path)
         os.makedirs(playlists_folder, exist_ok=True)
 
         xml_library = (
@@ -235,7 +235,7 @@ class TestMusicBeeManager(TestLocalLibraryManager[MusicBeeManager]):
             "</dict>",
             "</plist>",
         )
-        with open(join(musicbee_folder, MusicBee.xml_library_path), "w") as f:
+        with open(musicbee_folder.joinpath(MusicBee.xml_library_path), "w") as f:
             f.write("\n".join(xml_library))
 
         xml_settings = (
@@ -249,15 +249,15 @@ class TestMusicBeeManager(TestLocalLibraryManager[MusicBeeManager]):
             "</OrganisationMonitoredFolders>",
             "</ApplicationSettings>",
         )
-        with open(join(musicbee_folder, MusicBee.xml_settings_path), "w") as f:
+        with open(musicbee_folder.joinpath(MusicBee.xml_settings_path), "w") as f:
             f.write("\n".join(xml_settings))
 
         return Namespace(
             paths=Namespace(
                 library=MusicBeePaths(**{MusicBeePaths._platform_key: musicbee_folder}),
                 map={
-                    "/different/folder": musicbee_folder,
-                    "/another/path": musicbee_folder
+                    "/different/folder": str(musicbee_folder),
+                    "/another/path": str(musicbee_folder)
                 }
             ),
             playlists=Namespace(
@@ -286,7 +286,7 @@ class TestMusicBeeManager(TestLocalLibraryManager[MusicBeeManager]):
         assert manager._library is not None
 
         assert library.library_folders == library_folders
-        assert library.playlist_folder == join(config.paths.library.paths, MusicBee.playlists_path)
+        assert library.playlist_folder == config.paths.library.paths.joinpath(MusicBee.playlists_path)
         assert library.playlist_filter == manager.playlist_filter == config.playlists.filter
         assert id(library.remote_wrangler) == id(wrangler)
         assert isinstance(library.path_mapper, PathStemMapper)

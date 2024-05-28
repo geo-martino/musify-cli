@@ -1,5 +1,5 @@
 import logging
-from os.path import join
+from pathlib import Path
 
 import pytest
 from jsonargparse import Namespace
@@ -57,13 +57,13 @@ class TestReportsManager:
 
 class TestMusifyManager:
     @pytest.fixture
-    def config(self) -> Namespace:
+    def config(self, tmp_path: Path) -> Namespace:
         """
         Yields a valid :py:class:`Namespace` representing the config
         for the current manager as a pytest.fixture.
         """
         return Namespace(
-            output="/path/to/output/folder",
+            output=tmp_path.joinpath("/path/to/output/folder"),
             execute=True,
             backup=Namespace(key="KEY"),
             pause=None,
@@ -101,10 +101,10 @@ class TestMusifyManager:
         output_folder = manager.output_folder
         assert manager._output_folder is not None
 
-        assert output_folder == join(manager.config.output, manager.dt.strftime("%Y-%m-%d_%H.%M.%S"))
+        assert output_folder == Path(manager.config.output).joinpath(manager.dt.strftime("%Y-%m-%d_%H.%M.%S"))
 
         # does not generate a new object when called twice even if config changes
-        manager.config.output = "/path/to/a/new/folder"
+        manager.config.output = Path("/path/to/a/new/folder")
         assert manager.output_folder != manager.config.output
         assert id(manager.output_folder) == id(manager._output_folder) == id(output_folder)
 

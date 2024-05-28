@@ -1,5 +1,4 @@
 from collections.abc import Collection
-from concurrent.futures import ThreadPoolExecutor
 
 from jsonargparse import Namespace
 from musify.file.path_mapper import PathMapper, PathStemMapper
@@ -71,15 +70,15 @@ class LocalLibraryManager(LibraryManager):
         if types and self.types_loaded.intersection(types) == set(types) and not force:
             return
         elif not types and (force or not self.types_loaded):
-            self.library.load()
+            await self.library.load()
             self.types_loaded.update(LoadTypesLocal.all())
             return
 
         if _check_load(LoadTypesLocal.tracks):
-            self.library.load_tracks()
+            await self.library.load_tracks()
             self.types_loaded.add(LoadTypesLocal.tracks)
         if _check_load(LoadTypesLocal.playlists):
-            self.library.load_playlists()
+            await self.library.load_playlists()
             self.types_loaded.add(LoadTypesLocal.playlists)
 
         self.logger.print(STAT)
@@ -89,7 +88,7 @@ class LocalLibraryManager(LibraryManager):
             self.library.log_playlists()
         self.logger.print()
 
-    def save_tracks(self) -> dict[LocalTrack, SyncResultTrack]:
+    async def save_tracks(self) -> dict[LocalTrack, SyncResultTrack]:
         """
         Saves the tags of all tracks in this library.
 
@@ -102,9 +101,9 @@ class LocalLibraryManager(LibraryManager):
             f"\33[1;95m ->\33[1;97m Updating tags for {len(self.library)} tracks: "
             f"{', '.join(t.name.lower() for t in tags)} \33[0m"
         )
-        return self.library.save_tracks(tags=tags, replace=replace, dry_run=self.dry_run)
+        return await self.library.save_tracks(tags=tags, replace=replace, dry_run=self.dry_run)
 
-    def save_tracks_in_collections(
+    async def save_tracks_in_collections(
             self,
             collections: UnitIterable[LocalCollection[LocalTrack]] | None = None,
             tags: UnitIterable[LocalTrackField] = None,
@@ -127,15 +126,12 @@ class LocalLibraryManager(LibraryManager):
             f"\33[0;90m    Tags: {', '.join(t.name.lower() for t in tags)} \33[0m"
         )
 
-        collections: tuple[LocalCollection[LocalTrack]] = to_collection(collections)
-        with ThreadPoolExecutor(thread_name_prefix="track-saver") as executor:
-            futures = {
-                track: executor.submit(track.save, tags=tags, replace=replace, dry_run=self.dry_run)
-                for coll in collections for track in coll
-            }
-            bar = self.logger.get_iterator(futures.items(), desc="Updating tracks", unit="tracks")
-
-            return {track: future.result() for track, future in bar if future.result().updated}
+        collections = to_collection(collections)
+        bar = self.logger.get_iterator(collections, desc="Updating tracks", unit="tracks")
+        return {
+            track: await track.save(tags=tags, replace=replace, dry_run=self.dry_run)
+            for coll in bar for track in coll
+        }
 
     def merge_tracks(self, tracks: Collection[Track]) -> None:
         """
