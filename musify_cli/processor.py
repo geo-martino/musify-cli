@@ -69,6 +69,9 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
         self.logger.debug(f"{self.__class__.__name__} initialised. Time taken: {self.time_taken:.3f}")
 
+    def __await__(self):
+        return self.run().__await__()
+
     async def __aenter__(self) -> Self:
         await self.manager.__aenter__()
         return self
@@ -79,11 +82,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
     async def run(self) -> Any:
         """Run the processor and any pre-/post-operations around it."""
         self.logger.debug(f"Called processor '{self._processor_name}': START")
-
-        await self.manager.run_pre()
         await super().__call__()
-        await self.manager.run_post()
-
         self.logger.debug(f"Called processor '{self._processor_name}': DONE\n")
 
     def set_processor(self, name: str, config: Namespace = None) -> Callable[[], None]:

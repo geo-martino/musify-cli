@@ -196,7 +196,12 @@ async def main(processor: MusifyProcessor, config: dict[str, Namespace]) -> None
             async with processor:
                 processor.set_processor(name, cfg)
                 dump_config(log_name, processor)
-                await processor.run()
+
+                await processor.manager.run_pre()
+                await processor
+                if name != next(reversed(config)):  # only run post up to penultimate function
+                    await processor.manager.run_post()
+
         except (Exception, KeyboardInterrupt):
             processor.logger.critical(traceback.format_exc())
             return
