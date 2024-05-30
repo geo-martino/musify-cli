@@ -10,6 +10,7 @@ import shutil
 import sys
 import traceback
 from argparse import ArgumentParser
+from asyncio import AbstractEventLoop
 from pathlib import Path
 from typing import Any
 
@@ -44,6 +45,9 @@ DROP_KEYS_FROM_BASE_CONFIG: set[tuple[str]] = {
 }
 
 
+###########################################################################
+## Printers and terminal setters
+###########################################################################
 def set_title(value: str) -> None:
     """Set the terminal title to given ``value``"""
     if sys.platform == "win32":
@@ -87,17 +91,27 @@ def print_function_header(name: str, processor: MusifyProcessor) -> str:
     return name
 
 
-def dump_config(name: str, processor: MusifyProcessor) -> None:
-    """Dump/log the current config."""
-    config = processor.manager.config
+###########################################################################
+## Config and setup
+###########################################################################
+def setup() -> tuple[Namespace, dict[str, Namespace]]:
+    """Get config and configure logger."""
+    if any(arg in sys.argv for arg in ["-h", "--help"]):
+        CORE_PARSER.print_help()
+        exit()
+    elif len(sys.argv) >= 2 and os.path.isfile(sys.argv[1]):
+        cfg_base, cfg_functions = load_config(*sys.argv[1:])
+    else:
+        cfg_base = CORE_PARSER.parse_args()
+        cfg_functions = {func: cfg_base for func in cfg_base.functions}
 
-    processor.logger.debug(f"{name} core config:\n" + CORE_PARSER.dump(config))
+    if cfg_base.logging.config_path:
+        path = Path(cfg_base.logging.config_path)
+        if path.is_file():
+            MusifyManager.configure_logging(path, cfg_base.logging.name, __name__)
 
-    local_config_dump = LIBRARY_PARSER.dump(config.libraries.local)
-    processor.logger.debug(f"{name} local library config:\n{local_config_dump}")
-
-    remote_config_dump = LIBRARY_PARSER.dump(config.libraries.remote)
-    processor.logger.debug(f"{name} remote library config:\n{remote_config_dump}")
+    check_config_is_valid(cfg_functions)
+    return cfg_base, cfg_functions
 
 
 def load_config(config_path: str | Path, *function_names: str) -> tuple[Namespace, dict[str, Namespace]]:
@@ -148,24 +162,17 @@ def load_config(config_path: str | Path, *function_names: str) -> tuple[Namespac
     return base, functions
 
 
-def setup() -> tuple[Namespace, dict[str, Namespace]]:
-    """Get config and configure logger."""
-    if any(arg in sys.argv for arg in ["-h", "--help"]):
-        CORE_PARSER.print_help()
-        exit()
-    elif len(sys.argv) >= 2 and os.path.isfile(sys.argv[1]):
-        cfg_base, cfg_functions = load_config(*sys.argv[1:])
-    else:
-        cfg_base = CORE_PARSER.parse_args()
-        cfg_functions = {func: cfg_base for func in cfg_base.functions}
+def dump_config(name: str, processor: MusifyProcessor) -> None:
+    """Dump/log the current config."""
+    config = processor.manager.config
 
-    if cfg_base.logging.config_path:
-        path = Path(cfg_base.logging.config_path)
-        if path.is_file():
-            MusifyManager.configure_logging(path, cfg_base.logging.name, __name__)
+    processor.logger.debug(f"{name} core config:\n" + CORE_PARSER.dump(config))
 
-    check_config_is_valid(cfg_functions)
-    return cfg_base, cfg_functions
+    local_config_dump = LIBRARY_PARSER.dump(config.libraries.local)
+    processor.logger.debug(f"{name} local library config:\n{local_config_dump}")
+
+    remote_config_dump = LIBRARY_PARSER.dump(config.libraries.remote)
+    processor.logger.debug(f"{name} remote library config:\n{remote_config_dump}")
 
 
 def check_config_is_valid(config: dict[str, Namespace]) -> None:
@@ -185,6 +192,9 @@ def check_config_is_valid(config: dict[str, Namespace]) -> None:
         raise ParserError("Invalid function names given", key="functions", value=unknown_functions)
 
 
+###########################################################################
+## Core
+###########################################################################
 async def main(processor: MusifyProcessor, config: dict[str, Namespace]) -> None:
     """Main driver for CLI operations."""
     dump_config("Base", processor)
@@ -192,23 +202,25 @@ async def main(processor: MusifyProcessor, config: dict[str, Namespace]) -> None
     for i, (name, cfg) in enumerate(config.items(), 1):
         log_name = print_function_header(name, processor)
 
-        try:
-            async with processor:
-                processor.set_processor(name, cfg)
-                dump_config(log_name, processor)
+        async with processor:
+            processor.set_processor(name, cfg)
+            dump_config(log_name, processor)
 
-                await processor.manager.run_pre()
-                await processor
-                if name != next(reversed(config)):  # only run post up to penultimate function
-                    await processor.manager.run_post()
+            await processor.manager.run_pre()
+            await processor
+            if name != next(reversed(config)):  # only run post up to penultimate function
+                await processor.manager.run_post()
 
-        except (Exception, KeyboardInterrupt):
-            processor.logger.critical(traceback.format_exc())
-            return
+
+# noinspection PyUnusedLocal
+def handle_exception(lp: AbstractEventLoop, context: dict[str, Any]) -> None:
+    """Handle exceptions from a given ``loop``"""
+    lp.stop()
 
 
 def close(processor: MusifyProcessor) -> None:
     """Close the ``processor`` and log closing messages."""
+    print_header()
     if not processor.manager.output_folder.glob("*"):
         shutil.rmtree(processor.manager.output_folder)
 
@@ -225,7 +237,16 @@ config_base, config_functions = setup()
 main_processor = MusifyProcessor(manager=MusifyManager(config=config_base))
 print_sub_header(main_processor)
 
-asyncio.run(main(main_processor, config_functions))
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+loop.set_exception_handler(handle_exception)
 
-print_header()
-close(main_processor)
+task = loop.create_task(main(main_processor, config_functions))
+try:
+    loop.run_until_complete(task)
+except (Exception, KeyboardInterrupt):
+    main_processor.logger.debug(traceback.format_exc())
+    print(traceback.format_exc(0))
+    sys.exit(1)
+finally:
+    close(main_processor)

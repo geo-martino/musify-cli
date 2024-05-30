@@ -28,6 +28,7 @@ from musify_cli import MODULE_ROOT
 from musify_cli.exception import ParserError
 from musify_cli.manager.library import LocalLibraryManager, MusicBeeManager
 from musify_cli.manager.library import RemoteLibraryManager, SpotifyLibraryManager
+from musify_cli.parser import LoadTypesLocal, LoadTypesRemote
 
 
 class ReportsManager:
@@ -36,26 +37,35 @@ class ReportsManager:
         self.config = config
         self.parent: MusifyManager = parent
 
-    def __call__(self) -> None:
-        self.playlist_differences()
-        self.missing_tags()
+    def __await__(self):
+        return self.run().__await__()
 
-    def playlist_differences(self) -> dict[str, dict[str, tuple[MusifyItem, ...]]]:
+    async def run(self):
+        """Run all configured reports for this manager,"""
+        await self.playlist_differences()
+        await self.missing_tags()
+
+    async def playlist_differences(self) -> dict[str, dict[str, tuple[MusifyItem, ...]]]:
         """Generate a report on the differences between two library's playlists."""
         config = self.config.playlist_differences
         if not config.enabled:
             return {}
 
+        await self.parent.local.load(types=[LoadTypesLocal.tracks, LoadTypesLocal.playlists])
+        await self.parent.remote.load(types=[LoadTypesRemote.playlists])
+
         return report_playlist_differences(
-            source=config.filter(self.parent.local.library.playlists.values()),
-            reference=config.filter(self.parent.remote.library.playlists.values())
+            source=config.filter(self.parent.local.library),
+            reference=config.filter(self.parent.remote.library)
         )
 
-    def missing_tags(self) -> dict[str, dict[MusifyItem, tuple[str, ...]]]:
+    async def missing_tags(self) -> dict[str, dict[MusifyItem, tuple[str, ...]]]:
         """Generate a report on the items in albums from the local library that have missing tags."""
         config = self.config.missing_tags
         if not config.enabled:
             return {}
+
+        await self.parent.local.load(types=LoadTypesLocal.tracks)
 
         source = config.filter(self.parent.local.library.albums)
         return report_missing_tags(collections=source, tags=config.tags, match_all=config.match_all)
@@ -196,7 +206,7 @@ class MusifyManager:
                 log_config = json.load(file)
 
         MusifyLogger.compact = log_config.pop("compact", False)
-        MusifyLogger.disable_bars = log_config.pop("disable_bars", True)
+        MusifyLogger.disable_bars = log_config.pop("disable_bars", False)
 
         for formatter in log_config["formatters"].values():  # ensure ANSI colour codes in format are recognised
             formatter["format"] = formatter["format"].replace(r"\33", "\33")
@@ -259,7 +269,7 @@ class MusifyManager:
     ###########################################################################
     def filter[T: Collection](self, items: T) -> T:
         """Run the generic filter on the given ``items`` if configured."""
-        if self.config.filter.ready:
+        if self.config.filter is not None and self.config.filter.ready:
             return self.config.filter(items)
         return items
 
@@ -315,7 +325,8 @@ class MusifyManager:
         )
 
         # add tracks to remote playlist
-        pl = await self.remote.get_or_create_playlist(name)
+        response = await self.remote.api.get_or_create_playlist(name)
+        pl = self.remote.factory.playlist(response)
         pl.clear()
         pl.extend(tracks, allow_duplicates=False)
         return name, await pl.sync(kind="refresh", reload=False, dry_run=self.dry_run)

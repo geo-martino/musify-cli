@@ -7,10 +7,9 @@ from jsonargparse import Namespace
 from musify.api.cache.backend import CACHE_CLASSES, ResponseCache
 from musify.libraries.core.object import Playlist
 from musify.libraries.remote.core.api import RemoteAPI
-from musify.libraries.remote.core.enum import RemoteObjectType
 from musify.libraries.remote.core.factory import RemoteObjectFactory
 from musify.libraries.remote.core.library import RemoteLibrary
-from musify.libraries.remote.core.object import SyncResultRemotePlaylist, RemotePlaylist, RemoteAlbum
+from musify.libraries.remote.core.object import SyncResultRemotePlaylist, RemoteAlbum
 from musify.libraries.remote.core.processors.check import RemoteItemChecker
 from musify.libraries.remote.core.processors.search import RemoteItemSearcher
 from musify.libraries.remote.core.processors.wrangle import RemoteDataWrangler
@@ -51,6 +50,7 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        await self.check.close()
         await self.api.__aexit__(exc_type, exc_val, exc_tb)
 
     @property
@@ -274,29 +274,6 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
             reload=self.config.playlists.sync.reload,
             dry_run=self.dry_run
         )
-
-    async def get_or_create_playlist(self, name: str) -> RemotePlaylist:
-        """
-        Get the loaded playlist with the given ``name`` and return it.
-        If not found, attempt to find the playlist and load it.
-        Otherwise, create a new playlist.
-        """
-        pl = self.library.playlists.get(name)
-        if pl is None:  # playlist not loaded, attempt to find playlist on remote with fresh data
-            responses = await self.api.get_user_items()
-            for response in responses:
-                pl_check = self.factory.playlist(response=response, skip_checks=True)
-
-                if pl_check.name == name:
-                    await self.api.get_items(pl_check, kind=RemoteObjectType.PLAYLIST)
-                    pl = pl_check
-                    break
-
-        if pl is None:  # if playlist still not found, create it
-            # noinspection PyArgumentList
-            pl = self.factory.playlist.create(name=name)
-
-        return pl
 
     def filter_artist_albums_by_date(self, start: datetime.date, end: datetime.date) -> list[RemoteAlbum]:
         """Returns all loaded artist albums that are within the given ``start`` and ``end`` dates inclusive"""

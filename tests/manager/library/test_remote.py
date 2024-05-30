@@ -295,11 +295,6 @@ class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, 
         assert library_mock.sync_args["reload"] == config.playlists.sync.reload
         assert library_mock.sync_args["dry_run"] == manager_mock.dry_run
 
-    @staticmethod
-    @pytest.mark.skip(reason="Test not yet implemented")
-    async def test_get_or_create_playlist(manager_mock: T):
-        pass  # TODO
-
     def test_filter_artist_albums_by_date(self, manager_mock: T):
         library: RemoteLibraryManagerTester.LibraryMock = manager_mock.library
 

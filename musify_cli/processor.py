@@ -24,7 +24,7 @@ from musify.log import STAT
 from musify.log.handlers import CurrentTimeRotatingFileHandler
 from musify.log.logger import MusifyLogger
 from musify.processors.base import DynamicProcessor, dynamicprocessormethod
-from musify.utils import get_user_input, get_max_width, align_string
+from musify.utils import get_user_input
 
 from musify_cli.manager import MusifyManager
 from musify_cli.manager.library import LocalLibraryManager, RemoteLibraryManager
@@ -321,7 +321,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
     async def report(self) -> None:
         """Produce various reports on loaded data"""
         self.logger.debug("Generate reports: START")
-        self.manager.reports()
+        await self.manager.reports
         self.logger.debug("Generate reports: DONE")
 
     @dynamicprocessormethod
@@ -333,7 +333,8 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             self.logger.debug("Check and update URIs: DONE")
 
         self.logger.debug("Check and update URIs: START")
-        await self.local.load()
+
+        await self.local.load(types=LoadTypesLocal.tracks)
 
         folders = self.manager.filter(self.local.library.folders)
         if not await self.remote.check(folders):
@@ -361,6 +362,8 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             self.logger.debug("Search and match: DONE")
 
         self.logger.debug("Search and match: START")
+
+        await self.local.load(types=LoadTypesLocal.tracks)
 
         albums = self.local.library.albums
         [album.items.remove(track) for album in albums for track in album.items.copy() if track.has_uri is not None]
@@ -410,19 +413,6 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         self.local.library.log_save_tracks_result(results)
         log_prefix = "Would have set" if self.manager.dry_run else "Set"
         self.logger.info(f"\33[92m{log_prefix} tags for {len(results)} tracks \33[0m")
-
-        # TODO: why do some unavailable tracks keep getting updated? This block is for debugging
-        #  Seems like this may be resolved now...? Hasn't been an issue in the last few runs
-        max_width = get_max_width([track.path for track in results], max_width=80)
-        for track, result in results.items():
-            self.logger.stat(
-                f"\33[97m{align_string(track.path, max_width=max_width, truncate_left=True)} \33[0m| " +
-                f"\33[94m{' - '.join(
-                    f"{tag.name, condition, (track[tag.name.lower()] if hasattr(track, tag.name.lower()) else "img?")}"
-                    for tag, condition in result.updated.items()
-                )
-                } \33[0m"
-            )
 
         self.logger.print()
         self.logger.debug("Update tags: DONE")
@@ -475,9 +465,9 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         """Run the :py:class:`ItemDownloadHelper`"""
         self.logger.debug("Download helper: START")
 
-        responses = await self.remote.api.get_user_items(kind=RemoteObjectType.PLAYLIST)
+        responses = self.remote.api.user_playlist_data
         playlists: list[RemotePlaylist] = self.manager.filter(list(map(
-            lambda response: self.remote.factory.playlist(response, skip_checks=True), responses
+            lambda response: self.remote.factory.playlist(response, skip_checks=True), responses.values()
         )))
         await self.remote.api.get_items(playlists, kind=RemoteObjectType.PLAYLIST)
 
