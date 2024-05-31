@@ -51,6 +51,12 @@ def assert_spotify_parse(parsed: Namespace, token_path: Path | None = None) -> N
     assert parsed.api.client_secret == "<CLIENT_SECRET>"
     assert parsed.api.scopes == ["user-library-read", "user-follow-read"]
 
+    assert parsed.api.handler.backoff.start == 0.5
+    assert parsed.api.handler.backoff.factor == 4
+    assert parsed.api.handler.backoff.count == 200
+    assert parsed.api.handler.wait.start == 5
+    assert parsed.api.handler.wait.increment == 60
+
     assert parsed.api.cache.type == "sqlite"
     assert parsed.api.cache.db == "cache_db"
     assert parsed.api.cache.expire_after == timedelta(weeks=2)

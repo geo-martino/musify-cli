@@ -16,6 +16,7 @@ from tests.parser.utils import assert_local_parse, assert_musicbee_parse, assert
 
 @pytest.fixture
 def library_paths_platform_map() -> dict[str, Collection[PurePath]]:
+    """PurePaths test map for various platforms supported by the paths parser."""
     return dict(
         win=(PureWindowsPath(r"C:\windows\path"),),
         lin=[PurePosixPath("/linux/path")],

@@ -41,6 +41,14 @@ spotify:
       scopes:
         - user-library-read
         - user-follow-read
+      handler:
+        backoff:
+          start: 0.5
+          factor: 4
+          count: 200
+        wait:
+          start: 5
+          increment: 60
       cache:
         type: sqlite
         db: cache_db

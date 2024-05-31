@@ -334,6 +334,17 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
                     "user-library-read",
                     "user-follow-read",
                 ],
+                handler=Namespace(
+                    backoff=Namespace(
+                        start=2,
+                        factor=1.5,
+                        count=20,
+                    ),
+                    wait=Namespace(
+                        start=1,
+                        increment=0.3,
+                    ),
+                ),
                 cache=Namespace(
                     type="sqlite",
                     db=str(tmp_path.joinpath("cache_db")),
@@ -390,6 +401,13 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
         assert manager._api is not None
 
         assert api.handler.authoriser.token_file_path == config.api.token_path
+
+        assert api.handler.backoff_start == 2
+        assert api.handler.backoff_factor == 1.5
+        assert api.handler.backoff_count == 20
+        assert api.handler.wait_time == 1
+        assert api.handler.wait_increment == 0.3
+
         assert isinstance(api.handler.session, CachedSession)
 
         # does not generate a new object when called twice even if config changes

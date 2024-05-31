@@ -220,10 +220,10 @@ def handle_exception(lp: AbstractEventLoop, context: dict[str, Any]) -> None:
 
 def close(processor: MusifyProcessor) -> None:
     """Close the ``processor`` and log closing messages."""
-    print_header()
     if not processor.manager.output_folder.glob("*"):
         shutil.rmtree(processor.manager.output_folder)
 
+    print_header()
     processor.logger.debug(f"Time taken: {processor.time_taken}")
     logging.shutdown()
 
@@ -246,7 +246,7 @@ try:
     loop.run_until_complete(task)
 except (Exception, KeyboardInterrupt):
     main_processor.logger.debug(traceback.format_exc())
-    print(traceback.format_exc(0))
+    print(f"\33[91m{traceback.format_exc(0)}\33m")
     sys.exit(1)
 finally:
     close(main_processor)

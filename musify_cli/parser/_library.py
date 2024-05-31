@@ -13,7 +13,7 @@ from typing import Any, Self
 
 from dateutil.relativedelta import relativedelta
 from jsonargparse import ArgumentParser, ActionParser
-from jsonargparse.typing import Path_dw, Path_fc
+from jsonargparse.typing import Path_dw, Path_fc, PositiveInt, NonNegativeFloat, restricted_number_type
 from musify.api.authorise import APIAuthoriser
 from musify.api.cache.backend import CACHE_TYPES
 from musify.api.cache.backend.base import ResponseCache
@@ -48,6 +48,7 @@ REMOTE_LIBRARY_TYPES = [source.casefold() for source in REMOTE_SOURCES]
 class LocalLibraryPathsParser[T: PurePath | Collection[PurePath] | None](PrettyPrinter, ABC):
     """Base class for parsing and validating library paths config, giving platform appropriate paths."""
 
+    # noinspection PyPropertyDefinition
     @classmethod
     @property
     def _platform_key(cls) -> str:
@@ -302,6 +303,38 @@ def add_remote_api_arguments(core: ArgumentParser, source: str, api: type[Remote
         "--token-path", type=str | Path_fc,  # type switched to Path_fc when linked to main config
         help="Path to use for loading and saving a token."
     )
+
+    handler = ArgumentParser(prog=f"{source} API handler", formatter_class=EpilogHelpFormatter)
+
+    float_at_least_1 = restricted_number_type("float_at_least_1", float, [(">=", 1)])
+
+    backoff = ArgumentParser(prog=f"{source} API handler backoff", formatter_class=EpilogHelpFormatter)
+    backoff.add_argument(
+        "--start", type=NonNegativeFloat, default=0.2,
+        help="The initial backoff time in seconds for failed requests"
+    )
+    backoff.add_argument(
+        "--factor", type=float_at_least_1, default=1.932,
+        help="The factor by which to increase backoff time for failed requests i.e. backoff_start ** backoff_factor"
+    )
+    backoff.add_argument(
+        "--count", type=PositiveInt, default=10,
+        help="The maximum number of request attempts to make before giving up and raising an exception"
+    )
+    handler.add_argument("--backoff", action=ActionParser(backoff))
+
+    wait = ArgumentParser(prog=f"{source} API handler wait time", formatter_class=EpilogHelpFormatter)
+    wait.add_argument(
+        "--start", type=NonNegativeFloat, default=0,
+        help="The initial time in seconds to wait after receiving a response from a request"
+    )
+    wait.add_argument(
+        "--increment", type=NonNegativeFloat, default=0.1,
+        help="The amount to increase the wait time by each time a rate limit is hit i.e. 429 response"
+    )
+    handler.add_argument("--wait", action=ActionParser(wait))
+
+    remote_api.add_argument("--handler", action=ActionParser(handler))
 
     cache = ArgumentParser(prog=f"{source} API cache", formatter_class=EpilogHelpFormatter)
     cache.add_argument(

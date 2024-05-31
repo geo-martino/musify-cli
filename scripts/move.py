@@ -70,7 +70,7 @@ def remap_library(paths: dict[Path, Path], library_folder: Path, staging_folder:
     with open(path_lib_file, "r", encoding="utf-8") as file:
         library_data = file.read()
 
-    for old, new in logger.get_iterator(paths.items(), desc="Remapping library file", unit="paths"):
+    for old, new in logger.get_synchronous_iterator(paths.items(), desc="Remapping library file", unit="paths"):
         if old not in library_data:
             raise FileNotFoundError(f"Could not find old path: {old}")
 
@@ -97,7 +97,7 @@ def remap_playlists(
     }
     # jprint(path_map_stem)
 
-    for playlist_path in logger.get_iterator(playlist_paths, desc="Remapping playlists", unit="playlists"):
+    for playlist_path in logger.get_synchronous_iterator(playlist_paths, desc="Remapping playlists", unit="playlists"):
         with open(playlist_path, "r", encoding="utf-8") as file:
             playlist = file.read()
 

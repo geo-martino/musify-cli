@@ -69,6 +69,22 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
         """The initialised remote API for this remote library type"""
         raise NotImplementedError
 
+    def _set_handler(self, api: RemoteAPI) -> None:
+        config = self.config.api.handler
+        if not self.config.api.handler:
+            return
+
+        if value := config.backoff.start:
+            api.handler.backoff_start = value
+        if value := config.backoff.factor:
+            api.handler.backoff_factor = value
+        if value := config.backoff.count:
+            api.handler.backoff_count = value
+        if value := config.wait.start:
+            api.handler.wait_time = value
+        if value := config.wait.increment:
+            api.handler.wait_increment = value
+
     @property
     def cache(self) -> ResponseCache | None:
         """The initialised cache to use with the remote API for this remote library type"""
@@ -315,6 +331,8 @@ class SpotifyLibraryManager(RemoteLibraryManager):
                 token_file_path=self.config.api.token_path,
             )
             self.initialised = True
+
+            self._set_handler(self._api)
 
         return self._api
 

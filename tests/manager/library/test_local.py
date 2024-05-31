@@ -153,6 +153,10 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
         def path(self):
             return random_str()
 
+        @property
+        def album(self):
+            return random_str()
+
         async def save(
                 self,
                 tags: UnitIterable[Tags] = Tags.ALL,

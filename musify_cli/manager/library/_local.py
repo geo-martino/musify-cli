@@ -2,8 +2,9 @@ from collections.abc import Collection
 
 from jsonargparse import Namespace
 from musify.file.path_mapper import PathMapper, PathStemMapper
+from musify.libraries.core.collection import MusifyCollection
 from musify.libraries.core.object import Track
-from musify.libraries.local.collection import LocalCollection
+from musify.libraries.local.collection import LocalAlbum
 from musify.libraries.local.library import LocalLibrary, MusicBee
 from musify.libraries.local.track import LocalTrack, SyncResultTrack
 from musify.libraries.local.track.field import LocalTrackField
@@ -105,7 +106,7 @@ class LocalLibraryManager(LibraryManager):
 
     async def save_tracks_in_collections(
             self,
-            collections: UnitIterable[LocalCollection[LocalTrack]] | None = None,
+            collections: UnitIterable[MusifyCollection[LocalTrack]] | None = None,
             tags: UnitIterable[LocalTrackField] = None,
             replace: bool = None,
     ) -> dict[LocalTrack, SyncResultTrack]:
@@ -127,11 +128,11 @@ class LocalLibraryManager(LibraryManager):
         )
 
         collections = to_collection(collections)
-        bar = self.logger.get_iterator(collections, desc="Updating tracks", unit="tracks")
-        return {
-            track: await track.save(tags=tags, replace=replace, dry_run=self.dry_run)
-            for coll in bar for track in coll
-        }
+        collection = LocalAlbum.__new__(LocalAlbum)
+        collection.logger = self.logger
+        collection._tracks = [track for coll in collections for track in coll]
+
+        return await collection.save_tracks(tags=tags, replace=replace, dry_run=self.dry_run)
 
     def merge_tracks(self, tracks: Collection[Track]) -> None:
         """

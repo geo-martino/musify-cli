@@ -284,9 +284,12 @@ class MusifyManager:
         kind = RemoteObjectType.ALBUM
         key = self.remote.api.collection_item_map[kind]
 
-        bar = self.logger.get_iterator(iterable=albums, desc="Getting album tracks", unit="albums")
-        for album in bar:
-            await self.remote.api.extend_items(album.response, kind=kind, key=key)
+        await self.logger.get_asynchronous_iterator(
+            (self.remote.api.extend_items(album.response, kind=kind, key=key) for album in albums),
+            desc="Getting album tracks",
+            unit="albums"
+        )
+        for album in albums:
             album.refresh(skip_checks=False)
 
     ###########################################################################
