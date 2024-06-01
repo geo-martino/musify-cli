@@ -329,7 +329,7 @@ class MusifyManager:
 
         # add tracks to remote playlist
         response = await self.remote.api.get_or_create_playlist(name)
-        pl = self.remote.factory.playlist(response)
+        pl = self.remote.factory.playlist(response, skip_checks=True)
         pl.clear()
         pl.extend(tracks, allow_duplicates=False)
         return name, await pl.sync(kind="refresh", reload=False, dry_run=self.dry_run)
