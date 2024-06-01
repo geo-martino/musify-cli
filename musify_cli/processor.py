@@ -442,15 +442,17 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         self.logger.print()
         self.logger.debug("Update compilations: DONE")
 
+    # TODO: something weird is happening here when this is run right before running the 'report' processor.
+    #  It causes report_playlist_differences to be empty or produce weird results
     @dynamicprocessormethod
     async def sync_remote(self) -> None:
         """Run all main functions for synchronising remote playlists with a local library"""
         self.logger.debug(f"Sync {self.remote.source}: START")
 
-        await self.local.load(types=LoadTypesLocal.playlists)
+        await self.local.load()
         await self.remote.load(types=LoadTypesRemote.playlists)
 
-        playlists = copy(list(self.local.library.playlists.values()))
+        playlists = [copy(pl) for pl in self.local.library.playlists.values()]
         for pl in playlists:  # so filter_playlists doesn't clear the list of tracks on the original playlist objects
             pl._tracks = pl.tracks.copy()
 

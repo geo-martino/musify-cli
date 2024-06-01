@@ -8,10 +8,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9b2127b7-24ea-430c-8f59-a341ad0474f1" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/musify_cli/parser/types.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/_library.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/parser/_library.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/_setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/parser/_setup.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/processor.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
