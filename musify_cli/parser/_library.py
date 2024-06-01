@@ -36,6 +36,7 @@ from musify_cli.parser._setup import TIME_MAPPER_HELP_TEXT
 from musify_cli.parser._utils import EpilogHelpFormatter, LOCAL_TRACK_TAG_NAMES, MultiType
 from musify_cli.parser._utils import get_default_args, get_tags, get_comparers_filter
 from musify_cli.exception import ParserError
+from musify_cli.parser.types import SensitiveString
 
 LOCAL_LIBRARY_TYPES = [cls.source.lower() for cls in LIBRARY_CLASSES]
 REMOTE_LIBRARY_TYPES = [source.casefold() for source in REMOTE_SOURCES]
@@ -298,7 +299,17 @@ def add_remote_api_arguments(core: ArgumentParser, source: str, api: type[Remote
     )
     remote_api = ArgumentParser(prog=f"{source} API", formatter_class=EpilogHelpFormatter)
 
-    remote_api.add_class_arguments(api, as_group=False, skip={"cache", *set(get_default_args(APIAuthoriser))})
+    remote_api.add_class_arguments(
+        api, as_group=False, skip={"client_id", "client_secret", "cache", *set(get_default_args(APIAuthoriser))}
+    )
+    remote_api.add_argument(
+        "--client-id", type=SensitiveString,
+        help="The client ID to use when authorising requests."
+    )
+    remote_api.add_argument(
+        "--client-secret", type=SensitiveString,
+        help="The client secret to use when authorising requests."
+    )
     remote_api.add_argument(
         "--token-path", type=str | Path_fc,  # type switched to Path_fc when linked to main config
         help="Path to use for loading and saving a token."

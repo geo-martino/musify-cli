@@ -23,6 +23,8 @@ from musify.processors.base import dynamicprocessormethod
 from musify.processors.filter import FilterComparers
 from musify.processors.time import TimeMapper
 
+from musify_cli.parser.types import SensitiveString
+
 
 ###########################################################################
 ## Dumpers
@@ -44,6 +46,8 @@ def _make_yaml_safe(config: dict[str, Any]) -> None:
             config[key] = str(value)
         elif isinstance(value, Iterable) and all(isinstance(v, PurePath | jsonargparse.Path) for v in value):
             config[key] = [str(v) for v in value]
+        elif isinstance(value, SensitiveString):
+            config[key] = "<REDACTED>"
         elif isinstance(value, dict):
             _make_yaml_safe(value)
 
@@ -105,4 +109,10 @@ def setup() -> None:
         timedelta | relativedelta,
         serializer=serialize_time_delta,
         deserializer=deserialize_time_delta,
+    )
+
+    register_type(
+        SensitiveString,
+        serializer=SensitiveString,
+        deserializer=SensitiveString,
     )
