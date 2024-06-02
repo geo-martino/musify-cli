@@ -21,13 +21,23 @@ def get_func_log_name(name: str) -> str:
     return name.replace("_", " ").replace("-", " ").title()
 
 
+def get_terminal_width() -> int:
+    """Get the width in characters of the current terminal"""
+    try:
+      cols = os.get_terminal_size().columns
+    except OSError:
+      cols = 120
+
+    return cols
+
+
 def print_logo(fonts: Sequence[str] = LOGO_FONTS, colours: Collection[int] = LOGO_COLOURS) -> None:
     """Pretty print the Musify logo in the centre of the terminal"""
     colours = list(colours)
     if bool(random.getrandbits(1)):
         colours.reverse()
 
-    cols = os.get_terminal_size().columns
+    cols = get_terminal_width()
     # noinspection SpellCheckingInspection
     figlet = pyfiglet.Figlet(font=random.choice(fonts), direction=0, justify="left", width=cols)
 
@@ -42,7 +52,7 @@ def print_logo(fonts: Sequence[str] = LOGO_FONTS, colours: Collection[int] = LOG
 
 def print_line(text: str = "", line_char: str = "-") -> None:
     """Print an aligned line with the given text in the centre of the terminal"""
-    cols = os.get_terminal_size().columns
+    cols = get_terminal_width()
 
     text = f" {text} " if text else ""
     amount_left = (cols - len(text)) // 2
@@ -58,7 +68,7 @@ def print_time(seconds: float) -> None:
     secs = int(seconds % 60)
     text = f"{mins} mins {secs} secs"
 
-    cols = os.get_terminal_size().columns
+    cols = get_terminal_width()
     indent = int((cols - len(text)) / 2)
 
     print(f"\33[1;95m{' ' * indent}{text}\33[0m")

@@ -231,22 +231,23 @@ def close(processor: MusifyProcessor) -> None:
     print_time(processor.time_taken)
 
 
-print_header()
-config_base, config_functions = setup()
+if __name__ == "__main__":
+    print_header()
+    config_base, config_functions = setup()
 
-main_processor = MusifyProcessor(manager=MusifyManager(config=config_base))
-print_sub_header(main_processor)
+    main_processor = MusifyProcessor(manager=MusifyManager(config=config_base))
+    print_sub_header(main_processor)
 
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
-loop.set_exception_handler(handle_exception)
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.set_exception_handler(handle_exception)
 
-task = loop.create_task(main(main_processor, config_functions))
-try:
-    loop.run_until_complete(task)
-except (Exception, KeyboardInterrupt):
-    main_processor.logger.debug(traceback.format_exc())
-    print(f"\33[91m{traceback.format_exc(0)}\33m")
-    sys.exit(1)
-finally:
-    close(main_processor)
+    task = loop.create_task(main(main_processor, config_functions))
+    try:
+        loop.run_until_complete(task)
+    except (Exception, KeyboardInterrupt):
+        main_processor.logger.debug(traceback.format_exc())
+        print(f"\33[91m{traceback.format_exc(0)}\33m")
+        sys.exit(1)
+    finally:
+        close(main_processor)
