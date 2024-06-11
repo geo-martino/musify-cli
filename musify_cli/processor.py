@@ -112,6 +112,8 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         with open(path, "w") as file:
             json.dump(data, file, indent=2)
 
+        self.logger.info(f"\33[92m  > Saved JSON file: {path}\33[0m")
+
     def _load_json(self, filename: str | Path, folder: Path | None = None) -> dict[str, Any]:
         """Load a stored JSON file from a given folder, or this run's folder if not given"""
         folder = folder or self.manager.output_folder
@@ -200,9 +202,9 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             restored.append(self.remote.source)
 
         if not restored:
-            self.logger.info("No libraries restored.")
+            self.logger.info("\33[90mNo libraries restored.\33[0m")
             return
-        self.logger.info(f"Successfully restored libraries: {", ".join(restored)}")
+        self.logger.info(f"\33[92mSuccessfully restored libraries: {", ".join(restored)}\33[0m")
 
     def _get_available_backup_groups(self, backup_folder: Path) -> list[str]:
         backup_names = (self._library_backup_name(self.local.library), self._library_backup_name(self.remote.library))
