@@ -5,7 +5,7 @@ from typing import Any
 import jsonargparse
 import pytest
 import yaml
-from musify.core.enum import TagFields
+from musify.field import TagFields
 from musify.libraries.local.track.field import LocalTrackField
 
 from musify_cli.exception import ParserError

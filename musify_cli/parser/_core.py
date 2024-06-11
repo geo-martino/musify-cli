@@ -12,7 +12,7 @@ import yaml
 from jsonargparse import ArgumentParser, ActionParser, Namespace
 from jsonargparse.typing import Path_dc, Path_fr, Path_fc
 from musify import PROGRAM_NAME
-from musify.core.enum import TagFields
+from musify.field import TagFields
 from musify.libraries.local.track.field import LocalTrackField
 from musify.processors.download import ItemDownloadHelper
 from musify.processors.filter import FilterComparers

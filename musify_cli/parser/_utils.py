@@ -7,8 +7,8 @@ from collections.abc import Collection, Mapping, Callable
 from typing import Any, TypeVar
 
 from jsonargparse import DefaultHelpFormatter
-from musify.core.base import MusifyObject
-from musify.core.enum import Fields, TagField, MusifyEnum, Field
+from musify.base import MusifyObject
+from musify.field import Fields, TagField, MusifyEnum, Field
 from musify.libraries.local.track.field import LocalTrackField
 from musify.processors.compare import Comparer
 from musify.processors.filter import FilterComparers

@@ -20,12 +20,11 @@ from musify.libraries.local.collection import LocalFolder
 from musify.libraries.local.track.field import LocalTrackField
 from musify.libraries.remote.core.enum import RemoteObjectType
 from musify.libraries.remote.core.object import RemotePlaylist
-from musify.log import STAT
-from musify.log.handlers import CurrentTimeRotatingFileHandler
-from musify.log.logger import MusifyLogger
+from musify.logger import MusifyLogger, STAT
 from musify.processors.base import DynamicProcessor, dynamicprocessormethod
 from musify.utils import get_user_input
 
+from musify_cli.log.handlers import CurrentTimeRotatingFileHandler
 from musify_cli.manager import MusifyManager
 from musify_cli.manager.library import LocalLibraryManager, RemoteLibraryManager
 from musify_cli.parser import LoadTypesRemote, EnrichTypesRemote, LoadTypesLocal

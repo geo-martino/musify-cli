@@ -13,12 +13,11 @@ from typing import Self
 import yaml
 from jsonargparse import Namespace
 from musify import MODULE_ROOT as MUSIFY_ROOT
-from musify.core.base import MusifyItem
+from musify.base import MusifyItem
 from musify.libraries.core.collection import MusifyCollection
 from musify.libraries.remote.core.enum import RemoteObjectType
 from musify.libraries.remote.core.object import RemoteAlbum, SyncResultRemotePlaylist
-from musify.log import STAT
-from musify.log.logger import MusifyLogger
+from musify.logger import MusifyLogger, STAT
 from musify.processors.download import ItemDownloadHelper
 from musify.report import report_playlist_differences, report_missing_tags
 from musify.types import UnitIterable

@@ -6,8 +6,8 @@ import pytest
 import yaml
 from musify.api.request import RequestHandler
 
-from musify.libraries.remote.spotify.processors import SpotifyDataWrangler
-from musify.log.logger import MusifyLogger
+from musify.libraries.remote.spotify.wrangle import SpotifyDataWrangler
+from musify.logger import MusifyLogger
 from pytest_mock import MockerFixture
 
 from musify_cli import MODULE_ROOT

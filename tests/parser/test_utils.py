@@ -1,5 +1,5 @@
 import pytest
-from musify.core.enum import TagFields
+from musify.field import TagFields
 from musify.libraries.collection import BasicCollection
 from musify.libraries.local.track.field import LocalTrackField
 from musify.processors.base import Filter

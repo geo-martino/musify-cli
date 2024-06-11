@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 from jsonargparse import Namespace
-from musify.log.logger import MusifyLogger
+from musify.logger import MusifyLogger
 
 from musify_cli import MODULE_ROOT
 from musify_cli.exception import ParserError

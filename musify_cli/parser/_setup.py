@@ -18,7 +18,7 @@ from jsonargparse import Namespace, set_dumper
 from jsonargparse._loaders_dumpers import dump_yaml_kwargs
 from jsonargparse.typing import register_type
 
-from musify.core.printer import PrettyPrinter
+from musify.printer import PrettyPrinter
 from musify.processors.base import dynamicprocessormethod
 from musify.processors.filter import FilterComparers
 from musify.processors.time import TimeMapper

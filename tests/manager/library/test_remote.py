@@ -9,20 +9,20 @@ import pytest
 from jsonargparse import Namespace
 from musify.api.cache.backend import ResponseCache
 from musify.api.cache.session import CachedSession
-from musify.core.base import MusifyObject, MusifyItem
+from musify.base import MusifyObject, MusifyItem
 from musify.libraries.core.object import Library, Playlist
 from musify.libraries.remote.core.factory import RemoteObjectFactory
 from musify.libraries.remote.core.library import RemoteLibrary
 from musify.libraries.remote.core.object import RemoteTrack, RemotePlaylist, RemoteAlbum, RemoteArtist
 from musify.libraries.remote.core.object import SyncResultRemotePlaylist
-from musify.libraries.remote.core.processors.check import RemoteItemChecker
-from musify.libraries.remote.core.processors.search import RemoteItemSearcher
-from musify.libraries.remote.core.processors.wrangle import RemoteDataWrangler
+from musify.libraries.remote.core.wrangle import RemoteDataWrangler
 from musify.libraries.remote.spotify import SOURCE_NAME as SPOTIFY_SOURCE
 from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.libraries.remote.spotify.library import SpotifyLibrary
 from musify.libraries.remote.spotify.object import SpotifyTrack, SpotifyPlaylist, SpotifyAlbum, SpotifyArtist
+from musify.processors.check import RemoteItemChecker
 from musify.processors.filter import FilterDefinedList, FilterIncludeExclude
+from musify.processors.search import RemoteItemSearcher
 
 from musify_cli.exception import ParserError
 from musify_cli.manager.library import RemoteLibraryManager, SpotifyLibraryManager

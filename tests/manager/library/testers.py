@@ -3,7 +3,7 @@ from pathlib import Path
 from random import shuffle, sample
 
 from jsonargparse import Namespace
-from musify.core.enum import MusifyEnum
+from musify.enum import MusifyEnum
 
 # noinspection PyProtectedMember
 from musify_cli.manager.library._core import LibraryManager

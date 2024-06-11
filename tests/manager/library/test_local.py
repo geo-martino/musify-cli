@@ -6,14 +6,14 @@ from typing import Any
 
 import pytest
 from jsonargparse import Namespace
-from musify.core.enum import TagField, Fields
+from musify.field import TagField, Fields
 from musify.file.path_mapper import PathStemMapper
 from musify.libraries.collection import BasicCollection
 from musify.libraries.core.object import Track
 from musify.libraries.local.library import LocalLibrary, MusicBee
 from musify.libraries.local.track import LocalTrack, SyncResultTrack, FLAC
 from musify.libraries.local.track.field import LocalTrackField, LocalTrackField as Tags
-from musify.libraries.remote.spotify.processors import SpotifyDataWrangler
+from musify.libraries.remote.spotify.wrangle import SpotifyDataWrangler
 from musify.types import UnitIterable
 
 from musify_cli.manager.library import LocalLibraryManager, MusicBeeManager

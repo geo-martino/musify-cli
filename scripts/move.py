@@ -9,8 +9,8 @@ from pathlib import Path
 
 from musify.libraries.local.library import LocalLibrary
 from musify.libraries.local.library.musicbee import XMLLibraryParser, MusicBee
-from musify.log.logger import STAT, MusifyLogger
-from musify.libraries.remote.spotify.processors import SpotifyDataWrangler
+from musify.logger import MusifyLogger, STAT
+from musify.libraries.remote.spotify.wrangle import SpotifyDataWrangler
 
 logging.basicConfig(format="%(message)s", level=STAT)
 

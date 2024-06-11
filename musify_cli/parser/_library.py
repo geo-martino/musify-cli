@@ -24,14 +24,14 @@ from musify.libraries.local.track.field import LocalTrackField
 from musify.libraries.remote import REMOTE_SOURCES
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.object import RemotePlaylist
-from musify.libraries.remote.core.processors.check import RemoteItemChecker
-from musify.libraries.remote.core.processors.search import RemoteItemSearcher
 from musify.libraries.remote.spotify import SOURCE_NAME as SPOTIFY_SOURCE
 from musify.libraries.remote.spotify.api import SpotifyAPI
+from musify.processors.check import RemoteItemChecker
 from musify.processors.filter import FilterComparers
+from musify.processors.search import RemoteItemSearcher
 from musify.utils import to_collection
 
-from musify.core.printer import PrettyPrinter
+from musify.printer import PrettyPrinter
 from musify_cli.parser._setup import TIME_MAPPER_HELP_TEXT
 from musify_cli.parser._utils import EpilogHelpFormatter, LOCAL_TRACK_TAG_NAMES, MultiType
 from musify_cli.parser._utils import get_default_args, get_tags, get_comparers_filter

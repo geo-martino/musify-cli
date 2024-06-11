@@ -8,8 +8,8 @@ from musify.libraries.local.collection import LocalAlbum
 from musify.libraries.local.library import LocalLibrary, MusicBee
 from musify.libraries.local.track import LocalTrack, SyncResultTrack
 from musify.libraries.local.track.field import LocalTrackField
-from musify.libraries.remote.core.processors.wrangle import RemoteDataWrangler
-from musify.log import STAT
+from musify.libraries.remote.core.wrangle import RemoteDataWrangler
+from musify.logger import STAT
 from musify.types import UnitIterable, UnitCollection
 from musify.utils import to_collection
 
