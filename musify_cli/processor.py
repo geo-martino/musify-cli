@@ -112,7 +112,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         with open(path, "w") as file:
             json.dump(data, file, indent=2)
 
-        self.logger.info(f"\33[92m  > Saved JSON file: {path}\33[0m")
+        self.logger.info(f"\33[1;95m  >\33[1;97m Saved JSON file: \33[1;92m{path}\33[0m")
 
     def _load_json(self, filename: str | Path, folder: Path | None = None) -> dict[str, Any]:
         """Load a stored JSON file from a given folder, or this run's folder if not given"""
@@ -122,6 +122,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         with open(path, "r") as file:
             data = json.load(file)
 
+        self.logger.info(f"\33[1;95m  >\33[1;97m Loaded JSON file: \33[1;92m{path}\33[0m")
         return data
 
     def as_dict(self) -> dict[str, Any]:
