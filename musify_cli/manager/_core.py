@@ -55,8 +55,8 @@ class ReportsManager:
         await self.parent.remote.load(types=[LoadTypesRemote.playlists])
 
         return report_playlist_differences(
-            source=config.filter(self.parent.local.library),
-            reference=config.filter(self.parent.remote.library)
+            source=config.filter(self.parent.local.library.playlists.values()),
+            reference=config.filter(self.parent.remote.library.playlists.values())
         )
 
     async def missing_tags(self) -> dict[str, dict[MusifyItem, tuple[str, ...]]]:

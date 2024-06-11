@@ -138,7 +138,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
     def set_compilation_tags(collections: Iterable[LocalFolder]) -> None:
         """Modify tags for tracks in the given compilation ``collections``"""
         for collection in collections:
-            tracks = sorted(collection.tracks, key=lambda x: x.path)
+            tracks = sorted(collection.tracks, key=lambda x: str(x.path).casefold())
             album = " - ".join(collection.name.split(os.path.sep))
 
             for i, track in enumerate(tracks, 1):  # set tags

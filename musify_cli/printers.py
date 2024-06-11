@@ -24,9 +24,9 @@ def get_func_log_name(name: str) -> str:
 def get_terminal_width() -> int:
     """Get the width in characters of the current terminal"""
     try:
-      cols = os.get_terminal_size().columns
+        cols = os.get_terminal_size().columns
     except OSError:
-      cols = 120
+        cols = 120
 
     return cols
 

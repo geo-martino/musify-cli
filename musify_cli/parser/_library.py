@@ -83,7 +83,8 @@ class LocalLibraryPathsParser[T: PurePath | Collection[PurePath] | None](PrettyP
 
     def as_dict(self) -> dict[str, T]:
         """Return the attributes of this dataclass as a dictionary."""
-        return {key: self.__getattribute__(key) for key in self.__annotations__} | {"paths": self.paths, "others": self.others}
+        attributes = {key: self.__getattribute__(key) for key in self.__annotations__}
+        return attributes | {"paths": self.paths, "others": self.others}
 
 
 @dataclass(frozen=True)
