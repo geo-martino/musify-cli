@@ -136,7 +136,7 @@ cython_debug/
 **.DS_Store
 
 # binary/cache files
-**.sql*
+**.sqlite
 
 # data/log folders
 _data/
