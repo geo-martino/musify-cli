@@ -343,6 +343,7 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
                     wait=Namespace(
                         start=1,
                         increment=0.3,
+                        max=3,
                     ),
                 ),
                 cache=Namespace(
@@ -407,6 +408,7 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
         assert api.handler.backoff_count == 20
         assert api.handler.wait_time == 1
         assert api.handler.wait_increment == 0.3
+        assert api.handler.wait_max == 3
 
         assert isinstance(api.handler.session, CachedSession)
 

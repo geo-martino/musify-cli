@@ -84,6 +84,8 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
             api.handler.wait_time = value
         if value := config.wait.increment:
             api.handler.wait_increment = value
+        if value := config.wait.max:
+            api.handler.wait_max = value
 
     @property
     def cache(self) -> ResponseCache | None:

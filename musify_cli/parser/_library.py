@@ -342,7 +342,11 @@ def add_remote_api_arguments(core: ArgumentParser, source: str, api: type[Remote
     )
     wait.add_argument(
         "--increment", type=NonNegativeFloat, default=0.1,
-        help="The amount to increase the wait time by each time a rate limit is hit i.e. 429 response"
+        help="The amount in seconds to increase the wait time by each time a rate limit is hit i.e. 429 response"
+    )
+    wait.add_argument(
+        "--max", type=NonNegativeFloat, default=1,
+        help="The maximum time in seconds that the wait time can be incremented to"
     )
     handler.add_argument("--wait", action=ActionParser(wait))
 

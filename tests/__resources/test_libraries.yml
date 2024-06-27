@@ -49,6 +49,7 @@ spotify:
         wait:
           start: 5
           increment: 60
+          max: 300
       cache:
         type: sqlite
         db: cache_db

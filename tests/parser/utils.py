@@ -56,6 +56,7 @@ def assert_spotify_parse(parsed: Namespace, token_path: Path | None = None) -> N
     assert parsed.api.handler.backoff.count == 200
     assert parsed.api.handler.wait.start == 5
     assert parsed.api.handler.wait.increment == 60
+    assert parsed.api.handler.wait.max == 300
 
     assert parsed.api.cache.type == "sqlite"
     assert parsed.api.cache.db == "cache_db"
