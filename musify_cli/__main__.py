@@ -53,7 +53,7 @@ def set_title(value: str) -> None:
     if sys.platform == "win32":
         os.system(f"title {value}")
     elif sys.platform == "linux" or sys.platform == "darwin":
-        os.system(f"echo '\033]2;{value}\007'")
+        os.system(f"echo -n '\033]2;{value}\007'")
 
 
 def print_header() -> None:
@@ -211,6 +211,8 @@ async def main(processor: MusifyProcessor, config: dict[str, Namespace]) -> None
             if name != next(reversed(config)):  # only run post up to penultimate function
                 await processor.manager.run_post()
 
+            processor.logger.print()
+
 
 # noinspection PyUnusedLocal
 def handle_exception(lp: AbstractEventLoop, context: dict[str, Any]) -> None:
@@ -229,6 +231,7 @@ def close(processor: MusifyProcessor) -> None:
 
     print_folders(processor)
     print_time(processor.time_taken)
+    print()
 
 
 if __name__ == "__main__":

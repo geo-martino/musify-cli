@@ -140,15 +140,12 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
     ## Operations
     ###########################################################################
     async def load(self, types: UnitCollection[LoadTypesRemote] = (), force: bool = False) -> None:
-        types = to_collection(types)
-
-        def _loaded(load_type: LoadTypesRemote) -> bool:
-            return load_type in self.types_loaded
-
         def _should_load(load_type: LoadTypesRemote) -> bool:
             selected = not types or load_type in types
-            can_be_loaded = force or not _loaded(load_type)
+            can_be_loaded = force or load_type not in self.types_loaded
             return selected and can_be_loaded
+
+        types = to_collection(types)
 
         if types and self.types_loaded.intersection(types) == set(types) and not force:
             return
@@ -157,27 +154,35 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
             self.types_loaded.update(LoadTypesRemote.all())
             return
 
+        loaded = set()
         if _should_load(LoadTypesRemote.playlists):
             await self.library.load_playlists()
             self.types_loaded.add(LoadTypesRemote.playlists)
+            loaded.add(LoadTypesRemote.playlists)
         if _should_load(LoadTypesRemote.saved_tracks):
             await self.library.load_tracks()
             self.types_loaded.add(LoadTypesRemote.saved_tracks)
+            loaded.add(LoadTypesRemote.saved_tracks)
         if _should_load(LoadTypesRemote.saved_albums):
             await self.library.load_saved_albums()
             self.types_loaded.add(LoadTypesRemote.saved_albums)
+            loaded.add(LoadTypesRemote.saved_albums)
         if _should_load(LoadTypesRemote.saved_artists):
             await self.library.load_saved_artists()
             self.types_loaded.add(LoadTypesRemote.saved_artists)
+            loaded.add(LoadTypesRemote.saved_artists)
+
+        if not loaded:
+            return
 
         self.logger.print(STAT)
-        if _loaded(LoadTypesRemote.playlists):
+        if LoadTypesRemote.playlists in loaded:
             self.library.log_playlists()
-        if _loaded(LoadTypesRemote.saved_tracks):
+        if LoadTypesRemote.saved_tracks in loaded:
             self.library.log_tracks()
-        if _loaded(LoadTypesRemote.saved_albums):
+        if LoadTypesRemote.saved_albums in loaded:
             self.library.log_albums()
-        if _loaded(LoadTypesRemote.saved_artists):
+        if LoadTypesRemote.saved_artists in loaded:
             self.library.log_artists()
         self.logger.print()
 
