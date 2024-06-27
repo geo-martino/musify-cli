@@ -15,13 +15,14 @@ from jsonargparse import Namespace
 from musify import MODULE_ROOT as MUSIFY_ROOT
 from musify.base import MusifyItem
 from musify.libraries.core.collection import MusifyCollection
+from musify.libraries.local.track import LocalTrack
 from musify.libraries.remote.core.enum import RemoteObjectType
 from musify.libraries.remote.core.object import RemoteAlbum, SyncResultRemotePlaylist
 from musify.logger import MusifyLogger, STAT
 from musify.processors.download import ItemDownloadHelper
 from musify.report import report_playlist_differences, report_missing_tags
 from musify.types import UnitIterable
-from musify.utils import to_collection
+from musify.utils import to_collection, align_string
 
 from musify_cli import MODULE_ROOT
 from musify_cli.exception import ParserError
@@ -43,6 +44,7 @@ class ReportsManager:
         """Run all configured reports for this manager,"""
         await self.playlist_differences()
         await self.missing_tags()
+        await self.tracks_in_playlists()
 
     async def playlist_differences(self) -> dict[str, dict[str, tuple[MusifyItem, ...]]]:
         """Generate a report on the differences between two library's playlists."""
@@ -68,6 +70,80 @@ class ReportsManager:
 
         source = config.filter(self.parent.local.library.albums)
         return report_missing_tags(collections=source, tags=config.tags, match_all=config.match_all)
+
+    async def tracks_in_playlists(self) -> dict[str, dict[LocalTrack, list[str]]]:
+        """Report on the playlists each track appears in."""
+        config = self.config.tracks_in_playlists
+        if not config.enabled:
+            return {}
+
+        await self.parent.local.load()
+
+        folders = config.filter.folders(self.parent.local.library.folders)
+        playlists = config.filter.playlists(self.parent.local.library.playlists.values())
+
+        report: dict[str, dict[LocalTrack, list[str]]] = {
+            folder.name:
+                {track: sorted(pl.name for pl in playlists if pl.tracks and track in pl) for track in folder}
+            for folder in folders
+        }
+
+        counts_per_folder = config.counts.per_folder
+        track_width = 30
+
+        for count in counts_per_folder:
+            self.parent.logger.report(
+                f"\33[1;95m ->\33[1;97m The following tracks were featured in {count} playlist/s\33[0m"
+            )
+            self.parent.logger.print()
+
+            for folder, folder_report in report.items():
+                if not any(len(pl_names) == count for pl_names in folder_report.values()):
+                    continue
+
+                self.parent.logger.report(f"\33[1;95m  •\33[1;94m {folder}\33[0m")
+
+                for track, pl_names in folder_report.items():
+                    if len(pl_names) == count:
+                        self.parent.logger.report(f"\33[1;95m    -\33[97m {track.filename:<{track_width}}\33[0m")
+
+            self.parent.logger.print()
+
+        counts_per_playlist = config.counts.per_playlist
+        for count in counts_per_playlist:
+            self.parent.logger.report(
+                f"\33[1;95m ->\33[1;97m The following tracks were featured "
+                f"in the respective playlist {count} time/s\33[0m"
+            )
+            self.parent.logger.print()
+
+            for pl in playlists:
+                paths = [
+                    track.path for album_report in report.values()
+                    for track, pl_names in album_report.items() if len(pl_names) == count
+                ]
+                if not paths:
+                    continue
+
+                self.parent.logger.report(f"\33[1;95m  •\33[1;94m {pl.name}\33[0m")
+                tracks = [track for track in pl if track.path in paths]
+                for track in tracks:
+                    track_name = align_string(track.filename, max_width=track_width)
+                    self.parent.logger.report(f"\33[1;95m    -\33[97m {track_name:<{track_width}}\33[0m")
+
+        self.parent.logger.report("\33[1;95m ->\33[1;97m Reporting on the playlists each track is featured in\33[0m")
+        self.parent.logger.print()
+
+        for folder, folder_report in report.items():
+            self.parent.logger.report(f"\33[1;95m  •\33[1;94m {folder}\33[0m")
+
+            for track, pl_names in folder_report.items():
+                track_name = align_string(track.filename, max_width=track_width)
+                self.parent.logger.report(
+                    f"\33[1;95m    -\33[93m {track_name:<{track_width}}\33[0m: {", ".join(pl_names)}"
+                )
+
+        return report
 
 
 class MusifyManager:

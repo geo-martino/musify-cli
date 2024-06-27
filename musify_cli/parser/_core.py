@@ -10,7 +10,7 @@ from typing import Any
 
 import yaml
 from jsonargparse import ArgumentParser, ActionParser, Namespace
-from jsonargparse.typing import Path_dc, Path_fr, Path_fc
+from jsonargparse.typing import Path_dc, Path_fr, Path_fc, NonNegativeInt, PositiveInt
 from musify import PROGRAM_NAME
 from musify.field import TagFields
 from musify.libraries.local.track.field import LocalTrackField
@@ -161,6 +161,31 @@ reports_missing_tags.add_argument(
 )
 reports.add_argument(
     "--missing_tags", action=ActionParser(reports_missing_tags)
+)
+
+reports_tracks_in_playlists = ArgumentParser(prog="Report - Tracks in Playlists", formatter_class=EpilogHelpFormatter)
+reports_tracks_in_playlists.add_argument(
+    "--enabled", type=bool, default=False,
+    help="When true, trigger this report."
+)
+reports_tracks_in_playlists.add_argument(
+    "--filter.folders", type=get_comparers_filter, default=FilterComparers(),
+    help="A filter to apply to the folders for this report."
+)
+reports_tracks_in_playlists.add_argument(
+    "--filter.playlists", type=get_comparers_filter, default=FilterComparers(),
+    help="A filter to apply to the playlists for this report."
+)
+reports_tracks_in_playlists.add_argument(
+    "--counts.per_folder", type=list[NonNegativeInt], default=[],
+    help="Additionally, report on tracks that appear in this many playlists per folder."
+)
+reports_tracks_in_playlists.add_argument(
+    "--counts.per_playlist", type=list[PositiveInt], default=[],
+    help="Additionally, report on tracks that appear in this many playlists per playlist."
+)
+reports.add_argument(
+    "--tracks_in_playlists", action=ActionParser(reports_tracks_in_playlists)
 )
 
 reports_group.add_argument("--reports", action=ActionParser(reports))
