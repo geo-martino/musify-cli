@@ -329,18 +329,13 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
     @dynamicprocessormethod
     async def check(self) -> None:
         """Run check on entire library by album and update URI tags on file"""
-        def finalise() -> None:
-            """Finalise function operation"""
-            self.logger.print()
-            self.logger.debug("Check and update URIs: DONE")
-
         self.logger.debug("Check and update URIs: START")
 
         await self.local.load(types=LoadTypesLocal.tracks)
 
         folders = self.manager.filter(self.local.library.folders)
         if not await self.remote.check(folders):
-            finalise()
+            self.logger.debug("Check and update URIs: DONE")
             return
 
         self.logger.info(f"\33[1;95m ->\33[1;97m Updating tags for {len(self.local.library)} tracks: uri \33[0m")
@@ -353,16 +348,11 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         self.local.library.log_save_tracks_result(results)
         self.logger.info(f"\33[92mSet tags for {len(results)} tracks \33[0m")
 
-        finalise()
+        self.logger.debug("Check and update URIs: DONE")
 
     @dynamicprocessormethod
     async def search(self) -> None:
         """Run all methods for searching, checking, and saving URI associations for local files."""
-        def finalise() -> None:
-            """Finalise function operation"""
-            self.logger.print()
-            self.logger.debug("Search and match: DONE")
-
         self.logger.debug("Search and match: START")
 
         await self.local.load(types=LoadTypesLocal.tracks)
@@ -378,7 +368,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
         await self.remote.search(albums)
         if not await self.remote.check(albums):
-            finalise()
+            self.logger.debug("Search and match: DONE")
             return
 
         await self.remote.library.extend([track for album in albums for track in album], allow_duplicates=False)
@@ -393,7 +383,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         log_prefix = "Would have set" if self.manager.dry_run else "Set"
         self.logger.info(f"\33[92m{log_prefix} tags for {len(results)} tracks \33[0m")
 
-        finalise()
+        self.logger.debug("Search and match: DONE")
 
     ###########################################################################
     ## Miscellaneous library operations
@@ -416,7 +406,6 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         log_prefix = "Would have set" if self.manager.dry_run else "Set"
         self.logger.info(f"\33[92m{log_prefix} tags for {len(results)} tracks \33[0m")
 
-        self.logger.print()
         self.logger.debug("Update tags: DONE")
 
     @dynamicprocessormethod
@@ -441,7 +430,6 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         log_prefix = "Would have set" if self.manager.dry_run else "Set"
         self.logger.info(f"\33[92m{log_prefix} tags for {len(results)} tracks \33[0m")
 
-        self.logger.print()
         self.logger.debug("Update compilations: DONE")
 
     # TODO: something weird is happening here when this is run right before running the 'report' processor.
@@ -461,7 +449,6 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         results = await self.remote.sync(playlists)
 
         self.remote.library.log_sync(results)
-        self.logger.print()
         self.logger.debug(f"Sync {self.remote.source}: DONE")
 
     @dynamicprocessormethod

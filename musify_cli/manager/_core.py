@@ -260,8 +260,8 @@ class MusifyManager:
     def pause(self) -> None:
         """Pause the application and display message if configured."""
         if self.config.pause:
-            input(f"\33[93m{self.config.pause}\33[0m ")
             self.logger.print()
+            input(f"\33[93m{self.config.pause}\33[0m ")
 
     ###########################################################################
     ## Utilities

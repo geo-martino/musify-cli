@@ -58,12 +58,9 @@ class LocalLibraryManager(LibraryManager):
     ## Operations
     ###########################################################################
     async def load(self, types: UnitCollection[LoadTypesLocal] = (), force: bool = False) -> None:
-        def _check_loaded(load_type: LoadTypesLocal) -> bool:
-            return load_type in self.types_loaded
-
-        def _check_load(load_type: LoadTypesLocal) -> bool:
+        def _should_load(load_type: LoadTypesLocal) -> bool:
             selected = not types or load_type in types
-            can_be_loaded = force or not _check_loaded(load_type)
+            can_be_loaded = force or load_type not in self.types_loaded
             return selected and can_be_loaded
 
         types = to_collection(types)
@@ -75,17 +72,23 @@ class LocalLibraryManager(LibraryManager):
             self.types_loaded.update(LoadTypesLocal.all())
             return
 
-        if _check_load(LoadTypesLocal.tracks):
+        loaded = set()
+        if _should_load(LoadTypesLocal.tracks):
             await self.library.load_tracks()
             self.types_loaded.add(LoadTypesLocal.tracks)
-        if _check_load(LoadTypesLocal.playlists):
+            loaded.add(LoadTypesLocal.tracks)
+        if _should_load(LoadTypesLocal.playlists):
             await self.library.load_playlists()
             self.types_loaded.add(LoadTypesLocal.playlists)
+            loaded.add(LoadTypesLocal.playlists)
+
+        if not loaded:
+            return
 
         self.logger.print(STAT)
-        if _check_loaded(LoadTypesLocal.tracks):
+        if LoadTypesLocal.tracks in loaded:
             self.library.log_tracks()
-        if _check_loaded(LoadTypesLocal.playlists):
+        if LoadTypesLocal.playlists in loaded:
             self.library.log_playlists()
         self.logger.print()
 
