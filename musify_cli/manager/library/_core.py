@@ -4,11 +4,10 @@ from abc import ABC, abstractmethod
 
 from jsonargparse import Namespace
 from musify.base import MusifyObject
-from musify.enum import MusifyEnum
 from musify.libraries.core.object import Library
 from musify.logger import MusifyLogger
 from musify.processors.filter import FilterComparers
-from musify.types import UnitCollection
+from musify.types import UnitCollection, MusifyEnum
 
 
 class LibraryManager(ABC):

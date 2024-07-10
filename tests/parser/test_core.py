@@ -53,7 +53,7 @@ def test_parse_library_config(tmp_path: Path):
 
     parsed = parse_remote_library_config(lib="spotify", config_path=path_library_config, output_folder=tmp_path)
     parsed_library = parsed.get(parsed.type)
-    assert parsed_library.api.token_path is None
+    assert parsed_library.api.token_file_path is None
     assert parsed_library.api.cache.db == str(tmp_path.joinpath("cache_db"))
 
 

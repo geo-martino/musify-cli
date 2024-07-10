@@ -38,23 +38,23 @@ spotify:
     api:
       client_id: <CLIENT_ID>
       client_secret: <CLIENT_SECRET>
-      scopes:
+      scope:
         - user-library-read
         - user-follow-read
       handler:
-        backoff:
-          start: 0.5
-          factor: 4
+        retry:
+          initial: 0.5
           count: 200
+          exponent: 4
         wait:
-          start: 5
-          increment: 60
-          max: 300
+          initial: 5
+          final: 300
+          step: 60
       cache:
         type: sqlite
         db: cache_db
         expire_after: 2w
-      #token_path: /path/to/token.json
+      #token_file_path: /path/to/token.json
     check:
       interval: 200
       allow_karaoke: True

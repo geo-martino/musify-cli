@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 import yaml
-from musify.api.request import RequestHandler
+from aiorequestful.request.handler import RequestHandler
 
 from musify.libraries.remote.spotify.wrangle import SpotifyDataWrangler
 from musify.logger import MusifyLogger

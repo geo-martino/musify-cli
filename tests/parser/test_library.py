@@ -124,10 +124,10 @@ def test_musicbee_parser(library_paths_platform_map: dict[str, Collection[PurePa
 
 
 def test_spotify_parser(tmp_path: Path):
-    token_path = tmp_path.joinpath("token").with_suffix(".json")
+    token_file_path = tmp_path.joinpath("token").with_suffix(".json")
 
     def _extend_input(config: dict[str, Any]) -> None:
-        config["api"]["token_path"] = token_path
+        config["api"]["token_file_path"] = token_file_path
 
     parsed = parse_library(name="spotify", extend_input=_extend_input)
-    assert_spotify_parse(parsed, token_path=token_path)
+    assert_spotify_parse(parsed, token_file_path=token_file_path)

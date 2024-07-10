@@ -85,12 +85,12 @@ class LocalLibraryManager(LibraryManager):
         if not loaded:
             return
 
-        self.logger.print(STAT)
+        self.logger.print_line(STAT)
         if LoadTypesLocal.tracks in loaded:
             self.library.log_tracks()
         if LoadTypesLocal.playlists in loaded:
             self.library.log_playlists()
-        self.logger.print()
+        self.logger.print_line()
 
     async def save_tracks(self) -> dict[LocalTrack, SyncResultTrack]:
         """

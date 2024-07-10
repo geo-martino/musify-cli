@@ -11,12 +11,11 @@ from datetime import timedelta
 from pathlib import Path, PurePath, PureWindowsPath, PurePosixPath
 from typing import Any, Self
 
+from aiorequestful.cache.backend import CACHE_TYPES, ResponseCache
+from aiorequestful.request.timer import PowerCountTimer, StepCeilingTimer
 from dateutil.relativedelta import relativedelta
 from jsonargparse import ArgumentParser, ActionParser
 from jsonargparse.typing import Path_dw, Path_fc, PositiveInt, NonNegativeFloat, restricted_number_type
-from musify.api.authorise import APIAuthoriser
-from musify.api.cache.backend import CACHE_TYPES
-from musify.api.cache.backend.base import ResponseCache
 from musify.file.path_mapper import PathStemMapper
 from musify.libraries.local.library import LocalLibrary, LIBRARY_CLASSES
 from musify.libraries.local.track import LocalTrack
@@ -301,7 +300,7 @@ def add_remote_api_arguments(core: ArgumentParser, source: str, api: type[Remote
     remote_api = ArgumentParser(prog=f"{source} API", formatter_class=EpilogHelpFormatter)
 
     remote_api.add_class_arguments(
-        api, as_group=False, skip={"client_id", "client_secret", "cache", *set(get_default_args(APIAuthoriser))}
+        api, as_group=False, skip={"client_id", "client_secret", "cache", "token_file_path"}
     )
     remote_api.add_argument(
         "--client-id", type=SensitiveString,
@@ -312,7 +311,11 @@ def add_remote_api_arguments(core: ArgumentParser, source: str, api: type[Remote
         help="The client secret to use when authorising requests."
     )
     remote_api.add_argument(
-        "--token-path", type=str | Path_fc,  # type switched to Path_fc when linked to main config
+        "--scope", type=list[str],
+        help="The scopes to request access to."
+    )
+    remote_api.add_argument(
+        "--token-file-path", type=str | Path_fc,  # type switched to Path_fc when linked to main config
         help="Path to use for loading and saving a token."
     )
 
@@ -320,33 +323,35 @@ def add_remote_api_arguments(core: ArgumentParser, source: str, api: type[Remote
 
     float_at_least_1 = restricted_number_type("float_at_least_1", float, [(">=", 1)])
 
-    backoff = ArgumentParser(prog=f"{source} API handler backoff", formatter_class=EpilogHelpFormatter)
-    backoff.add_argument(
-        "--start", type=NonNegativeFloat, default=0.2,
-        help="The initial backoff time in seconds for failed requests"
+    retry_defaults = get_default_args(PowerCountTimer)
+    retry = ArgumentParser(prog=f"{source} API handler retry timer", formatter_class=EpilogHelpFormatter)
+    retry.add_argument(
+        "--initial", type=NonNegativeFloat, default=retry_defaults.get("initial"),
+        help="The initial retry time in seconds for failed requests"
     )
-    backoff.add_argument(
-        "--factor", type=float_at_least_1, default=1.932,
-        help="The factor by which to increase backoff time for failed requests i.e. backoff_start ** backoff_factor"
-    )
-    backoff.add_argument(
-        "--count", type=PositiveInt, default=10,
+    retry.add_argument(
+        "--count", type=PositiveInt, default=retry_defaults.get("count"),
         help="The maximum number of request attempts to make before giving up and raising an exception"
     )
-    handler.add_argument("--backoff", action=ActionParser(backoff))
+    retry.add_argument(
+        "--exponent", type=float_at_least_1, default=retry_defaults.get("factor"),
+        help="The exponent by which to increase retry time for failed requests i.e. value ** factor"
+    )
+    handler.add_argument("--retry", action=ActionParser(retry))
 
-    wait = ArgumentParser(prog=f"{source} API handler wait time", formatter_class=EpilogHelpFormatter)
+    wait_defaults = get_default_args(StepCeilingTimer)
+    wait = ArgumentParser(prog=f"{source} API handler wait timer", formatter_class=EpilogHelpFormatter)
     wait.add_argument(
-        "--start", type=NonNegativeFloat, default=0,
+        "--initial", type=NonNegativeFloat, default=wait_defaults.get("initial"),
         help="The initial time in seconds to wait after receiving a response from a request"
     )
     wait.add_argument(
-        "--increment", type=NonNegativeFloat, default=0.1,
-        help="The amount in seconds to increase the wait time by each time a rate limit is hit i.e. 429 response"
+        "--final", type=NonNegativeFloat, default=wait_defaults.get("final"),
+        help="The maximum time in seconds that the wait time can be incremented to"
     )
     wait.add_argument(
-        "--max", type=NonNegativeFloat, default=1,
-        help="The maximum time in seconds that the wait time can be incremented to"
+        "--step", type=NonNegativeFloat, default=wait_defaults.get("step"),
+        help="The amount in seconds to increase the wait time by each time a rate limit is hit i.e. 429 response"
     )
     handler.add_argument("--wait", action=ActionParser(wait))
 

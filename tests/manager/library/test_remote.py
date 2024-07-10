@@ -6,9 +6,10 @@ from random import randrange, choice
 from typing import Literal, Any
 
 import pytest
+from aiorequestful.cache.backend import ResponseCache
+from aiorequestful.cache.session import CachedSession
+from aiorequestful.request.timer import PowerCountTimer, StepCeilingTimer
 from jsonargparse import Namespace
-from musify.api.cache.backend import ResponseCache
-from musify.api.cache.session import CachedSession
 from musify.base import MusifyObject, MusifyItem
 from musify.libraries.core.object import Library, Playlist
 from musify.libraries.remote.core.factory import RemoteObjectFactory
@@ -330,20 +331,20 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
             api=Namespace(
                 client_id="<CLIENT ID>",
                 client_secret="<CLIENT SECRET>",
-                scopes=[
+                scope=[
                     "user-library-read",
                     "user-follow-read",
                 ],
                 handler=Namespace(
-                    backoff=Namespace(
-                        start=2,
-                        factor=1.5,
+                    retry=Namespace(
+                        initial=2,
                         count=20,
+                        exponent=1.5,
                     ),
                     wait=Namespace(
-                        start=1,
-                        increment=0.3,
-                        max=3,
+                        initial=1,
+                        final=3,
+                        step=0.3,
                     ),
                 ),
                 cache=Namespace(
@@ -351,7 +352,7 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
                     db=str(tmp_path.joinpath("cache_db")),
                     expire_after=timedelta(days=16),
                 ),
-                token_path=tmp_path.joinpath("token.json"),
+                token_file_path=tmp_path.joinpath("token.json"),
             ),
             check=Namespace(
                 interval=200,
@@ -376,10 +377,12 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
         manager = SpotifyLibraryManager(name="spotify", config=config)
 
         authoriser = manager.api.handler.authoriser
-        authoriser.token = {"access_token": "fake access token", "token_type": "Bearer", "scope": "test-read"}
-        authoriser.test_args = None
-        authoriser.test_expiry = 0
-        authoriser.test_condition = None
+        authoriser.response_handler.response = {
+            "access_token": "fake access token", "token_type": "Bearer", "scope": "test-read"
+        }
+        authoriser.response_tester.request = None
+        authoriser.response_tester.response_test = None
+        authoriser.response_tester.max_expiry = 0
 
         async with manager as m:
             yield m
@@ -396,24 +399,27 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
             # noinspection PyStatementEffect
             manager.api
 
-    # noinspection PyTestUnpassedFixture
+    # noinspection PyTestUnpassedFixture,PyUnresolvedReferences
     async def test_init_api(self, manager: SpotifyLibraryManager, config: Namespace):
         api: SpotifyAPI = manager.api
         assert manager._api is not None
 
-        assert api.handler.authoriser.token_file_path == config.api.token_path
+        assert api.handler.authoriser.response_handler.file_path == config.api.token_file_path
 
-        assert api.handler.backoff_start == 2
-        assert api.handler.backoff_factor == 1.5
-        assert api.handler.backoff_count == 20
-        assert api.handler.wait_time == 1
-        assert api.handler.wait_increment == 0.3
-        assert api.handler.wait_max == 3
+        assert isinstance(api.handler.retry_timer, PowerCountTimer)
+        assert api.handler.retry_timer.initial == 2
+        assert api.handler.retry_timer.count == 20
+        assert api.handler.retry_timer.exponent == 1.5
+
+        assert isinstance(api.handler.wait_timer, StepCeilingTimer)
+        assert api.handler.wait_timer.initial == 1
+        assert api.handler.wait_timer.final == 3
+        assert api.handler.wait_timer.step == 0.3
 
         assert isinstance(api.handler.session, CachedSession)
 
         # does not generate a new object when called twice even if config changes
-        config.api.token_path = "/new/path/to/token.json"
+        config.api.token_file_path = "/new/path/to/token.json"
         config.api.cache.db = "/new/path/to/cache_db"
         assert id(manager.api) == id(manager._api) == id(api)
 

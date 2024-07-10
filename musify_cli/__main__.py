@@ -211,7 +211,7 @@ async def main(processor: MusifyProcessor, config: dict[str, Namespace]) -> None
             if name != next(reversed(config)):  # only run post up to penultimate function
                 await processor.manager.run_post()
 
-            processor.logger.print()
+            processor.logger.print_line()
 
 
 # noinspection PyUnusedLocal

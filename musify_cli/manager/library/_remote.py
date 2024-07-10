@@ -3,8 +3,9 @@ from collections.abc import Collection
 from datetime import datetime
 from typing import AsyncContextManager, Self
 
+from aiorequestful.cache.backend import CACHE_CLASSES, ResponseCache
+from aiorequestful.request.timer import PowerCountTimer, StepCeilingTimer
 from jsonargparse import Namespace
-from musify.api.cache.backend import CACHE_CLASSES, ResponseCache
 from musify.libraries.core.object import Playlist
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.factory import RemoteObjectFactory
@@ -70,22 +71,14 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
         raise NotImplementedError
 
     def _set_handler(self, api: RemoteAPI) -> None:
-        config = self.config.api.handler
+        config: Namespace = self.config.api.handler
         if not self.config.api.handler:
             return
 
-        if value := config.backoff.start:
-            api.handler.backoff_start = value
-        if value := config.backoff.factor:
-            api.handler.backoff_factor = value
-        if value := config.backoff.count:
-            api.handler.backoff_count = value
-        if value := config.wait.start:
-            api.handler.wait_time = value
-        if value := config.wait.increment:
-            api.handler.wait_increment = value
-        if value := config.wait.max:
-            api.handler.wait_max = value
+        if config_retry := config.get("retry"):
+            api.handler.retry_timer = PowerCountTimer(**config_retry)
+        if config_wait := config.get("wait"):
+            api.handler.wait_timer = StepCeilingTimer(**config_wait)
 
     @property
     def cache(self) -> ResponseCache | None:
@@ -177,7 +170,7 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
         if not loaded:
             return
 
-        self.logger.print(STAT)
+        self.logger.print_line(STAT)
         if LoadTypesRemote.playlists in loaded:
             self.library.log_playlists()
         if LoadTypesRemote.saved_tracks in loaded:
@@ -186,7 +179,7 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
             self.library.log_albums()
         if LoadTypesRemote.saved_artists in loaded:
             self.library.log_artists()
-        self.logger.print()
+        self.logger.print_line()
 
     async def enrich(
             self,
@@ -280,7 +273,7 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
                 f"{align_string(pl.name, max_width=max_width)} | Filtered out {initial_count - len(pl):>3} items"
             )
 
-        self.logger.print()
+        self.logger.print_line()
         return pl_filtered
 
     async def sync(self, playlists: Collection[Playlist]) -> dict[str, SyncResultRemotePlaylist]:
@@ -333,9 +326,9 @@ class SpotifyLibraryManager(RemoteLibraryManager):
             self._api = SpotifyAPI(
                 client_id=self.config.api.client_id,
                 client_secret=self.config.api.client_secret,
-                scopes=self.config.api.scopes,
+                scope=self.config.api.scope,
                 cache=self.cache,
-                token_file_path=self.config.api.token_path,
+                token_file_path=self.config.api.token_file_path,
             )
             self.initialised = True
 

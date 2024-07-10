@@ -45,27 +45,27 @@ def assert_musicbee_parse(parsed: Namespace, library_path: str | Path = Path()) 
     assert parsed.playlists.filter(playlist_names) == ["cool playlist 1", "awesome playlist"]
 
 
-def assert_spotify_parse(parsed: Namespace, token_path: Path | None = None) -> None:
+def assert_spotify_parse(parsed: Namespace, token_file_path: Path | None = None) -> None:
     """Check the arguments parsed for the 'spotify' named library."""
     assert parsed.api.client_id == "<CLIENT_ID>"
     assert parsed.api.client_secret == "<CLIENT_SECRET>"
-    assert parsed.api.scopes == ["user-library-read", "user-follow-read"]
+    assert parsed.api.scope == ["user-library-read", "user-follow-read"]
 
-    assert parsed.api.handler.backoff.start == 0.5
-    assert parsed.api.handler.backoff.factor == 4
-    assert parsed.api.handler.backoff.count == 200
-    assert parsed.api.handler.wait.start == 5
-    assert parsed.api.handler.wait.increment == 60
-    assert parsed.api.handler.wait.max == 300
+    assert parsed.api.handler.retry.initial == 0.5
+    assert parsed.api.handler.retry.count == 200
+    assert parsed.api.handler.retry.exponent == 4
+    assert parsed.api.handler.wait.initial == 5
+    assert parsed.api.handler.wait.final == 300
+    assert parsed.api.handler.wait.step == 60
 
     assert parsed.api.cache.type == "sqlite"
     assert parsed.api.cache.db == "cache_db"
     assert parsed.api.cache.expire_after == timedelta(weeks=2)
 
-    print(type(parsed.api.token_path), type(token_path))
-    if token_path is not None:
-        assert isinstance(parsed.api.token_path, jsonargparse.Path)
-        assert Path(parsed.api.token_path) == token_path
+    print(type(parsed.api.token_file_path), type(token_file_path))
+    if token_file_path is not None:
+        assert isinstance(parsed.api.token_file_path, jsonargparse.Path)
+        assert Path(parsed.api.token_file_path) == token_file_path
 
     playlist_names = ["cool playlist", "awesome playlist", "terrible playlist", "other"]
     assert parsed.playlists.filter(playlist_names) == ["cool playlist"]

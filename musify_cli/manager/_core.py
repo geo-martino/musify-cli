@@ -15,7 +15,7 @@ from jsonargparse import Namespace
 from musify import MODULE_ROOT as MUSIFY_ROOT
 from musify.base import MusifyItem
 from musify.libraries.core.collection import MusifyCollection
-from musify.libraries.remote.core.enum import RemoteObjectType
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.libraries.remote.core.object import RemoteAlbum, SyncResultRemotePlaylist
 from musify.logger import MusifyLogger, STAT
 from musify.processors.download import ItemDownloadHelper
@@ -164,7 +164,8 @@ class MusifyManager:
         """Directory of the folder to use for output data"""
         if self._output_folder is None:
             self._output_folder = Path(self.config.output).joinpath(self.dt.strftime("%Y-%m-%d_%H.%M.%S"))
-            os.makedirs(self._output_folder, exist_ok=True)
+            if "PYTEST_CURRENT_TEST" not in os.environ:
+                os.makedirs(self._output_folder, exist_ok=True)
         return self._output_folder
 
     @property
@@ -247,7 +248,7 @@ class MusifyManager:
             await self.remote.load(types=config_remote.types or (), force=force)
             if config_remote.extend:
                 await self.remote.library.extend(self.local.library, allow_duplicates=False)
-                self.logger.print(STAT)
+                self.logger.print_line(STAT)
             if config_remote.enrich.enabled:
                 await self.remote.enrich(
                     types=config_remote.types or (),
@@ -260,7 +261,7 @@ class MusifyManager:
     def pause(self) -> None:
         """Pause the application and display message if configured."""
         if self.config.pause:
-            self.logger.print()
+            self.logger.print_line()
             input(f"\33[93m{self.config.pause}\33[0m ")
 
     ###########################################################################

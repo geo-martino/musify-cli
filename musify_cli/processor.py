@@ -18,8 +18,8 @@ from jsonargparse import Namespace
 from musify.libraries.core.object import Library
 from musify.libraries.local.collection import LocalFolder
 from musify.libraries.local.track.field import LocalTrackField
-from musify.libraries.remote.core.enum import RemoteObjectType
 from musify.libraries.remote.core.object import RemotePlaylist
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.logger import MusifyLogger, STAT
 from musify.processors.base import DynamicProcessor, dynamicprocessormethod
 from musify.utils import get_user_input
@@ -170,7 +170,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         key = self.manager.backup_key
         if not key:
             key = get_user_input("Enter a key for this backup. Hit return to backup without a key")
-            self.logger.print()
+            self.logger.print_line()
 
         await self.local.load()
         await self.remote.load(types=[LoadTypesRemote.playlists, LoadTypesRemote.saved_tracks])
@@ -197,7 +197,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         if get_user_input(f"Restore {self.local.source} library tracks? (enter 'y')").casefold() == 'y':
             await self._restore_local(restore_dir, key=restore_key)
             restored.append(self.local.library.name)
-            self.logger.print()
+            self.logger.print_line()
         if get_user_input(f"Restore {self.remote.source} library playlists? (enter 'y')").casefold() == 'y':
             await self._restore_spotify(restore_dir, key=restore_key)
             restored.append(self.remote.source)
@@ -260,11 +260,11 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
     async def _restore_local(self, path: Path, key: str | None = None) -> None:
         """Restore local library data from a backup, getting user input for the settings"""
         self.logger.debug("Restore local: START")
-        self.logger.print()
+        self.logger.print_line()
 
         tags, tag_names = self._get_tags_to_restore_from_user()
 
-        self.logger.print()
+        self.logger.print_line()
         await self.local.load(types=LoadTypesLocal.tracks)
 
         self.logger.info(
@@ -300,7 +300,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
     async def _restore_spotify(self, path: Path, key: str | None = None) -> None:
         """Restore remote library data from a backup, getting user input for the settings"""
         self.logger.debug(f"Restore {self.remote.source}: START")
-        self.logger.print()
+        self.logger.print_line()
 
         await self.remote.load(types=[LoadTypesRemote.saved_tracks, LoadTypesRemote.playlists])
 
@@ -344,7 +344,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         )
 
         if results:
-            self.logger.print(STAT)
+            self.logger.print_line(STAT)
         self.local.library.log_save_tracks_result(results)
         self.logger.info(f"\33[92mSet tags for {len(results)} tracks \33[0m")
 
@@ -363,7 +363,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
         if len(albums) == 0:
             self.logger.info("\33[1;95m ->\33[0;90m All items matched or unavailable. Skipping search.\33[0m")
-            self.logger.print()
+            self.logger.print_line()
             return
 
         await self.remote.search(albums)
@@ -378,7 +378,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         results = await self.local.save_tracks_in_collections(collections=albums, replace=True)
 
         if results:
-            self.logger.print(STAT)
+            self.logger.print_line(STAT)
         self.local.library.log_save_tracks_result(results)
         log_prefix = "Would have set" if self.manager.dry_run else "Set"
         self.logger.info(f"\33[92m{log_prefix} tags for {len(results)} tracks \33[0m")
@@ -401,7 +401,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         results = await self.local.save_tracks()
 
         if results:
-            self.logger.print(STAT)
+            self.logger.print_line(STAT)
         self.local.library.log_save_tracks_result(results)
         log_prefix = "Would have set" if self.manager.dry_run else "Set"
         self.logger.info(f"\33[92m{log_prefix} tags for {len(results)} tracks \33[0m")
@@ -425,7 +425,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         results = await self.local.save_tracks_in_collections(collections=folders)
 
         if results:
-            self.logger.print(STAT)
+            self.logger.print_line(STAT)
         self.local.library.log_save_tracks_result(results)
         log_prefix = "Would have set" if self.manager.dry_run else "Set"
         self.logger.info(f"\33[92m{log_prefix} tags for {len(results)} tracks \33[0m")
@@ -488,14 +488,14 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
         # log load results
         if load_albums or albums_to_extend:
-            self.logger.print(STAT)
+            self.logger.print_line(STAT)
             self.remote.library.log_artists()
-            self.logger.print()
+            self.logger.print_line()
 
         new_albums = self.manager.get_new_artist_albums()
         name, results = await self.manager.create_new_music_playlist(new_albums)
 
-        self.logger.print(STAT)
+        self.logger.print_line(STAT)
         self.remote.library.log_sync({name: results})
         log_prefix = "Would have added" if self.manager.dry_run else "Added"
         self.logger.info(f"\33[92m{log_prefix} {results.added} new tracks to playlist: '{name}' \33[0m")
