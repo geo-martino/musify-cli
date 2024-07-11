@@ -66,7 +66,7 @@ def print_header() -> None:
 def print_folders(processor: MusifyProcessor):
     """Print the key folder locations to the terminal"""
     if processor.logger.file_paths:
-        processor.logger.info(f"\33[90mLogs: {", ".join(map(str, processor.logger.file_paths))} \33[0m")
+        processor.logger.info(f"\33[90mLogs: {", ".join(map(str, set(processor.logger.file_paths)))} \33[0m")
     processor.logger.info(f"\33[90mOutput: {processor.manager.output_folder} \33[0m")
     print()
 
