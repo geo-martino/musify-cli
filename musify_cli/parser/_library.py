@@ -334,8 +334,8 @@ def add_remote_api_arguments(core: ArgumentParser, source: str, api: type[Remote
         help="The maximum number of request attempts to make before giving up and raising an exception"
     )
     retry.add_argument(
-        "--exponent", type=float_at_least_1, default=retry_defaults.get("factor"),
-        help="The exponent by which to increase retry time for failed requests i.e. value ** factor"
+        "--exponent", type=float_at_least_1, default=retry_defaults.get("exponent"),
+        help="The exponent by which to increase retry time for failed requests i.e. value ** exponent"
     )
     handler.add_argument("--retry", action=ActionParser(retry))
 
