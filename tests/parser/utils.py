@@ -53,7 +53,7 @@ def assert_spotify_parse(parsed: Namespace, token_file_path: Path | None = None)
 
     assert parsed.api.handler.retry.initial == 0.5
     assert parsed.api.handler.retry.count == 200
-    assert parsed.api.handler.retry.exponent == 4
+    assert parsed.api.handler.retry.factor == 4
     assert parsed.api.handler.wait.initial == 5
     assert parsed.api.handler.wait.final == 300
     assert parsed.api.handler.wait.step == 60
