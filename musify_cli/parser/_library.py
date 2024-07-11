@@ -12,7 +12,7 @@ from pathlib import Path, PurePath, PureWindowsPath, PurePosixPath
 from typing import Any, Self
 
 from aiorequestful.cache.backend import CACHE_TYPES, ResponseCache
-from aiorequestful.request.timer import PowerCountTimer, StepCeilingTimer
+from aiorequestful.request.timer import GeometricCountTimer, StepCeilingTimer
 from dateutil.relativedelta import relativedelta
 from jsonargparse import ArgumentParser, ActionParser
 from jsonargparse.typing import Path_dw, Path_fc, PositiveInt, NonNegativeFloat, restricted_number_type
@@ -323,7 +323,7 @@ def add_remote_api_arguments(core: ArgumentParser, source: str, api: type[Remote
 
     float_at_least_1 = restricted_number_type("float_at_least_1", float, [(">=", 1)])
 
-    retry_defaults = get_default_args(PowerCountTimer)
+    retry_defaults = get_default_args(GeometricCountTimer)
     retry = ArgumentParser(prog=f"{source} API handler retry timer", formatter_class=EpilogHelpFormatter)
     retry.add_argument(
         "--initial", type=NonNegativeFloat, default=retry_defaults.get("initial"),
@@ -334,8 +334,8 @@ def add_remote_api_arguments(core: ArgumentParser, source: str, api: type[Remote
         help="The maximum number of request attempts to make before giving up and raising an exception"
     )
     retry.add_argument(
-        "--exponent", type=float_at_least_1, default=retry_defaults.get("exponent"),
-        help="The exponent by which to increase retry time for failed requests i.e. value ** exponent"
+        "--factor", type=float_at_least_1, default=retry_defaults.get("factor"),
+        help="The factor by which to increase retry time for failed requests i.e. value * factor"
     )
     handler.add_argument("--retry", action=ActionParser(retry))
 

@@ -45,7 +45,7 @@ spotify:
         retry:
           initial: 0.5
           count: 200
-          exponent: 4
+          factor: 4
         wait:
           initial: 5
           final: 300

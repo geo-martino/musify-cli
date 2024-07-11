@@ -8,7 +8,7 @@ from typing import Literal, Any
 import pytest
 from aiorequestful.cache.backend import ResponseCache
 from aiorequestful.cache.session import CachedSession
-from aiorequestful.request.timer import PowerCountTimer, StepCeilingTimer
+from aiorequestful.request.timer import GeometricCountTimer, StepCeilingTimer
 from jsonargparse import Namespace
 from musify.base import MusifyObject, MusifyItem
 from musify.libraries.core.object import Library, Playlist
@@ -339,7 +339,7 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
                     retry=Namespace(
                         initial=2,
                         count=20,
-                        exponent=1.5,
+                        factor=1.5,
                     ),
                     wait=Namespace(
                         initial=1,
@@ -377,12 +377,12 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
         manager = SpotifyLibraryManager(name="spotify", config=config)
 
         authoriser = manager.api.handler.authoriser
-        authoriser.response_handler.response = {
+        authoriser.response.replace({
             "access_token": "fake access token", "token_type": "Bearer", "scope": "test-read"
-        }
-        authoriser.response_tester.request = None
-        authoriser.response_tester.response_test = None
-        authoriser.response_tester.max_expiry = 0
+        })
+        authoriser.tester.request = None
+        authoriser.tester.response_test = None
+        authoriser.tester.max_expiry = 0
 
         async with manager as m:
             yield m
@@ -404,12 +404,12 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
         api: SpotifyAPI = manager.api
         assert manager._api is not None
 
-        assert api.handler.authoriser.response_handler.file_path == config.api.token_file_path
+        assert api.handler.authoriser.response.file_path == config.api.token_file_path
 
-        assert isinstance(api.handler.retry_timer, PowerCountTimer)
+        assert isinstance(api.handler.retry_timer, GeometricCountTimer)
         assert api.handler.retry_timer.initial == 2
         assert api.handler.retry_timer.count == 20
-        assert api.handler.retry_timer.exponent == 1.5
+        assert api.handler.retry_timer.factor == 1.5
 
         assert isinstance(api.handler.wait_timer, StepCeilingTimer)
         assert api.handler.wait_timer.initial == 1

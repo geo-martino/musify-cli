@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import AsyncContextManager, Self
 
 from aiorequestful.cache.backend import CACHE_CLASSES, ResponseCache
-from aiorequestful.request.timer import PowerCountTimer, StepCeilingTimer
+from aiorequestful.request.timer import GeometricCountTimer, StepCeilingTimer
 from jsonargparse import Namespace
 from musify.libraries.core.object import Playlist
 from musify.libraries.remote.core.api import RemoteAPI
@@ -76,7 +76,7 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
             return
 
         if config_retry := config.get("retry"):
-            api.handler.retry_timer = PowerCountTimer(**config_retry)
+            api.handler.retry_timer = GeometricCountTimer(**config_retry)
         if config_wait := config.get("wait"):
             api.handler.wait_timer = StepCeilingTimer(**config_wait)
 
@@ -84,8 +84,7 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
     def cache(self) -> ResponseCache | None:
         """The initialised cache to use with the remote API for this remote library type"""
         if self._cache is None:
-            config = self.config.api.cache
-            if config is None:
+            if (config := self.config.api.cache) is None:
                 return
 
             cls = next((cls for cls in CACHE_CLASSES if cls.type == config.type), None)
