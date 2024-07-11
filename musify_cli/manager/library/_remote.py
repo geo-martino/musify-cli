@@ -75,10 +75,10 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
         if not self.config.api.handler:
             return
 
-        if config_retry := config.get("retry") and config.retry.enabled:
-            api.handler.retry_timer = PowerCountTimer(**config_retry)
-        if config_wait := config.get("wait") and config.wait.enabled:
-            api.handler.wait_timer = StepCeilingTimer(**config_wait)
+        # if config_retry := config.get("retry"):
+        #     api.handler.retry_timer = PowerCountTimer(**config_retry)
+        # if config_wait := config.get("wait"):
+        #     api.handler.wait_timer = StepCeilingTimer(**config_wait)
 
     @property
     def cache(self) -> ResponseCache | None:

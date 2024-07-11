@@ -326,10 +326,6 @@ def add_remote_api_arguments(core: ArgumentParser, source: str, api: type[Remote
     retry_defaults = get_default_args(PowerCountTimer)
     retry = ArgumentParser(prog=f"{source} API handler retry timer", formatter_class=EpilogHelpFormatter)
     retry.add_argument(
-        "--enabled", type=bool, default=True,
-        help="Whether or not to enable this timer."
-    )
-    retry.add_argument(
         "--initial", type=NonNegativeFloat, default=retry_defaults.get("initial"),
         help="The initial retry time in seconds for failed requests"
     )
@@ -345,10 +341,6 @@ def add_remote_api_arguments(core: ArgumentParser, source: str, api: type[Remote
 
     wait_defaults = get_default_args(StepCeilingTimer)
     wait = ArgumentParser(prog=f"{source} API handler wait timer", formatter_class=EpilogHelpFormatter)
-    wait.add_argument(
-        "--enabled", type=bool, default=True,
-        help="Whether or not to enable this timer."
-    )
     wait.add_argument(
         "--initial", type=NonNegativeFloat, default=wait_defaults.get("initial"),
         help="The initial time in seconds to wait after receiving a response from a request"
