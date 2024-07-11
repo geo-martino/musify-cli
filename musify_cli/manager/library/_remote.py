@@ -83,9 +83,9 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
     @property
     def cache(self) -> ResponseCache | None:
         """The initialised cache to use with the remote API for this remote library type"""
+        return None
         if self._cache is None:
-            config = self.config.api.cache
-            if config is None:
+            if (config := self.config.api.cache) is None:
                 return
 
             cls = next((cls for cls in CACHE_CLASSES if cls.type == config.type), None)
