@@ -432,8 +432,6 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
         self.logger.debug("Update compilations: DONE")
 
-    # TODO: something weird is happening here when this is run right before running the 'report' processor.
-    #  It causes report_playlist_differences to be empty or produce weird results
     @dynamicprocessormethod
     async def sync_remote(self) -> None:
         """Run all main functions for synchronising remote playlists with a local library"""
