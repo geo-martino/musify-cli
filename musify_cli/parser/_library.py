@@ -345,7 +345,7 @@ def add_remote_api_arguments(core: ArgumentParser, source: str, api: type[Remote
 
     wait_defaults = get_default_args(StepCeilingTimer)
     wait = ArgumentParser(prog=f"{source} API handler wait timer", formatter_class=EpilogHelpFormatter)
-    retry.add_argument(
+    wait.add_argument(
         "--enabled", type=bool, default=True,
         help="Whether or not to enable this timer."
     )
