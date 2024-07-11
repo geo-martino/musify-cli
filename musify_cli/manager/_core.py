@@ -212,7 +212,7 @@ class MusifyManager:
             formatter["format"] = formatter["format"].replace(r"\33", "\33")
 
         if name and name in log_config.get("loggers", {}):
-            log_config["loggers"][MODULE_ROOT] = log_config["loggers"][name]
+            # log_config["loggers"][MODULE_ROOT] = log_config["loggers"][name]
             log_config["loggers"][MUSIFY_ROOT] = log_config["loggers"][name]
             for n in names:
                 log_config["loggers"][n] = log_config["loggers"][name]

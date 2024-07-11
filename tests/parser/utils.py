@@ -62,7 +62,6 @@ def assert_spotify_parse(parsed: Namespace, token_file_path: Path | None = None)
     assert parsed.api.cache.db == "cache_db"
     assert parsed.api.cache.expire_after == timedelta(weeks=2)
 
-    print(type(parsed.api.token_file_path), type(token_file_path))
     if token_file_path is not None:
         assert isinstance(parsed.api.token_file_path, jsonargparse.Path)
         assert Path(parsed.api.token_file_path) == token_file_path
