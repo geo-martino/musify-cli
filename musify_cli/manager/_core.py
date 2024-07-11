@@ -11,6 +11,7 @@ from time import perf_counter
 from typing import Self
 
 import yaml
+from aiorequestful import MODULE_ROOT as AIOREQUESTFUL_ROOT
 from jsonargparse import Namespace
 from musify import MODULE_ROOT as MUSIFY_ROOT
 from musify.base import MusifyItem
@@ -214,6 +215,7 @@ class MusifyManager:
         if name and name in log_config.get("loggers", {}):
             log_config["loggers"][MODULE_ROOT] = log_config["loggers"][name]
             log_config["loggers"][MUSIFY_ROOT] = log_config["loggers"][name]
+            log_config["loggers"][AIOREQUESTFUL_ROOT] = log_config["loggers"][name]
             for n in names:
                 log_config["loggers"][n] = log_config["loggers"][name]
 
