@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import AsyncContextManager, Self
 
 from aiorequestful.cache.backend import CACHE_CLASSES, ResponseCache
-from aiorequestful.request.timer import GeometricCountTimer, StepCeilingTimer
+from aiorequestful.timer import GeometricCountTimer, StepCeilingTimer
 from jsonargparse import Namespace
 from musify.libraries.core.object import Playlist
 from musify.libraries.remote.core.api import RemoteAPI

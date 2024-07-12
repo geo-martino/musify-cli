@@ -12,7 +12,7 @@ from pathlib import Path, PurePath, PureWindowsPath, PurePosixPath
 from typing import Any, Self
 
 from aiorequestful.cache.backend import CACHE_TYPES, ResponseCache
-from aiorequestful.request.timer import GeometricCountTimer, StepCeilingTimer
+from aiorequestful.timer import GeometricCountTimer, StepCeilingTimer
 from dateutil.relativedelta import relativedelta
 from jsonargparse import ArgumentParser, ActionParser
 from jsonargparse.typing import Path_dw, Path_fc, PositiveInt, NonNegativeFloat, restricted_number_type

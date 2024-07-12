@@ -8,7 +8,7 @@ from typing import Literal, Any
 import pytest
 from aiorequestful.cache.backend import ResponseCache
 from aiorequestful.cache.session import CachedSession
-from aiorequestful.request.timer import GeometricCountTimer, StepCeilingTimer
+from aiorequestful.timer import GeometricCountTimer, StepCeilingTimer
 from jsonargparse import Namespace
 from musify.base import MusifyObject, MusifyItem
 from musify.libraries.core.object import Library, Playlist
