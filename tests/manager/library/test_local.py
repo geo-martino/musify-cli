@@ -1,4 +1,3 @@
-import os
 from collections.abc import Collection
 from pathlib import Path
 from random import randrange
@@ -34,10 +33,10 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
     @pytest.fixture
     def config(self, tmp_path: Path) -> Namespace:
         library_folder = tmp_path.joinpath("library")
-        os.makedirs(library_folder, exist_ok=True)
+        library_folder.mkdir(parents=True, exist_ok=True)
 
         playlist_folder = tmp_path.joinpath("playlists")
-        os.makedirs(playlist_folder, exist_ok=True)
+        playlist_folder.mkdir(parents=True, exist_ok=True)
 
         return Namespace(
             paths=Namespace(
@@ -209,17 +208,17 @@ class TestMusicBeeManager(TestLocalLibraryManager[MusicBeeManager]):
         """The library folders to use when generating the MusicBee settings file."""
         library_folders = [tmp_path.joinpath("library_1"), tmp_path.joinpath("library_2")]
         for path in library_folders:
-            os.makedirs(path, exist_ok=True)
+            path.mkdir(parents=True, exist_ok=True)
         return library_folders
 
     # noinspection PyMethodOverriding
     @pytest.fixture
     def config(self, tmp_path: Path, library_folders: list[Path]) -> Namespace:
         musicbee_folder = tmp_path.joinpath("library")
-        os.makedirs(musicbee_folder, exist_ok=True)
+        musicbee_folder.mkdir(parents=True, exist_ok=True)
 
         playlists_folder = musicbee_folder.joinpath(MusicBee.playlists_path)
-        os.makedirs(playlists_folder, exist_ok=True)
+        playlists_folder.mkdir(parents=True, exist_ok=True)
 
         xml_library = (
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
