@@ -452,10 +452,11 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
                 remote_wrangler=pl.remote_wrangler
             )
             static_copy.extend(pl.tracks)
-            await static_copy.save(dry_run=self.manager.dry_run)
+            result = await static_copy.save(dry_run=self.manager.dry_run)
+            print(result)
 
         await self.logger.get_asynchronous_iterator(
-            (_export_playlist(pl) for pl in self.local.library.playlists.values()),
+            map(_export_playlist, self.local.library.playlists.values()),
             desc="Exporting playlists",
             unit="playlists",
         )
