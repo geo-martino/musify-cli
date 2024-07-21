@@ -15,8 +15,9 @@ from time import perf_counter
 from typing import Any, AsyncContextManager, Self
 
 from jsonargparse import Namespace
-from musify.libraries.core.object import Library
+from musify.libraries.core.object import Library, Playlist
 from musify.libraries.local.collection import LocalFolder
+from musify.libraries.local.playlist import M3U, LocalPlaylist
 from musify.libraries.local.track.field import LocalTrackField
 from musify.libraries.remote.core.object import RemotePlaylist
 from musify.libraries.remote.core.types import RemoteObjectType
@@ -386,7 +387,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         self.logger.debug("Search and match: DONE")
 
     ###########################################################################
-    ## Miscellaneous library operations
+    ## Local-bound library operations
     ###########################################################################
     @dynamicprocessormethod
     async def pull_tags(self) -> None:
@@ -432,6 +433,33 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
         self.logger.debug("Update compilations: DONE")
 
+    @dynamicprocessormethod
+    async def export_playlists(self) -> None:
+        """Export a static copy of all local library playlists as M3U files."""
+        self.logger.debug("Export playlists: START")
+
+        await self.local.load(types=LoadTypesLocal.playlists)
+
+        self.logger.info(
+            f"\33[1;95m ->\33[1;97m Exporting a static copy of {len(self.local.library.playlists)} local playlists\n"
+        )
+
+        async def _export_playlist(pl: LocalPlaylist) -> None:
+            static_copy = M3U(
+                path=self.manager.output_folder.joinpath("export").joinpath(pl.filename).with_suffix(".m3u"),
+                path_mapper=pl.path_mapper,
+                remote_wrangler=pl.remote_wrangler
+            )
+            static_copy.extend(pl.tracks)
+            await static_copy.save(dry_run=self.manager.dry_run)
+
+        tuple(map(_export_playlist, self.local.library.playlists.values()))
+
+        self.logger.debug("Export playlists: DONE")
+
+    ###########################################################################
+    ## Remote-bound library operations
+    ###########################################################################
     @dynamicprocessormethod
     async def sync_remote(self) -> None:
         """Run all main functions for synchronising remote playlists with a local library"""
