@@ -439,7 +439,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         """Export a static copy of all local library playlists as M3U files."""
         self.logger.debug("Export playlists: START")
 
-        await self.local.load(types=LoadTypesLocal.playlists)
+        await self.local.load(types=[LoadTypesLocal.tracks, LoadTypesLocal.playlists])
 
         self.logger.info(
             f"\33[1;95m ->\33[1;97m Exporting a static copy of {len(self.local.library.playlists)} local playlists\n"
