@@ -3,6 +3,7 @@ Meta-functionality for the program.
 
 Uses the :py:class:`MusifyManager` to run complex operations on various Musify objects.
 """
+import asyncio
 import json
 import logging
 import os
@@ -453,7 +454,11 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             static_copy.extend(pl.tracks)
             await static_copy.save(dry_run=self.manager.dry_run)
 
-        tuple(map(_export_playlist, self.local.library.playlists.values()))
+        await self.logger.get_asynchronous_iterator(
+            (_export_playlist(pl) for pl in self.local.library.playlists.values()),
+            desc="Exporting playlists",
+            unit="playlists",
+        )
 
         self.logger.debug("Export playlists: DONE")
 
