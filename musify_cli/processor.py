@@ -452,20 +452,13 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
                 remote_wrangler=pl.remote_wrangler
             )
             static_copy.extend(pl.tracks)
-            result = await static_copy.save(dry_run=self.manager.dry_run)
-
-            with open(static_copy.path, "r") as f:
-                assert len(tuple(f)) == len(pl) == result.final
+            await static_copy.save(dry_run=self.manager.dry_run)
 
         await self.logger.get_asynchronous_iterator(
             map(_export_playlist, self.local.library.playlists.values()),
             desc="Exporting playlists",
             unit="playlists",
         )
-
-        env_key = "STAGING_PLAYLIST_FOLDER"
-        os.environ[env_key] = str(staging_folder)
-        self.logger.debug(f"Set environment value: {env_key}={staging_folder}")
 
         self.logger.debug("Export playlists: DONE")
 
