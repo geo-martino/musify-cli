@@ -452,7 +452,9 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             )
             static_copy.extend(pl.tracks)
             result = await static_copy.save(dry_run=self.manager.dry_run)
-            print(static_copy.path, result)
+
+            with open(static_copy.path, "r") as f:
+                assert len(tuple(f)) == len(pl) == result.final
 
         await self.logger.get_asynchronous_iterator(
             map(_export_playlist, self.local.library.playlists.values()),
