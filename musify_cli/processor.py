@@ -441,12 +441,13 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         await self.local.load(types=[LoadTypesLocal.tracks, LoadTypesLocal.playlists])
 
         self.logger.info(
-            f"\33[1;95m ->\33[1;97m Exporting a static copy of {len(self.local.library.playlists)} local playlists\n"
+            f"\33[1;95m ->\33[1;97m Exporting a static copy of {len(self.local.library.playlists)} local playlists"
         )
+        staging_folder = self.manager.output_folder.joinpath("export")
 
         async def _export_playlist(pl: LocalPlaylist) -> None:
             static_copy = M3U(
-                path=self.manager.output_folder.joinpath("export").joinpath(pl.filename).with_suffix(".m3u"),
+                path=staging_folder.joinpath(pl.filename).with_suffix(".m3u"),
                 path_mapper=pl.path_mapper,
                 remote_wrangler=pl.remote_wrangler
             )
@@ -461,6 +462,10 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             desc="Exporting playlists",
             unit="playlists",
         )
+
+        env_key = "STAGING_PLAYLIST_FOLDER"
+        os.environ[env_key] = str(staging_folder)
+        self.logger.debug(f"Set environment value: {env_key}={staging_folder}")
 
         self.logger.debug("Export playlists: DONE")
 
