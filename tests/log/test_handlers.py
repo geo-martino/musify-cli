@@ -91,7 +91,7 @@ def test_current_time_file_handler_rotator_folders(tmp_path: Path):
         dt_str = (dt_now - timedelta(hours=i)).strftime(LOGGING_DT_FORMAT)
         path = tmp_path.joinpath(dt_str)
         paths.append(path)
-        os.makedirs(path)
+        path.mkdir(parents=True)
 
         if i > 10:  # all folders with dt >10hrs will be empty
             continue

@@ -3,7 +3,6 @@ Meta-functionality for the program.
 
 Uses the :py:class:`MusifyManager` to run complex operations on various Musify objects.
 """
-import asyncio
 import json
 import logging
 import os
@@ -16,7 +15,7 @@ from time import perf_counter
 from typing import Any, AsyncContextManager, Self
 
 from jsonargparse import Namespace
-from musify.libraries.core.object import Library, Playlist
+from musify.libraries.core.object import Library
 from musify.libraries.local.collection import LocalFolder
 from musify.libraries.local.playlist import M3U, LocalPlaylist
 from musify.libraries.local.track.field import LocalTrackField

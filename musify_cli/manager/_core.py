@@ -166,7 +166,7 @@ class MusifyManager:
         if self._output_folder is None:
             self._output_folder = Path(self.config.output).joinpath(self.dt.strftime("%Y-%m-%d_%H.%M.%S"))
             if "PYTEST_CURRENT_TEST" not in os.environ:
-                os.makedirs(self._output_folder, exist_ok=True)
+                self._output_folder.mkdir(parents=True, exist_ok=True)
         return self._output_folder
 
     @property

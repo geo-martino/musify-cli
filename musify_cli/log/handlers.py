@@ -48,7 +48,7 @@ class CurrentTimeRotatingFileHandler(logging.handlers.BaseRotatingHandler):
             filename = "{}.log"
 
         self.filename = Path(str(filename).format(dt_str) if "{}" in str(filename) else filename)
-        os.makedirs(self.filename.parent, exist_ok=True)
+        self.filename.parent.mkdir(parents=True, exist_ok=True)
 
         self.delta = TimeMapper(when.lower())(interval) if when and interval else None
         self.count = count
