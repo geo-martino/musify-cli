@@ -13,7 +13,7 @@ from musify_cli.parser import LoadTypesLocal, LoadTypesRemote, EnrichTypesRemote
 # noinspection PyProtectedMember
 from musify_cli.parser._core import CORE_PARSER, append_parent_folder
 # noinspection PyProtectedMember
-from musify_cli.parser._core import parse_local_library_config, parse_remote_library_config
+from musify_cli.parser._core import parse_library_config
 from tests.parser.utils import path_core_config, path_library_config
 from tests.parser.utils import assert_local_parse, assert_musicbee_parse, assert_spotify_parse
 from tests.utils import path_logging_config
@@ -28,51 +28,55 @@ def test_append_parent_folder(tmp_path: Path):
 
 def test_parse_library_config_fails(tmp_path: Path):
     with pytest.raises(ParserError):  # key to library config given, but no config given
-        parse_local_library_config(lib="local")
+        parse_library_config(lib="local")
 
     with pytest.raises(ParserError):  # key to library config given which doesn't exist in config file
-        parse_local_library_config(lib="key does not exist", config_path=path_library_config)
+        parse_library_config(lib="key does not exist", config_path=path_library_config)
 
 
 # noinspection PyTestUnpassedFixture
 def test_parse_library_config(tmp_path: Path):
-    parsed = parse_local_library_config(lib="local", config_path=path_library_config)
+    parsed = parse_library_config(lib="local", config_path=path_library_config)
     assert_local_parse(parsed.get(parsed.type))
 
     with open(path_library_config, "r") as file:
         config: dict[str, Any] = yaml.full_load(file)
 
-    parsed = parse_local_library_config({"name": "local"} | config["local"])
+    parsed = parse_library_config({"name": "local"} | config["local"])
     assert_local_parse(parsed.get(parsed.type))
 
-    parsed = parse_local_library_config(lib="musicbee", config_path=path_library_config)
+    parsed = parse_library_config(lib="musicbee", config_path=path_library_config)
     assert_musicbee_parse(parsed.get(parsed.type))
 
-    parsed = parse_remote_library_config(lib="spotify", config_path=path_library_config)
+    parsed = parse_library_config(lib="spotify", config_path=path_library_config)
     assert_spotify_parse(parsed.get(parsed.type))
 
-    parsed = parse_remote_library_config(lib="spotify", config_path=path_library_config, output_folder=tmp_path)
-    parsed_library = parsed.get(parsed.type)
-    assert parsed_library.api.token_file_path is None
-    assert parsed_library.api.cache.db == str(tmp_path.joinpath("cache_db"))
 
-
+# noinspection PyTestUnpassedFixture
 def test_core(tmp_path: Path):
     with open(path_core_config, "r") as file:
         config: dict[str, Any] = yaml.full_load(file)
 
-    config["output"] = tmp_path
+    config["paths"]["base"] = tmp_path
+    config["paths"]["backup"] = "backup"
+    config["paths"]["cache"] = "cache"
+    config["paths"]["token"] = tmp_path.joinpath("token")
+    config["paths"].pop("local_library")
+
     config["logging"]["config_path"] = path_logging_config
     config["libraries"]["config_path"] = path_library_config
 
     parsed = CORE_PARSER.parse_object(config)
 
-    assert isinstance(parsed.output, jsonargparse.Path)
-    assert str(parsed.output) == str(tmp_path)
     assert parsed.execute
 
-    assert isinstance(parsed.logging.config_path, jsonargparse.Path)
-    assert str(parsed.logging.config_path) == str(path_logging_config)
+    assert parsed.paths.base == tmp_path
+    assert parsed.paths.backup == Path("backup")
+    assert parsed.paths.cache == Path("cache")
+    assert parsed.paths.token == tmp_path.joinpath("token")
+    assert parsed.paths.local_library == Path("library", "local")
+
+    assert parsed.logging.config_path == path_logging_config
     assert parsed.logging.name == "logger"
 
     values = ["include me", "exclude me", "and me"]

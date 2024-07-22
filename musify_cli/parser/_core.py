@@ -10,7 +10,6 @@ from typing import Any
 
 import yaml
 from jsonargparse import ArgumentParser, ActionParser, Namespace
-from jsonargparse.typing import Path_dc, Path_fr, Path_fc
 from musify import PROGRAM_NAME
 from musify.field import TagFields
 from musify.libraries.local.track.field import LocalTrackField
@@ -40,23 +39,30 @@ CORE_PARSER._optionals.title = "Help and external config"
 
 
 ###########################################################################
+## Link argument helpers
+###########################################################################
+def append_parent_folder(path: str | Path, parent_folder: str | Path | os.PathLike) -> Path:
+    """When the given ``path`` is relative, append the ``parent_folder`` as the parent directory"""
+    if Path(path).is_absolute():
+        return path
+    return Path(parent_folder).joinpath(path)
+
+
+###########################################################################
 ## Runtime
 ###########################################################################
 runtime_group = CORE_PARSER.add_argument_group(
     title="Runtime options",
-    description="Runtime functionality of the program e.g. data output, logging etc."
-)
-runtime_group.add_argument(
-    "-o", "--output", type=Path_dc, default=PACKAGE_ROOT.joinpath("_data"),
-    help="Directory of the folder to use for output data e.g. backups, API tokens, caches etc."
+    description="Runtime functionality of the program e.g. app data output, logging etc."
 )
 runtime_group.add_argument(
     "-x", "--execute", action="store_true",
     help="Run all write operations i.e. modify actual data on any write/save/sync commands"
 )
+
 logging_parser = ArgumentParser(prog="Logging", formatter_class=EpilogHelpFormatter)
 logging_parser.add_argument(
-    "--config-path", type=Path_fr,
+    "--config-path", type=Path,
     help="The path to the logging config file to use."
 )
 logging_parser.add_argument(
@@ -64,6 +70,36 @@ logging_parser.add_argument(
     help="The logger settings to use for this run as found in logging config file."
 )
 runtime_group.add_argument("--logging", action=ActionParser(logging_parser))
+
+app_data_group = CORE_PARSER.add_argument_group(
+    title="App data directories",
+    description="Control the hierarchy of files needed and/or exported by the program "
+                "e.g. backups, API tokens, caches etc."
+)
+app_data = ArgumentParser(prog="App data", formatter_class=EpilogHelpFormatter)
+app_data.add_argument(
+    "--base", type=Path, default=PACKAGE_ROOT.joinpath("_data"),
+    help="The base directory to use for output data e.g. backups, API tokens, caches etc."
+)
+app_data.add_argument(
+    "--backup", type=Path, default="backup",
+    help="The directory to use for backup output. May either be a full path or relative path to the '--base'"
+)
+app_data.add_argument(
+    "--cache", type=Path, default="cache",
+    help="The directory to use for cache output. May either be a full path or relative path to the '--base'"
+)
+app_data.add_argument(
+    "--token", type=Path, default="token",
+    help="The directory to use for token files. May either be a full path or relative path to the '--base'"
+)
+app_data.add_argument(
+    "--local-library", type=Path, default=Path("library", "local"),
+    help="The directory to use for local library export data. "
+         "May either be a full path or relative path to the '--base'"
+)
+
+app_data_group.add_argument("--paths", action=ActionParser(app_data))
 
 ###########################################################################
 ## Pre-/Post- operations
@@ -227,7 +263,7 @@ libraries_group = CORE_PARSER.add_argument_group(
 libraries = ArgumentParser(prog="Libraries", formatter_class=EpilogHelpFormatter)
 
 libraries.add_argument(
-    "--config-path", type=Path_fr | None,
+    "--config-path", type=Path | None,
     help="The file path of the libraries"
 )
 libraries.add_argument(
@@ -246,15 +282,8 @@ libraries.add_argument(
 libraries_group.add_argument("--libraries", action=ActionParser(libraries))
 
 
-def append_parent_folder(path: str | Path, parent_folder: str | Path | os.PathLike) -> Path:
-    """When the given ``path`` is relative, append the ``parent_folder`` as the parent directory"""
-    if os.path.isabs(path):
-        return path
-    return Path(parent_folder).joinpath(path)
-
-
 def load_library_config(
-        lib: str | dict, config_path: Path_fr | None = None, overwrite: str | dict = None
+        lib: str | dict, config_path: Path | None = None, overwrite: str | dict = None
 ) -> dict[str, Any]:
     """
     Process the given library config ``lib`` at the ``config_path``.
@@ -283,8 +312,8 @@ def load_library_config(
     return lib
 
 
-def parse_local_library_config(
-        lib: str | dict, config_path: Path_fr | None = None, overwrite: dict[str, Any] = None
+def parse_library_config(
+        lib: str | dict, config_path: Path | None = None, overwrite: dict[str, Any] = None
 ) -> Namespace:
     """
     Process the given local library config ``lib`` at the ``config_path``.
@@ -294,40 +323,13 @@ def parse_local_library_config(
     return LIBRARY_PARSER.parse_object(data)
 
 
-def parse_remote_library_config(
-        lib: str | dict,
-        config_path: Path_fr | None = None,
-        output_folder: str | Path | None = None,
-        overwrite: dict[str, Any] = None
-) -> Namespace:
-    """
-    Process the given local library config ``lib`` at the ``config_path``,
-    appending ``output_folder`` to paths as appropriate.
-    Overwrite loaded config with ``overwrite``.
-    """
-    data = load_library_config(lib=lib, config_path=config_path, overwrite=overwrite)
-    parsed = LIBRARY_PARSER.parse_object(data)
-    if not output_folder:
-        return parsed
-
-    api = parsed.get(parsed.type).api
-    if api.token_file_path:
-        api.token_file_path = Path_fc(append_parent_folder(api.token_file_path, parent_folder=output_folder))
-
-    local_cache_types = ["sqlite"]
-    if api.cache and api.cache.type in local_cache_types and api.cache.db:
-        api.cache.db = str(Path_fc(append_parent_folder(api.cache.db, parent_folder=output_folder)))
-
-    return parsed
-
-
 CORE_PARSER.link_arguments(
     ("libraries.local", "libraries.config_path"),
     "libraries.local",
-    parse_local_library_config
+    parse_library_config
 )
 CORE_PARSER.link_arguments(
-    ("libraries.remote", "libraries.config_path", "output"),
+    ("libraries.remote", "libraries.config_path"),
     "libraries.remote",
-    parse_remote_library_config
+    parse_library_config
 )

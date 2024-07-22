@@ -1,9 +1,15 @@
 #file: noinspection SpellCheckingInspection
-output: test_folder
 execute: True
 
 logging:
   name: logger
+
+paths:
+  base: test_folder
+  backup: test_backups
+  cache: test_cache
+  token: test_token
+  local_library: test_library_local
 
 reload:
   local:

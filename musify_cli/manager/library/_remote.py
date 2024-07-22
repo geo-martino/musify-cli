@@ -1,9 +1,10 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection
 from datetime import datetime
+from pathlib import Path
 from typing import AsyncContextManager, Self
 
-from aiorequestful.cache.backend import CACHE_CLASSES, ResponseCache
+from aiorequestful.cache.backend import CACHE_CLASSES, ResponseCache, SQLiteCache
 from aiorequestful.timer import GeometricCountTimer, StepCeilingTimer
 from jsonargparse import Namespace
 from musify.libraries.core.object import Playlist
@@ -24,6 +25,7 @@ from musify.types import UnitCollection
 from musify.utils import get_max_width, align_string, to_collection
 
 from musify_cli.exception import ParserError
+from musify_cli.manager._paths import PathsManager
 from musify_cli.manager.library._core import LibraryManager
 from musify_cli.parser import LoadTypesRemote, EnrichTypesRemote
 
@@ -31,8 +33,10 @@ from musify_cli.parser import LoadTypesRemote, EnrichTypesRemote
 class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMeta):
     """Instantiates and manages a :py:class:`RemoteLibrary` and related objects from a given ``config``."""
 
-    def __init__(self, name: str, config: Namespace, dry_run: bool = True):
+    def __init__(self, name: str, config: Namespace, paths: PathsManager, dry_run: bool = True):
         super().__init__(name=name, config=config, dry_run=dry_run)
+
+        self._paths: PathsManager = paths
 
         self._library: RemoteLibrary | None = None
         self._api: RemoteAPI | None = None
@@ -91,7 +95,12 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
             if not cls:
                 return
 
-            self._cache = cls.connect(value=config.db, expire=config.expire_after)
+            local_caches = [SQLiteCache]
+            db = config.db
+            if cls in local_caches and not Path(config.db).is_absolute():
+                db = self._paths.cache.joinpath(db)
+
+            self._cache = cls.connect(value=db, expire=config.expire_after)
 
         return self._cache
 
@@ -322,12 +331,16 @@ class SpotifyLibraryManager(RemoteLibraryManager):
             if not self.config.api.client_id or not self.config.api.client_secret:
                 raise ParserError("Cannot create API object without client ID and client secret")
 
+            token_file_path = Path(self.config.api.token_file_path)
+            if not token_file_path.is_absolute():
+                token_file_path = self._paths.token.joinpath(token_file_path)
+
             self._api = SpotifyAPI(
                 client_id=self.config.api.client_id,
                 client_secret=self.config.api.client_secret,
                 scope=self.config.api.scope,
                 cache=self.cache,
-                token_file_path=self.config.api.token_file_path,
+                token_file_path=token_file_path,
             )
             self.initialised = True
 

@@ -8,7 +8,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9b2127b7-24ea-430c-8f59-a341ad0474f1" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/musify_cli/processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/processor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -45,20 +45,20 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python tests.Run all tests.executor": "Run",
-    "Python tests.pytest for manager.library.test_remote.TestSpotifyLibraryManager.test_context_manager.executor": "Run",
-    "Python tests.pytest for manager.test_core.TestMusifyManager.executor": "Run",
-    "Python tests.pytest for tests.manager.library.test_local.TestLocalLibraryManager.executor": "Run",
-    "Python tests.pytest for tests.manager.library.test_remote.TestSpotifyLibraryManager.executor": "Run",
-    "Python tests.pytest for tests.parser.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "static-pl-export",
-    "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python tests.Run all tests.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for manager.library.test_remote.TestSpotifyLibraryManager.test_context_manager.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for manager.test_core.TestMusifyManager.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for tests.manager.library.test_local.TestLocalLibraryManager.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for tests.manager.library.test_remote.TestSpotifyLibraryManager.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for tests.parser.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\Projects\musify-cli\tests\log" />

@@ -25,7 +25,9 @@ from musify.processors.check import RemoteItemChecker
 from musify.processors.filter import FilterDefinedList, FilterIncludeExclude
 from musify.processors.search import RemoteItemSearcher
 
+from manager.utils import DatetimeStoreImpl
 from musify_cli.exception import ParserError
+from musify_cli.manager._paths import PathsManager
 from musify_cli.manager.library import RemoteLibraryManager, SpotifyLibraryManager
 # noinspection PyProtectedMember
 from musify_cli.parser._utils import get_comparers_filter, LoadTypesRemote, EnrichTypesRemote
@@ -352,7 +354,7 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
                     db=str(tmp_path.joinpath("cache_db")),
                     expire_after=timedelta(days=16),
                 ),
-                token_file_path=tmp_path.joinpath("token.json"),
+                token_file_path="token.json",
             ),
             check=Namespace(
                 interval=200,
@@ -371,10 +373,21 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
             ),
         )
 
+    @pytest.fixture
+    async def paths(self, config: Namespace, tmp_path: Path) -> PathsManager:
+        config = Namespace(
+            base=tmp_path,
+            backup=Path("path", "to", "backup"),
+            token="test_token",
+            cache="test_cache",
+            local_library=Path("path", "to", "local_library"),
+        )
+        return PathsManager(config, dt=DatetimeStoreImpl())
+
     # noinspection PyMethodOverriding
     @pytest.fixture
-    async def manager(self, config: Namespace) -> SpotifyLibraryManager:
-        manager = SpotifyLibraryManager(name="spotify", config=config)
+    async def manager(self, config: Namespace, paths: PathsManager) -> SpotifyLibraryManager:
+        manager = SpotifyLibraryManager(name="spotify", config=config, paths=paths)
 
         authoriser = manager.api.handler.authoriser
         authoriser.response.replace({
@@ -390,8 +403,8 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
     def test_properties(self, manager: SpotifyLibraryManager, config: Namespace):
         assert manager.source == SPOTIFY_SOURCE
 
-    def test_init_api_fails(self, config: Namespace):
-        manager = SpotifyLibraryManager(name="test", config=config)
+    def test_init_api_fails(self, config: Namespace, paths: PathsManager):
+        manager = SpotifyLibraryManager(name="test", config=config, paths=paths)
         config.api.client_id = None
         config.api.client_secret = None
 
@@ -400,11 +413,11 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
             manager.api
 
     # noinspection PyTestUnpassedFixture,PyUnresolvedReferences
-    async def test_init_api(self, manager: SpotifyLibraryManager, config: Namespace):
+    async def test_init_api(self, manager: SpotifyLibraryManager, config: Namespace, paths: PathsManager):
         api: SpotifyAPI = manager.api
         assert manager._api is not None
 
-        assert api.handler.authoriser.response.file_path == config.api.token_file_path
+        assert api.handler.authoriser.response.file_path == paths.token.joinpath(config.api.token_file_path)
 
         assert isinstance(api.handler.retry_timer, GeometricCountTimer)
         assert api.handler.retry_timer.initial == 2

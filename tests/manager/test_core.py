@@ -63,8 +63,14 @@ class TestMusifyManager:
         for the current manager as a pytest.fixture.
         """
         return Namespace(
-            output=tmp_path.joinpath("/path/to/output/folder"),
             execute=True,
+            paths=Namespace(
+                base=tmp_path,
+                backup=Path("path", "to", "backup"),
+                token="test_token",
+                cache="test_cache",
+                local_library=Path("path", "to", "local_library"),
+            ),
             backup=Namespace(key="KEY"),
             pause=None,
             filter=get_comparers_filter(["playlist 1", "playlist 2"]),
@@ -95,18 +101,6 @@ class TestMusifyManager:
     @pytest.mark.skip(reason="Test not yet implemented")
     def test_set_config(self, manager: MusifyManager):
         pass  # TODO
-
-    def test_init_output_folder(self, manager: MusifyManager):
-        assert manager._output_folder is None
-        output_folder = manager.output_folder
-        assert manager._output_folder is not None
-
-        assert output_folder == Path(manager.config.output).joinpath(manager.dt.strftime("%Y-%m-%d_%H.%M.%S"))
-
-        # does not generate a new object when called twice even if config changes
-        manager.config.output = Path("/path/to/a/new/folder")
-        assert manager.output_folder != manager.config.output
-        assert id(manager.output_folder) == id(manager._output_folder) == id(output_folder)
 
     def test_init_dry_run(self, manager: MusifyManager):
         dry_run = manager.dry_run

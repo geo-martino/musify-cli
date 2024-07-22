@@ -60,12 +60,12 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         sys.excepthook = self._handle_exception
 
         # ensure the config and file handler are using the same timestamp
-        # clean up output folder using the same logic for all file handlers
+        # clean up app data backup folder using the same logic for all file handlers
         for name in logging.getHandlerNames():
             handler = logging.getHandlerByName(name)
             if isinstance(handler, CurrentTimeRotatingFileHandler):
                 self.manager.dt = handler.dt
-                handler.rotator(str(self.manager.output_folder.joinpath("{}")), self.manager.output_folder)
+                handler.rotator(str(self.manager.paths.backup.joinpath("{}")), self.manager.paths.backup)
 
         self.logger.debug(f"{self.__class__.__name__} initialised. Time taken: {self.time_taken:.3f}")
 
@@ -105,20 +105,18 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             "CRITICAL ERROR: Uncaught Exception", exc_info=(exc_type, exc_value, exc_traceback)
         )
 
-    def _save_json(self, filename: str | Path, data: Mapping[str, Any], folder: Path | None = None) -> None:
+    def _save_json(self, path: str | Path, data: Mapping[str, Any]) -> None:
         """Save a JSON file to a given folder, or this run's folder if not given"""
-        folder = folder or self.manager.output_folder
-        path = folder.joinpath(filename).with_suffix(".json")
+        path = Path(path).with_suffix(".json")
 
         with open(path, "w") as file:
             json.dump(data, file, indent=2)
 
         self.logger.info(f"\33[1;95m  >\33[1;97m Saved JSON file: \33[1;92m{path}\33[0m")
 
-    def _load_json(self, filename: str | Path, folder: Path | None = None) -> dict[str, Any]:
+    def _load_json(self, path: Path) -> dict[str, Any]:
         """Load a stored JSON file from a given folder, or this run's folder if not given"""
-        folder = folder or self.manager.output_folder
-        path = folder.joinpath(filename).with_suffix(".json")
+        path = Path(path).with_suffix(".json")
 
         with open(path, "r") as file:
             data = json.load(file)
@@ -176,15 +174,17 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         await self.local.load()
         await self.remote.load(types=[LoadTypesRemote.playlists, LoadTypesRemote.saved_tracks])
 
-        self._save_json(self._library_backup_name(self.local.library, key), self.local.library.json())
-        self._save_json(self._library_backup_name(self.remote.library, key), self.remote.library.json())
+        local_backup_path = Path(self.manager.paths.backup, self._library_backup_name(self.local.library, key))
+        self._save_json(local_backup_path, self.local.library.json())
+        remote_backup_path = Path(self.manager.paths.backup, self._library_backup_name(self.remote.library, key))
+        self._save_json(remote_backup_path, self.remote.library.json())
 
         self.logger.debug("Backup libraries: DONE")
 
     @dynamicprocessormethod
     async def restore(self) -> None:
         """Restore library data from a backup, getting user input for the settings"""
-        backup_folder = self.manager.output_folder.parent
+        backup_folder = self.manager.paths.backup.parent
         available_groups = self._get_available_backup_groups(backup_folder)
 
         if len(available_groups) == 0:
@@ -272,7 +272,8 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             f"\33[1;95m ->\33[1;97m Restoring local track tags from backup: "
             f"{path.name} | Tags: {', '.join(tag_names)}\33[0m"
         )
-        backup = self._load_json(self._library_backup_name(self.local.library, key), path)
+        backup_path = Path(self.manager.paths.backup, self._library_backup_name(self.local.library, key))
+        backup = self._load_json(backup_path)
 
         # restore and save
         tracks = {track["path"]: track for track in backup["tracks"]}
@@ -308,7 +309,8 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         self.logger.info(
             f"\33[1;95m ->\33[1;97m Restoring {self.remote.source} playlists from backup: {path.name} \33[0m"
         )
-        backup = self._load_json(self._library_backup_name(self.remote.library, key), path)
+        backup_path = Path(self.manager.paths.backup, self._library_backup_name(self.remote.library, key))
+        backup = self._load_json(backup_path)
 
         # restore and sync
         await self.remote.library.restore_playlists(backup["playlists"])
@@ -443,7 +445,11 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         self.logger.info(
             f"\33[1;95m ->\33[1;97m Exporting a static copy of {len(self.local.library.playlists)} local playlists"
         )
-        staging_folder = self.manager.output_folder.joinpath("export")
+        if staging_folder_env := os.getenv("MUSIFY__LOCAL__PLAYLIST_EXPORT"):
+            staging_folder = Path(staging_folder_env)
+            staging_folder.mkdir(parents=True, exist_ok=True)
+        else:
+            staging_folder = self.manager.paths.local_library.joinpath("playlists")
 
         async def _export_playlist(pl: LocalPlaylist) -> None:
             static_copy = M3U(

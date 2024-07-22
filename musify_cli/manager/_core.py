@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import logging
 import logging.config
-import os
 from collections.abc import Collection, Iterable
 from datetime import datetime
 from pathlib import Path
@@ -26,6 +25,7 @@ from musify.utils import to_collection
 
 from musify_cli import MODULE_ROOT
 from musify_cli.exception import ParserError
+from musify_cli.manager._paths import PathsManager
 from musify_cli.manager.library import LocalLibraryManager, MusicBeeManager
 from musify_cli.manager.library import RemoteLibraryManager, SpotifyLibraryManager
 from musify_cli.parser import LoadTypesLocal, LoadTypesRemote
@@ -35,7 +35,7 @@ class ReportsManager:
     """Configures options for running reports on Musify objects from a given ``config``."""
     def __init__(self, config: Namespace, parent: MusifyManager):
         self.config = config
-        self.parent: MusifyManager = parent
+        self._parent: MusifyManager = parent
 
     def __await__(self):
         return self.run().__await__()
@@ -51,12 +51,12 @@ class ReportsManager:
         if not config.enabled:
             return {}
 
-        await self.parent.local.load(types=[LoadTypesLocal.tracks, LoadTypesLocal.playlists])
-        await self.parent.remote.load(types=[LoadTypesRemote.playlists])
+        await self._parent.local.load(types=[LoadTypesLocal.tracks, LoadTypesLocal.playlists])
+        await self._parent.remote.load(types=[LoadTypesRemote.playlists])
 
         return report_playlist_differences(
-            source=config.filter(self.parent.local.library.playlists.values()),
-            reference=config.filter(self.parent.remote.library.playlists.values())
+            source=config.filter(self._parent.local.library.playlists.values()),
+            reference=config.filter(self._parent.remote.library.playlists.values())
         )
 
     async def missing_tags(self) -> dict[str, dict[MusifyItem, tuple[str, ...]]]:
@@ -65,9 +65,9 @@ class ReportsManager:
         if not config.enabled:
             return {}
 
-        await self.parent.local.load(types=LoadTypesLocal.tracks)
+        await self._parent.local.load(types=LoadTypesLocal.tracks)
 
-        source = config.filter(self.parent.local.library.albums)
+        source = config.filter(self._parent.local.library.albums)
         return report_missing_tags(collections=source, tags=config.tags, match_all=config.match_all)
 
 
@@ -92,8 +92,9 @@ class MusifyManager:
         self.config = config
         self.dt = datetime.now()
 
-        self._output_folder: Path | None = None
         self._dry_run: bool | None = None
+
+        self.paths: PathsManager = PathsManager(config=self.config.paths, dt=self)
 
         local_library_config: Namespace = self.config.libraries.local
         self.local: LocalLibraryManager = self._local_library_map[local_library_config.type](
@@ -106,6 +107,7 @@ class MusifyManager:
         self.remote: RemoteLibraryManager = self._remote_library_map[remote_library_config.type](
             name=remote_library_config.name,
             config=remote_library_config.get(remote_library_config.type),
+            paths=self.paths,
             dry_run=self.dry_run,
         )
 
@@ -159,15 +161,6 @@ class MusifyManager:
             self.local.config = local_library_config.get(local_library_config.type)
 
         self.reports.config = self.config.reports
-
-    @property
-    def output_folder(self) -> Path:
-        """Directory of the folder to use for output data"""
-        if self._output_folder is None:
-            self._output_folder = Path(self.config.output).joinpath(self.dt.strftime("%Y-%m-%d_%H.%M.%S"))
-            if "PYTEST_CURRENT_TEST" not in os.environ:
-                self._output_folder.mkdir(parents=True, exist_ok=True)
-        return self._output_folder
 
     @property
     def dry_run(self) -> bool:

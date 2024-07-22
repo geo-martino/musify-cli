@@ -67,7 +67,7 @@ def print_folders(processor: MusifyProcessor):
     """Print the key folder locations to the terminal"""
     if processor.logger.file_paths:
         processor.logger.info(f"\33[90mLogs: {", ".join(map(str, set(processor.logger.file_paths)))} \33[0m")
-    processor.logger.info(f"\33[90mOutput: {processor.manager.output_folder} \33[0m")
+    processor.logger.info(f"\33[90mApp data: {processor.manager.paths.base} \33[0m")
     print()
 
 
@@ -222,8 +222,7 @@ def handle_exception(lp: AbstractEventLoop, context: dict[str, Any]) -> None:
 
 def close(processor: MusifyProcessor) -> None:
     """Close the ``processor`` and log closing messages."""
-    if not processor.manager.output_folder.glob("*"):
-        shutil.rmtree(processor.manager.output_folder)
+    processor.manager.paths.clear_empty()
 
     print_header()
     processor.logger.debug(f"Time taken: {processor.time_taken}")
