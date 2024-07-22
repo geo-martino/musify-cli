@@ -35,7 +35,7 @@ class PathsManager:
         if not path.is_absolute():
             path = self.base.joinpath(path)
         if "PYTEST_CURRENT_TEST" not in os.environ:
-            self._backup.mkdir(parents=True, exist_ok=True)
+            path.mkdir(parents=True, exist_ok=True)
         return path
 
     def clear_empty(self) -> None:
