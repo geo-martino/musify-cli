@@ -17,7 +17,7 @@ from typing import Any, AsyncContextManager, Self
 from jsonargparse import Namespace
 from musify.libraries.core.object import Library
 from musify.libraries.local.collection import LocalFolder
-from musify.libraries.local.playlist import M3U, LocalPlaylist
+from musify.libraries.local.playlist import M3U, LocalPlaylist, PLAYLIST_CLASSES
 from musify.libraries.local.track.field import LocalTrackField
 from musify.libraries.remote.core.object import RemotePlaylist
 from musify.libraries.remote.core.types import RemoteObjectType
@@ -434,6 +434,35 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         self.logger.info(f"\33[92m{log_prefix} tags for {len(results)} tracks \33[0m")
 
         self.logger.debug("Update compilations: DONE")
+
+    @dynamicprocessormethod
+    async def merge_playlists(self) -> None:
+        """Merge playlists from a given folder with the currently loaded set of local playlists."""
+        self.logger.debug("Merge playlists: START")
+
+        if not (merge_folder := os.getenv("MUSIFY__LOCAL__PLAYLIST_EXPORT")):
+            self.logger.debug("Merge path not set. Set env var: 'MUSIFY__LOCAL__PLAYLIST_EXPORT'")
+            self.logger.debug("Merge playlists: DONE")
+            return
+
+        await self.local.load(types=[LoadTypesLocal.tracks, LoadTypesLocal.playlists])
+
+        merge_folder = Path(merge_folder)
+        merge_playlists: list[LocalPlaylist] = []
+        for cls in PLAYLIST_CLASSES:
+            merge_playlists.extend(
+                cls(path, path_mapper=self.local.path_mapper, remote_wrangler=self.remote.wrangler)
+                for path in cls.get_filepaths(merge_folder)
+            )
+
+        for pl in merge_playlists:
+            if pl.name not in self.local.library.playlists:
+                print(pl.name)
+                continue
+
+            print(pl.name, len(pl), len(self.local.library.playlists[pl.name]), len(pl) == len(self.local.library.playlists[pl.name]))
+
+        self.logger.debug("Merge playlists: DONE")
 
     @dynamicprocessormethod
     async def export_playlists(self) -> None:

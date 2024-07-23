@@ -35,7 +35,7 @@ class LocalLibraryManager(LibraryManager):
         return str(LocalLibrary.source)
 
     @property
-    def _path_mapper(self) -> PathMapper:
+    def path_mapper(self) -> PathMapper:
         """The configured :py:class:`PathMapper` to use when instantiating a library"""
         return PathStemMapper(stem_map=self.config.paths.map)
 
@@ -47,7 +47,7 @@ class LocalLibraryManager(LibraryManager):
                 library_folders=self.config.paths.library.paths,
                 playlist_folder=self.config.paths.playlists,
                 playlist_filter=self.playlist_filter or (),
-                path_mapper=self._path_mapper,
+                path_mapper=self.path_mapper,
                 remote_wrangler=self._remote_wrangler,
             )
             self.initialised = True
@@ -160,7 +160,7 @@ class MusicBeeManager(LocalLibraryManager):
             self._library = MusicBee(
                 musicbee_folder=self.config.paths.library.paths,
                 playlist_filter=self.config.playlists.filter or (),
-                path_mapper=self._path_mapper,
+                path_mapper=self.path_mapper,
                 remote_wrangler=self._remote_wrangler,
             )
             self.initialised = True
