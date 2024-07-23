@@ -455,12 +455,23 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
                 for path in cls.get_filepaths(merge_folder)
             )
 
-        for pl in merge_playlists:
-            if pl.name not in self.local.library.playlists:
-                print(pl.name)
+        original_playlists = self.manager.filter(self.local.library.playlists.values())
+        merge_playlists = self.manager.filter(merge_playlists)
+        self.logger.info(
+            f"\33[1;95m ->\33[1;97m Merging {len(original_playlists)} local playlists with "
+            f"{len(merge_playlists)} merge playlists from \33[1;94m{merge_folder}\33[0m"
+        )
+
+        for merge_pl in merge_playlists:
+            name = merge_pl.name
+            original_pl = self.local.library.playlists[name]
+
+            if merge_pl.name not in self.local.library.playlists:
+                print(name)
                 continue
 
-            print(pl.name, len(pl), len(self.local.library.playlists[pl.name]), len(pl) == len(self.local.library.playlists[pl.name]))
+            await merge_pl.load(self.local.library)
+            print(name, len(merge_pl), len(original_pl), len(merge_pl) == len(original_pl))
 
         self.logger.debug("Merge playlists: DONE")
 
