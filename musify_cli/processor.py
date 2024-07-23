@@ -442,9 +442,11 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
         await self.local.load(types=[LoadTypesLocal.tracks, LoadTypesLocal.playlists])
 
+        playlists = self.manager.filter(self.local.library.playlists.values())
         self.logger.info(
-            f"\33[1;95m ->\33[1;97m Exporting a static copy of {len(self.local.library.playlists)} local playlists"
+            f"\33[1;95m ->\33[1;97m Exporting a static copy of {len(playlists)} local playlists"
         )
+
         if staging_folder_env := os.getenv("MUSIFY__LOCAL__PLAYLIST_EXPORT"):
             staging_folder = Path(staging_folder_env)
             staging_folder.mkdir(parents=True, exist_ok=True)
@@ -460,7 +462,6 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             static_copy.extend(pl.tracks)
             await static_copy.save(dry_run=self.manager.dry_run)
 
-        playlists = self.manager.filter(self.local.library.playlists.values())
         await self.logger.get_asynchronous_iterator(
             map(_export_playlist, playlists), desc="Exporting playlists", unit="playlists",
         )
