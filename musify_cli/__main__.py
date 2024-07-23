@@ -6,7 +6,6 @@ User can run 'python -m musify_cli ...' to access the program from this script.
 import asyncio
 import logging
 import os
-import shutil
 import sys
 import traceback
 from argparse import ArgumentParser
