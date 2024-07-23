@@ -477,7 +477,10 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             f"{len(merge_playlists)} merge playlists from \33[1;94m{merge_folder}\33[0m"
         )
         if reference_folder is not None:
-            log += f" against {len(reference_playlists)} reference playlists from \33[1;94m{reference_folder}\33[0m"
+            log += (
+                f"\33[1;97m against {len(reference_playlists)} reference playlists from "
+                f"\33[1;94m{reference_folder}\33[0m"
+            )
         self.logger.info(log)
 
         # TODO: DELETE ME
