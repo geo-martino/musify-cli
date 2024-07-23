@@ -461,6 +461,8 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             f"\33[1;95m ->\33[1;97m Merging {len(original_playlists)} local playlists with "
             f"{len(merge_playlists)} merge playlists from \33[1;94m{merge_folder}\33[0m"
         )
+        for pl in original_playlists:
+            print(pl.name, pl.path, pl.path.stem, pl.path.name)
 
         for merge_pl in merge_playlists:
             name = merge_pl.name
