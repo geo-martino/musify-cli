@@ -452,7 +452,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
         reference_folder = None
         reference_playlists: list[LocalPlaylist] = []
-        if not (reference_folder_env := os.getenv("MUSIFY__LOCAL__PLAYLIST_REFERENCE")):
+        if reference_folder_env := os.getenv("MUSIFY__LOCAL__PLAYLIST_REFERENCE"):
             reference_folder = Path(reference_folder_env)
 
         for cls in PLAYLIST_CLASSES:
