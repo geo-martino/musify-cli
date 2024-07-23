@@ -492,12 +492,11 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
             await merge_pl.load(self.local.library)
 
-            print(name, len(original_pl), len(merge_pl), len(reference_pl))
-            if reference_pl:
+            if isinstance(reference_pl, LocalPlaylist):
                 await reference_pl.load(self.local.library)
-                print(original_pl == merge_pl == reference_pl)
+                print(name, len(original_pl), len(merge_pl), len(reference_pl), original_pl == merge_pl == reference_pl)
             else:
-                print(original_pl == merge_pl)
+                print(name, len(original_pl), len(merge_pl), original_pl == merge_pl)
         ###
 
         # TODO: add load for merge+reference playlists here. Use logger to get iterator for tqdm bar too
