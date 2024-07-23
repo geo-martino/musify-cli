@@ -69,7 +69,7 @@ def test_current_time_file_handler_rotator_time(log_paths: list[str], tmp_path: 
 def test_current_time_file_handler_rotator_count(log_paths: list[str], tmp_path: Path):
     filename = tmp_path.joinpath("{}.log")
     CurrentTimeRotatingFileHandler(filename=filename, count=10)
-    assert len(list(tmp_path.glob("*"))) == 10
+    assert len(list(tmp_path.glob("*"))) == 9  # -1 for current file/folder
 
 
 def test_current_time_file_handler_rotator_combined(log_paths: list[str], tmp_path: Path):

@@ -82,7 +82,7 @@ class CurrentTimeRotatingFileHandler(logging.handlers.BaseRotatingHandler):
 
         remaining = len(paths)
         for path in sorted(paths):
-            too_many = self.count is not None and remaining >= self.count
+            too_many = self.count is not None and remaining >= (self.count - 1)  # -1 for current file/folder
 
             dt_part = str(path).removeprefix(prefix).removesuffix(suffix)
             try:
