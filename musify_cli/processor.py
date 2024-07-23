@@ -488,7 +488,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
                 continue
 
             original_pl = self.local.library.playlists[name]
-            reference_pl = next(iter(pl for pl in reference_playlists if pl.name == name))
+            reference_pl = next(iter(pl for pl in reference_playlists if pl.name == name), [])
             await merge_pl.load(self.local.library)
 
             print(name, len(original_pl), len(merge_pl), len(reference_pl))
