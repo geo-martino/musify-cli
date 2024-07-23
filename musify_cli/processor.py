@@ -440,28 +440,47 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         """Merge playlists from a given folder with the currently loaded set of local playlists."""
         self.logger.debug("Merge playlists: START")
 
-        if not (merge_folder := os.getenv("MUSIFY__LOCAL__PLAYLIST_EXPORT")):
-            self.logger.debug("Merge path not set. Set env var: 'MUSIFY__LOCAL__PLAYLIST_EXPORT'")
+        if not (merge_folder_env := os.getenv("MUSIFY__LOCAL__PLAYLIST_MERGE")):
+            self.logger.debug("Merge path not set. Set env var: 'MUSIFY__LOCAL__PLAYLIST_MERGE'")
             self.logger.debug("Merge playlists: DONE")
             return
 
         await self.local.load(types=[LoadTypesLocal.tracks, LoadTypesLocal.playlists])
 
-        merge_folder = Path(merge_folder)
+        merge_folder = Path(merge_folder_env)
         merge_playlists: list[LocalPlaylist] = []
+
+        reference_folder = None
+        reference_playlists: list[LocalPlaylist] = []
+        if not (reference_folder_env := os.getenv("MUSIFY__LOCAL__PLAYLIST_REFERENCE")):
+            reference_folder = Path(reference_folder_env)
+
         for cls in PLAYLIST_CLASSES:
             merge_playlists.extend(
                 cls(path, path_mapper=self.local.path_mapper, remote_wrangler=self.remote.wrangler)
                 for path in cls.get_filepaths(merge_folder)
             )
+            if reference_folder is None:
+                continue
+
+            reference_playlists.extend(
+                cls(path, path_mapper=self.local.path_mapper, remote_wrangler=self.remote.wrangler)
+                for path in cls.get_filepaths(reference_folder)
+            )
 
         original_playlists = self.manager.filter(self.local.library.playlists.values())
         merge_playlists = self.manager.filter(merge_playlists)
-        self.logger.info(
+        reference_playlists = self.manager.filter(reference_playlists)
+
+        log = (
             f"\33[1;95m ->\33[1;97m Merging {len(original_playlists)} local playlists with "
             f"{len(merge_playlists)} merge playlists from \33[1;94m{merge_folder}\33[0m"
         )
+        if reference_folder is not None:
+            log += f" against {len(reference_playlists)} reference playlists from \33[1;94m{reference_folder}\33[0m"
+        self.logger.info(log)
 
+        # TODO: DELETE ME
         for merge_pl in merge_playlists:
             name = merge_pl.name
             if merge_pl.name not in self.local.library.playlists:
@@ -469,8 +488,18 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
                 continue
 
             original_pl = self.local.library.playlists[name]
+            reference_pl = next(iter(pl for pl in reference_playlists if pl.name == name))
             await merge_pl.load(self.local.library)
-            print(name, len(merge_pl), len(original_pl), len(merge_pl) == len(original_pl))
+
+            print(name, len(original_pl), len(merge_pl), len(reference_pl))
+            print(len(original_pl) == len(merge_pl) == len(reference_pl))
+        ###
+
+        self.local.library.merge_playlists(merge_playlists, reference=reference_playlists)
+        self.logger.info(
+            f"\33[1;95m >\33[1;97m Saving {len(self.local.library.playlists)} local playlists"
+        )
+        # await self.local.library.save_playlists(dry_run=self.manager.dry_run)
 
         self.logger.debug("Merge playlists: DONE")
 
