@@ -464,12 +464,11 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
         for merge_pl in merge_playlists:
             name = merge_pl.name
-            original_pl = self.local.library.playlists[name]
-
             if merge_pl.name not in self.local.library.playlists:
-                print(name)
+                print(name, merge_pl.path, merge_pl.path.stem, merge_pl.path.name)
                 continue
 
+            original_pl = self.local.library.playlists[name]
             await merge_pl.load(self.local.library)
             print(name, len(merge_pl), len(original_pl), len(merge_pl) == len(original_pl))
 
