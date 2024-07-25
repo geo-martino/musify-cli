@@ -17,6 +17,7 @@ from typing import Any, AsyncContextManager, Self
 from jsonargparse import Namespace
 from musify.libraries.core.object import Library
 from musify.libraries.local.collection import LocalFolder
+from musify.libraries.local.library import LocalLibrary
 from musify.libraries.local.playlist import M3U, LocalPlaylist, PLAYLIST_CLASSES
 from musify.libraries.local.track.field import LocalTrackField
 from musify.libraries.remote.core.object import RemotePlaylist
@@ -469,8 +470,6 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             )
 
         original_playlists = self.manager.filter(self.local.library.playlists.values())
-        merge_playlists = self.manager.filter(merge_playlists)
-        reference_playlists = self.manager.filter(reference_playlists)
 
         log = (
             f"\33[1;95m ->\33[1;97m Merging {len(original_playlists)} local playlists with "
@@ -483,6 +482,28 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             )
         self.logger.info(log)
 
+        merge_library = LocalLibrary(
+            playlist_folder=merge_folder,
+            playlist_filter=self.manager.config.filter,
+            path_mapper=self.local.path_mapper,
+            remote_wrangler=self.remote.wrangler,
+            name="Merge",
+        )
+        merge_library.extend(self.local.library)
+        await merge_library.load_playlists()
+        merge_library.log_playlists()
+
+        reference_library = LocalLibrary(
+            playlist_folder=reference_folder,
+            playlist_filter=self.manager.config.filter,
+            path_mapper=self.local.path_mapper,
+            remote_wrangler=self.remote.wrangler,
+            name="Reference",
+        )
+        reference_library.extend(self.local.library)
+        await reference_library.load_playlists()
+        reference_library.log_playlists()
+
         # TODO: DELETE ME
         for merge_pl in merge_playlists:
             name = merge_pl.name
@@ -493,10 +514,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             original_pl = self.local.library.playlists[name]
             reference_pl = next(iter(pl for pl in reference_playlists if pl.name == name), [])
 
-            await merge_pl.load(self.local.library)
-
             if isinstance(reference_pl, LocalPlaylist):
-                await reference_pl.load(self.local.library)
                 equal = original_pl == merge_pl == reference_pl
                 stats = (len(original_pl), len(merge_pl), len(reference_pl))
             else:
@@ -506,8 +524,6 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             if not equal:
                 print(name, *stats, equal)
         ###
-
-        # TODO: add load for merge+reference playlists here. Use logger to get iterator for tqdm bar too
 
         self.local.library.merge_playlists(merge_playlists, reference=reference_playlists)
         self.logger.info(
