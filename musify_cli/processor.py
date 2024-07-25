@@ -462,14 +462,16 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         )
         merge_library.extend(self.local.library)
 
-        reference_library = LocalLibrary(
-            playlist_folder=reference_folder,
-            playlist_filter=self.manager.config.filter,
-            path_mapper=self.local.path_mapper,
-            remote_wrangler=self.remote.wrangler,
-            name="Reference",
-        )
-        reference_library.extend(self.local.library)
+        reference_library = None
+        if reference_folder is not None:
+            reference_library = LocalLibrary(
+                playlist_folder=reference_folder,
+                playlist_filter=self.manager.config.filter,
+                path_mapper=self.local.path_mapper,
+                remote_wrangler=self.remote.wrangler,
+                name="Reference",
+            )
+            reference_library.extend(self.local.library)
 
         original_playlists = self.manager.filter(self.local.library.playlists.values())
 
@@ -487,8 +489,13 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         await merge_library.load_playlists()
         merge_library.log_playlists()
 
-        await reference_library.load_playlists()
-        reference_library.log_playlists()
+        deleted_playlists = set()
+        if reference_library is not None:
+            await reference_library.load_playlists()
+            reference_library.log_playlists()
+
+            deleted_playlists.update(set(reference_library.playlists).difference(merge_library.playlists))
+            deleted_playlists.update(set(reference_library.playlists).difference(original_playlists))
 
         self.local.library.merge_playlists(merge_library, reference=reference_library)
         self.logger.info(
@@ -496,6 +503,14 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         )
         await self.local.library.save_playlists(dry_run=self.manager.dry_run)
         await merge_library.save_playlists(dry_run=self.manager.dry_run)
+
+        for name in deleted_playlists:
+            if (pl := self.local.library.playlists.get(name)) is not None:
+                self.local.library.playlists.pop(pl.name)
+                os.remove(pl.path)
+            if (pl := merge_library.playlists.get(name)) is not None:
+                merge_library.playlists.pop(pl.name)
+                os.remove(pl.path)
 
         self.logger.debug("Merge playlists: DONE")
 
