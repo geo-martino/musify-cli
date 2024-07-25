@@ -479,7 +479,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         )
         if reference_folder is not None:
             log += (
-                f"\33[1;97m against {len(len(reference_library._playlist_paths))} reference playlists from "
+                f"\33[1;97m against {len(reference_library._playlist_paths)} reference playlists from "
                 f"\33[1;94m{reference_folder}\33[0m"
             )
         self.logger.info(log)
