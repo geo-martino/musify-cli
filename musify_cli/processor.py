@@ -18,7 +18,7 @@ from jsonargparse import Namespace
 from musify.libraries.core.object import Library
 from musify.libraries.local.collection import LocalFolder
 from musify.libraries.local.library import LocalLibrary
-from musify.libraries.local.playlist import M3U, LocalPlaylist, PLAYLIST_CLASSES
+from musify.libraries.local.playlist import M3U, LocalPlaylist
 from musify.libraries.local.track.field import LocalTrackField
 from musify.libraries.remote.core.object import RemotePlaylist
 from musify.libraries.remote.core.types import RemoteObjectType
@@ -449,38 +449,9 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         await self.local.load(types=[LoadTypesLocal.tracks, LoadTypesLocal.playlists])
 
         merge_folder = Path(merge_folder_env)
-        merge_playlists: list[LocalPlaylist] = []
-
         reference_folder = None
-        reference_playlists: list[LocalPlaylist] = []
         if reference_folder_env := os.getenv("MUSIFY__LOCAL__PLAYLIST_REFERENCE"):
             reference_folder = Path(reference_folder_env)
-
-        for cls in PLAYLIST_CLASSES:
-            merge_playlists.extend(
-                cls(path, path_mapper=self.local.path_mapper, remote_wrangler=self.remote.wrangler)
-                for path in cls.get_filepaths(merge_folder)
-            )
-            if reference_folder is None:
-                continue
-
-            reference_playlists.extend(
-                cls(path, path_mapper=self.local.path_mapper, remote_wrangler=self.remote.wrangler)
-                for path in cls.get_filepaths(reference_folder)
-            )
-
-        original_playlists = self.manager.filter(self.local.library.playlists.values())
-
-        log = (
-            f"\33[1;95m ->\33[1;97m Merging {len(original_playlists)} local playlists with "
-            f"{len(merge_playlists)} merge playlists from \33[1;94m{merge_folder}\33[0m"
-        )
-        if reference_folder is not None:
-            log += (
-                f"\33[1;97m against {len(reference_playlists)} reference playlists from "
-                f"\33[1;94m{reference_folder}\33[0m"
-            )
-        self.logger.info(log)
 
         merge_library = LocalLibrary(
             playlist_folder=merge_folder,
@@ -490,8 +461,6 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             name="Merge",
         )
         merge_library.extend(self.local.library)
-        await merge_library.load_playlists()
-        merge_library.log_playlists()
 
         reference_library = LocalLibrary(
             playlist_folder=reference_folder,
@@ -501,18 +470,35 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             name="Reference",
         )
         reference_library.extend(self.local.library)
+
+        original_playlists = self.manager.filter(self.local.library.playlists.values())
+
+        log = (
+            f"\33[1;95m ->\33[1;97m Merging {len(original_playlists)} local playlists with "
+            f"{len(merge_library._playlist_paths)} merge playlists from \33[1;94m{merge_folder}\33[0m"
+        )
+        if reference_folder is not None:
+            log += (
+                f"\33[1;97m against {len(len(reference_library._playlist_paths))} reference playlists from "
+                f"\33[1;94m{reference_folder}\33[0m"
+            )
+        self.logger.info(log)
+
+        await merge_library.load_playlists()
+        merge_library.log_playlists()
+
         await reference_library.load_playlists()
         reference_library.log_playlists()
 
         # TODO: DELETE ME
-        for merge_pl in merge_playlists:
+        for merge_pl in merge_library.playlists.values():
             name = merge_pl.name
             if merge_pl.name not in self.local.library.playlists:
                 print(name, merge_pl.path, merge_pl.path.stem, merge_pl.path.name)
                 continue
 
             original_pl = self.local.library.playlists[name]
-            reference_pl = next(iter(pl for pl in reference_playlists if pl.name == name), [])
+            reference_pl = next(iter(pl for pl in reference_library.playlists.values() if pl.name == name), [])
 
             if isinstance(reference_pl, LocalPlaylist):
                 equal = original_pl == merge_pl == reference_pl
@@ -525,7 +511,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
                 print(name, *stats, equal)
         ###
 
-        self.local.library.merge_playlists(merge_playlists, reference=reference_playlists)
+        self.local.library.merge_playlists(merge_library, reference=reference_library)
         self.logger.info(
             f"\33[1;95m >\33[1;97m Saving {len(self.local.library.playlists)} local playlists"
         )
