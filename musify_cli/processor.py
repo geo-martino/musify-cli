@@ -489,13 +489,20 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         await merge_library.load_playlists()
         merge_library.log_playlists()
 
-        deleted_playlists = set()
         if reference_library is not None:
             await reference_library.load_playlists()
             reference_library.log_playlists()
 
-            deleted_playlists.update(set(reference_library.playlists).difference(merge_library.playlists))
+            deleted_playlists = set(reference_library.playlists).difference(merge_library.playlists)
             deleted_playlists.update(set(reference_library.playlists).difference(self.local.library.playlists))
+
+            for name in deleted_playlists:
+                if (pl := self.local.library.playlists.get(name)) is not None:
+                    self.local.library.playlists.pop(pl.name)
+                    os.remove(pl.path)
+                if (pl := merge_library.playlists.get(name)) is not None:
+                    merge_library.playlists.pop(pl.name)
+                    os.remove(pl.path)
 
         self.local.library.merge_playlists(merge_library, reference=reference_library)
         self.logger.info(
@@ -503,14 +510,6 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         )
         await self.local.library.save_playlists(dry_run=self.manager.dry_run)
         await merge_library.save_playlists(dry_run=self.manager.dry_run)
-
-        for name in deleted_playlists:
-            if (pl := self.local.library.playlists.get(name)) is not None:
-                self.local.library.playlists.pop(pl.name)
-                os.remove(pl.path)
-            if (pl := merge_library.playlists.get(name)) is not None:
-                merge_library.playlists.pop(pl.name)
-                os.remove(pl.path)
 
         self.logger.debug("Merge playlists: DONE")
 
