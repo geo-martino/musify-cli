@@ -495,7 +495,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             reference_library.log_playlists()
 
             deleted_playlists.update(set(reference_library.playlists).difference(merge_library.playlists))
-            deleted_playlists.update(set(reference_library.playlists).difference(original_playlists))
+            deleted_playlists.update(set(reference_library.playlists).difference(self.local.library.playlists))
 
         self.local.library.merge_playlists(merge_library, reference=reference_library)
         self.logger.info(
