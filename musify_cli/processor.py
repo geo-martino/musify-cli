@@ -516,6 +516,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             f"\33[1;95m >\33[1;97m Saving {len(self.local.library.playlists)} local playlists"
         )
         await self.local.library.save_playlists(dry_run=self.manager.dry_run)
+        await merge_library.save_playlists(dry_run=self.manager.dry_run)
 
         print(self.local.library.playlists["monster ronson's queue 🎤"])
         print(merge_library.playlists["monster ronson's queue 🎤"])
