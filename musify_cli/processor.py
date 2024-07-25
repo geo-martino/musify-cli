@@ -529,7 +529,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         self.logger.info(
             f"\33[1;95m >\33[1;97m Saving {len(self.local.library.playlists)} local playlists"
         )
-        # await self.local.library.save_playlists(dry_run=self.manager.dry_run)
+        await self.local.library.save_playlists(dry_run=self.manager.dry_run)
 
         self.logger.debug("Merge playlists: DONE")
 
