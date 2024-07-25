@@ -490,36 +490,12 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         await reference_library.load_playlists()
         reference_library.log_playlists()
 
-        # TODO: DELETE ME
-        for merge_pl in merge_library.playlists.values():
-            name = merge_pl.name
-            if merge_pl.name not in self.local.library.playlists:
-                print(name, merge_pl.path, merge_pl.path.stem, merge_pl.path.name)
-                continue
-
-            original_pl = self.local.library.playlists[name]
-            reference_pl = next(iter(pl for pl in reference_library.playlists.values() if pl.name == name), [])
-
-            if isinstance(reference_pl, LocalPlaylist):
-                equal = original_pl == merge_pl == reference_pl
-                stats = (len(original_pl), len(merge_pl), len(reference_pl))
-            else:
-                equal = original_pl == merge_pl
-                stats = (len(original_pl), len(merge_pl))
-
-            if not equal:
-                print(name, *stats, equal)
-        ###
-
         self.local.library.merge_playlists(merge_library, reference=reference_library)
         self.logger.info(
             f"\33[1;95m >\33[1;97m Saving {len(self.local.library.playlists)} local playlists"
         )
         await self.local.library.save_playlists(dry_run=self.manager.dry_run)
         await merge_library.save_playlists(dry_run=self.manager.dry_run)
-
-        print(self.local.library.playlists.get("monster ronson's queue 🎤"))
-        print(merge_library.playlists.get("monster ronson's queue 🎤"))
 
         self.logger.debug("Merge playlists: DONE")
 
