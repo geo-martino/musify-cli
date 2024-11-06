@@ -17,7 +17,8 @@ from typing import Any, AsyncContextManager, Self
 from jsonargparse import Namespace
 from musify.libraries.core.object import Library
 from musify.libraries.local.collection import LocalFolder
-from musify.libraries.local.playlist import M3U, LocalPlaylist, PLAYLIST_CLASSES
+from musify.libraries.local.library import LocalLibrary
+from musify.libraries.local.playlist import M3U, LocalPlaylist
 from musify.libraries.local.track.field import LocalTrackField
 from musify.libraries.remote.core.object import RemotePlaylist
 from musify.libraries.remote.core.types import RemoteObjectType
@@ -448,72 +449,67 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         await self.local.load(types=[LoadTypesLocal.tracks, LoadTypesLocal.playlists])
 
         merge_folder = Path(merge_folder_env)
-        merge_playlists: list[LocalPlaylist] = []
-
         reference_folder = None
-        reference_playlists: list[LocalPlaylist] = []
         if reference_folder_env := os.getenv("MUSIFY__LOCAL__PLAYLIST_REFERENCE"):
             reference_folder = Path(reference_folder_env)
 
-        for cls in PLAYLIST_CLASSES:
-            merge_playlists.extend(
-                cls(path, path_mapper=self.local.path_mapper, remote_wrangler=self.remote.wrangler)
-                for path in cls.get_filepaths(merge_folder)
-            )
-            if reference_folder is None:
-                continue
+        merge_library = LocalLibrary(
+            playlist_folder=merge_folder,
+            playlist_filter=self.manager.config.filter,
+            path_mapper=self.local.path_mapper,
+            remote_wrangler=self.remote.wrangler,
+            name="Merge",
+        )
+        merge_library.extend(self.local.library)
 
-            reference_playlists.extend(
-                cls(path, path_mapper=self.local.path_mapper, remote_wrangler=self.remote.wrangler)
-                for path in cls.get_filepaths(reference_folder)
+        reference_library = None
+        if reference_folder is not None:
+            reference_library = LocalLibrary(
+                playlist_folder=reference_folder,
+                playlist_filter=self.manager.config.filter,
+                path_mapper=self.local.path_mapper,
+                remote_wrangler=self.remote.wrangler,
+                name="Reference",
             )
+            reference_library.extend(self.local.library)
 
         original_playlists = self.manager.filter(self.local.library.playlists.values())
-        merge_playlists = self.manager.filter(merge_playlists)
-        reference_playlists = self.manager.filter(reference_playlists)
 
         log = (
             f"\33[1;95m ->\33[1;97m Merging {len(original_playlists)} local playlists with "
-            f"{len(merge_playlists)} merge playlists from \33[1;94m{merge_folder}\33[0m"
+            f"{len(merge_library._playlist_paths)} merge playlists from \33[1;94m{merge_folder}\33[0m"
         )
         if reference_folder is not None:
             log += (
-                f"\33[1;97m against {len(reference_playlists)} reference playlists from "
+                f"\33[1;97m against {len(reference_library._playlist_paths)} reference playlists from "
                 f"\33[1;94m{reference_folder}\33[0m"
             )
         self.logger.info(log)
 
-        # TODO: DELETE ME
-        for merge_pl in merge_playlists:
-            name = merge_pl.name
-            if merge_pl.name not in self.local.library.playlists:
-                print(name, merge_pl.path, merge_pl.path.stem, merge_pl.path.name)
-                continue
+        await merge_library.load_playlists()
+        merge_library.log_playlists()
 
-            original_pl = self.local.library.playlists[name]
-            reference_pl = next(iter(pl for pl in reference_playlists if pl.name == name), [])
+        if reference_library is not None:
+            await reference_library.load_playlists()
+            reference_library.log_playlists()
 
-            await merge_pl.load(self.local.library)
+            deleted_playlists = set(reference_library.playlists).difference(merge_library.playlists)
+            deleted_playlists.update(set(reference_library.playlists).difference(self.local.library.playlists))
 
-            if isinstance(reference_pl, LocalPlaylist):
-                await reference_pl.load(self.local.library)
-                equal = original_pl == merge_pl == reference_pl
-                stats = (len(original_pl), len(merge_pl), len(reference_pl))
-            else:
-                equal = original_pl == merge_pl
-                stats = (len(original_pl), len(merge_pl))
+            for name in deleted_playlists:
+                if (pl := self.local.library.playlists.get(name)) is not None:
+                    self.local.library.playlists.pop(pl.name)
+                    os.remove(pl.path)
+                if (pl := merge_library.playlists.get(name)) is not None:
+                    merge_library.playlists.pop(pl.name)
+                    os.remove(pl.path)
 
-            if not equal:
-                print(name, *stats, equal)
-        ###
-
-        # TODO: add load for merge+reference playlists here. Use logger to get iterator for tqdm bar too
-
-        self.local.library.merge_playlists(merge_playlists, reference=reference_playlists)
+        self.local.library.merge_playlists(merge_library, reference=reference_library)
         self.logger.info(
             f"\33[1;95m >\33[1;97m Saving {len(self.local.library.playlists)} local playlists"
         )
-        # await self.local.library.save_playlists(dry_run=self.manager.dry_run)
+        await self.local.library.save_playlists(dry_run=self.manager.dry_run)
+        await merge_library.save_playlists(dry_run=self.manager.dry_run)
 
         self.logger.debug("Merge playlists: DONE")
 
