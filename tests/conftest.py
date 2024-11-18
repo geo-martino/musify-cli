@@ -1,3 +1,4 @@
+import asyncio
 import logging.config
 from pathlib import Path
 from typing import Any
@@ -11,6 +12,16 @@ from musify.logger import MusifyLogger
 from pytest_mock import MockerFixture
 
 from musify_cli import MODULE_ROOT
+
+
+@pytest.fixture(scope="session")
+def event_loop():
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
 
 
 # noinspection PyUnusedLocal
