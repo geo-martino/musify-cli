@@ -6,12 +6,14 @@ from typing import Any
 import pytest
 import yaml
 from aiorequestful.request import RequestHandler
+from musify.libraries.local.track import LocalTrack
 
 from musify.libraries.remote.spotify.wrangle import SpotifyDataWrangler
 from musify.logger import MusifyLogger
 from pytest_mock import MockerFixture
 
 from musify_cli import MODULE_ROOT
+from tests.utils import random_track, random_tracks
 
 
 @pytest.fixture(scope="session")
@@ -69,3 +71,13 @@ async def requests_mock(mocker: MockerFixture) -> None:
     mocker.patch.object(RequestHandler, "request", return_value={})
     yield
     mocker.stopall()
+
+
+@pytest.fixture
+def track() -> LocalTrack:
+    return random_track()
+
+
+@pytest.fixture
+def tracks() -> list[LocalTrack]:
+    return random_tracks()

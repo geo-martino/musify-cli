@@ -8,8 +8,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9b2127b7-24ea-430c-8f59-a341ad0474f1" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/musify_cli/tagger/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/musify_cli/tagger/getter.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/musify_cli/tagger/setter.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/tagger/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/tagger/test_getter.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/tagger/test_setter.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/conftest.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/conftest.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
