@@ -155,6 +155,7 @@ class LocalLibraryManager(LibraryManager):
         tags = self.config.updater.tags
         replace = self.config.updater.replace
 
+        print(self.config)
         print(self.config.tags.rules)
         exit()
 
