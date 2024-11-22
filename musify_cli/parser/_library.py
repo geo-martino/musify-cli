@@ -258,7 +258,7 @@ def load_auto_tag_config(config_path: Path | None = None) -> list[dict[str, Any]
     return config
 
 
-def parse_auto_tag_config(config_path: Path | None = None) -> dict[FilterComparers, dict[str, Setter]] | None:
+def parse_auto_tag_config(config_path: Path | None = None) -> dict[FilterComparers, list[Setter]] | None:
     """
     Process the given tagging config  at the ``config_path``.
     """
@@ -269,10 +269,10 @@ def parse_auto_tag_config(config_path: Path | None = None) -> dict[FilterCompare
     auto_tag_config = {}
     for rules in config:
         condition = get_comparers_filter(rules.pop("filter"))
-        auto_tag_config[condition] = {
-            field: setter_from_config(next(iter(LocalTrackField.from_name(field))), conf)
+        auto_tag_config[condition] = [
+            setter_from_config(next(iter(LocalTrackField.from_name(field))), conf)
             for field, conf in rules.items()
-        }
+        ]
 
     return auto_tag_config
 

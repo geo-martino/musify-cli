@@ -10,11 +10,13 @@ from musify.libraries.local.track import LocalTrack, SyncResultTrack
 from musify.libraries.local.track.field import LocalTrackField
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
 from musify.logger import STAT
+from musify.processors.filter import FilterComparers
 from musify.types import UnitIterable, UnitCollection
 from musify.utils import to_collection
 
 from musify_cli.manager.library._core import LibraryManager
 from musify_cli.parser import LoadTypesLocal
+from musify_cli.tagger.setter import Setter
 
 
 class LocalLibraryManager(LibraryManager):
@@ -152,14 +154,22 @@ class LocalLibraryManager(LibraryManager):
 
         :return: A map of the :py:class:`LocalTrack` saved to its result as a :py:class:`SyncResultTrack` object
         """
-        tags = self.config.updater.tags
-        replace = self.config.updater.replace
+        rules: dict[FilterComparers, list[Setter]] = self.config.tags.rules
+        if not rules:
+            return {}
 
-        print(self.config)
-        print(self.config.tags.rules)
-        exit()
+        folders = {folder.name: folder for folder in self.library.folders}
+        for filter_, setters in rules.items():
+            tracks = filter_.process(self.library)
 
-        return {}
+            for track in tracks:
+                folder = folders[track.folder]
+
+                for setter in setters:
+                    setter.set(track, folder)
+
+        assert self.dry_run
+        return await self.save_tracks()
 
 
 class MusicBeeManager(LocalLibraryManager):
