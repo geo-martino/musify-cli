@@ -38,4 +38,5 @@ class ParserError(MusifyError):
         self.key = key
         self.value = value
         self.message = message
-        super().__init__(": ".join([message, " | ".join(suffix)]))
+
+        super().__init__(": ".join([message, " | ".join(suffix)]) if suffix else message)

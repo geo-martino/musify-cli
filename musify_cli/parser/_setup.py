@@ -53,6 +53,10 @@ def _make_yaml_safe(config: dict[str, Any]) -> None:
 
 
 def yaml_dump(data: dict[str, Any] | Namespace) -> str:
+    """
+    Render given ``data`` as YAML-formatted string,
+    safely converting values and redacting secrets as appropriate.
+    """
     data = data.as_dict() if isinstance(data, Namespace) else deepcopy(data)
     _make_yaml_safe(data)
     return yaml.safe_dump(data, **dump_yaml_kwargs)
