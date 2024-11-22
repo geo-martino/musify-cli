@@ -161,7 +161,7 @@ class LocalLibraryManager(LibraryManager):
         folders = {folder.name: folder for folder in self.library.folders}
         for filter_, setters in rules.items():
             print(filter_.comparers)
-            tracks = filter_.process(self.library)
+            tracks = filter_.process(self.library.tracks)
 
             for track in tracks:
                 print(track.name)
