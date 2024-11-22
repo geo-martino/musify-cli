@@ -80,9 +80,12 @@ def get_tags[T: TagField](
 def get_comparers_filter[T](config: MultiType[T]) -> FilterComparers[T | MusifyObject]:
     """Generate the :py:class:`FilterComparers` object from the ``config``"""
     match_all = get_default_args(FilterComparers)["match_all"]
+
     if isinstance(config, Mapping):
+        field_str = config.pop("field") if "field" in config else None
+        field = next(iter(Fields.from_name(field_str))) if field_str is not None else None
         comparers = [
-            Comparer(condition=cond, expected=exp) for cond, exp in config.items() if cond != "match_all"
+            Comparer(condition=cond, expected=exp, field=field) for cond, exp in config.items() if cond != "match_all"
         ]
         match_all = config.get("match_all", match_all)
     elif isinstance(config, str):

@@ -12,7 +12,8 @@ from musify_cli.manager import MusifyManager
 from musify_cli.manager._core import ReportsManager
 from musify_cli.parser import LOCAL_LIBRARY_TYPES, REMOTE_LIBRARY_TYPES
 # noinspection PyProtectedMember
-from musify_cli.parser._utils import get_comparers_filter
+from musify_cli.parser.utils import get_comparers_filter
+from parser.utils import path_tags_config, path_library_config
 from tests.utils import path_txt, path_logging_config
 
 

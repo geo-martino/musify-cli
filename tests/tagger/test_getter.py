@@ -19,7 +19,6 @@ def test_value_as_config():
     assert getter.field == LocalTrackField.TRACK_NUMBER
 
 
-
 class TagGetterTester(metaclass=ABCMeta):
     @abstractmethod
     def getter(self) -> TagGetter:

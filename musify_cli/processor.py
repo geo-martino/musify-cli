@@ -3,6 +3,7 @@ Meta-functionality for the program.
 
 Uses the :py:class:`MusifyManager` to run complex operations on various Musify objects.
 """
+import itertools
 import json
 import logging
 import os
@@ -135,22 +136,6 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
     async def print(self) -> None:
         """Pretty print data from API getting input from user"""
         await self.remote.api.print_collection()
-
-    @staticmethod
-    def set_compilation_tags(collections: Iterable[LocalFolder]) -> None:
-        """Modify tags for tracks in the given compilation ``collections``"""
-        for collection in collections:
-            tracks = sorted(collection.tracks, key=lambda x: str(x.path).casefold())
-            album = " - ".join(collection.name.split(os.path.sep))
-
-            for i, track in enumerate(tracks, 1):  # set tags
-                track.album = album
-                track.album_artist = "Various"
-                track.track_number = i
-                track.track_total = len(tracks)
-                track.disc_number = 1
-                track.disc_total = 1
-                track.compilation = True
 
     ###########################################################################
     ## Backup/Restore
@@ -413,20 +398,14 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         self.logger.debug("Update tags: DONE")
 
     @dynamicprocessormethod
-    async def process_compilations(self) -> None:
-        """Run all methods for setting and saving local track tags for compilation albums"""
-        self.logger.debug("Update compilations: START")
+    async def auto_tag(self) -> None:
+        """Run all methods for setting and saving tags according to user-defined rules."""
+        self.logger.debug("Auto-tagging: START")
 
         await self.local.load(types=LoadTypesLocal.tracks)
 
-        folders = self.manager.filter(self.local.library.folders)
-
-        self.logger.info(
-            f"\33[1;95m ->\33[1;97m Setting compilation style tags "
-            f"for {sum(len(folder) for folder in folders)} tracks in {len(folders)} folders\n"
-        )
-        self.set_compilation_tags(folders)
-        results = await self.local.save_tracks_in_collections(collections=folders)
+        self.logger.info(f"\33[1;95m ->\33[1;97m Setting tags for {len(self.local.library)} tracks\n")
+        results = await self.local.set_tags()
 
         if results:
             self.logger.print_line(STAT)
@@ -434,7 +413,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         log_prefix = "Would have set" if self.manager.dry_run else "Set"
         self.logger.info(f"\33[92m{log_prefix} tags for {len(results)} tracks \33[0m")
 
-        self.logger.debug("Update compilations: DONE")
+        self.logger.debug("Auto-tagging: DONE")
 
     @dynamicprocessormethod
     async def merge_playlists(self) -> None:

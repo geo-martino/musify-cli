@@ -146,6 +146,20 @@ class LocalLibraryManager(LibraryManager):
         """
         self.library.merge_tracks(tracks, tags=self.config.updater.tags)
 
+    async def set_tags(self) -> dict[LocalTrack, SyncResultTrack]:
+        """
+        Set the tags for the given tracks based on set rules.
+
+        :return: A map of the :py:class:`LocalTrack` saved to its result as a :py:class:`SyncResultTrack` object
+        """
+        tags = self.config.updater.tags
+        replace = self.config.updater.replace
+
+        print(self.config.tags.rules)
+        exit()
+
+        return {}
+
 
 class MusicBeeManager(LocalLibraryManager):
     """Instantiates and manages a :py:class:`MusicBee` library and related objects from a given ``config``."""

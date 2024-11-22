@@ -9,6 +9,7 @@ from tests.utils import path_resources
 
 path_core_config = path_resources.joinpath("test_config.yml")
 path_library_config = path_resources.joinpath("test_libraries.yml")
+path_tags_config = path_resources.joinpath("test_tagging.yml")
 
 
 def assert_local_parse(parsed: Namespace, library_path: str | Path = Path()) -> None:

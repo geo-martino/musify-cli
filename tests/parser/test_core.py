@@ -13,7 +13,7 @@ from musify_cli.parser import LoadTypesLocal, LoadTypesRemote, EnrichTypesRemote
 from musify_cli.parser._core import CORE_PARSER, append_parent_folder
 # noinspection PyProtectedMember
 from musify_cli.parser._core import parse_library_config
-from tests.parser.utils import path_core_config, path_library_config
+from tests.parser.utils import path_core_config, path_library_config, path_tags_config
 from tests.parser.utils import assert_local_parse, assert_musicbee_parse, assert_spotify_parse
 from tests.utils import path_logging_config
 
@@ -64,6 +64,7 @@ def test_core(tmp_path: Path):
 
     config["logging"]["config_path"] = path_logging_config
     config["libraries"]["config_path"] = path_library_config
+    config["tags"]["config_path"] = path_tags_config
 
     parsed = CORE_PARSER.parse_object(config)
 
@@ -94,6 +95,8 @@ def test_core(tmp_path: Path):
     assert parsed.libraries.remote.type == "spotify"
 
     assert parsed.backup.key == "test key"
+
+    assert len(parsed.tags.rules) == 4
 
     assert parsed.reports.playlist_differences.enabled
     values = ["a", "b", "c", 1, 2, 3, "you", "and", "me"]

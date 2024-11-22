@@ -8,7 +8,7 @@ from musify.libraries.local.track.field import LocalTrackField
 from musify_cli.exception import ParserError
 from musify_cli.tagger.getter import TagGetter
 from musify_cli.tagger.setter import SETTERS, setter_from_config, \
-    Value, Clear, GroupedValueSetter, Min, Max, Join, Incremental, GroupedSetter, Template
+    Value, Clear, GroupedValueSetter, Min, Max, Join, Incremental, GroupedSetter, Template, Field
 
 
 def test_value_as_config():
@@ -41,6 +41,25 @@ class TestValue:
         assert track.title != setter.value
         setter.set(track, ())
         assert track.title == setter.value
+
+
+class TestField:
+    def test_setter_from_config(self):
+        assert Field not in SETTERS
+        config = {"field": "year"}
+        setter = setter_from_config(field=LocalTrackField.TITLE, config=config)
+        assert isinstance(setter, Field)
+
+    def test_from_dict(self):
+        config = {"field": "disc_number"}
+        setter = Field.from_dict(field=LocalTrackField.TITLE, config=config)
+        assert setter.value_of == LocalTrackField.DISC_NUMBER
+
+    def test_set(self, track: LocalTrack):
+        setter = Field(field=LocalTrackField.TITLE, value_of=LocalTrackField.YEAR)
+        assert track.title != track.year
+        setter.set(track, ())
+        assert track.title == track.year
 
 
 class TestClear:

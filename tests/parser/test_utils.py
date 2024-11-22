@@ -11,7 +11,7 @@ from musify_cli.parser import CORE_PARSER
 # noinspection PyProtectedMember
 from musify_cli.parser._library import LIBRARY_EPILOG
 # noinspection PyProtectedMember
-from musify_cli.parser._utils import get_default_args, get_tags, get_comparers_filter
+from musify_cli.parser.utils import get_default_args, get_tags, get_comparers_filter
 
 
 def test_epilog_formatter():

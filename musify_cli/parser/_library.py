@@ -32,8 +32,8 @@ from musify.utils import to_collection
 
 from musify.printer import PrettyPrinter
 from musify_cli.parser._setup import TIME_MAPPER_HELP_TEXT
-from musify_cli.parser._utils import EpilogHelpFormatter, LOCAL_TRACK_TAG_NAMES, MultiType
-from musify_cli.parser._utils import get_default_args, get_tags, get_comparers_filter
+from musify_cli.parser.utils import EpilogHelpFormatter, LOCAL_TRACK_TAG_NAMES, MultiType
+from musify_cli.parser.utils import get_default_args, get_tags, get_comparers_filter
 from musify_cli.exception import ParserError
 from musify_cli.parser.types import SensitiveString
 

@@ -19,7 +19,7 @@ from musify_cli.manager.library import LocalLibraryManager, MusicBeeManager
 # noinspection PyProtectedMember
 from musify_cli.parser._library import LocalLibraryPaths, MusicBeePaths
 # noinspection PyProtectedMember
-from musify_cli.parser._utils import get_comparers_filter, get_tags, LoadTypesLocal
+from musify_cli.parser.utils import get_comparers_filter, get_tags, LoadTypesLocal
 from tests.manager.library.testers import LibraryManagerTester
 from tests.utils import random_str
 

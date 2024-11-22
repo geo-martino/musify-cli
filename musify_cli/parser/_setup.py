@@ -16,7 +16,7 @@ from dateutil.relativedelta import relativedelta
 from jsonargparse import Namespace, set_dumper
 # noinspection PyProtectedMember
 from jsonargparse._loaders_dumpers import dump_yaml_kwargs
-from jsonargparse.typing import register_type
+from jsonargparse.typing import register_type, get_registered_type
 
 from musify.printer import PrettyPrinter
 from musify.processors.base import dynamicprocessormethod
@@ -107,6 +107,7 @@ def setup() -> None:
         date,
         serializer=lambda x: x.strftime("%Y-%m-%d"),
         deserializer=lambda x: datetime.strptime(x, "%Y-%m-%d"),
+        fail_already_registered=False
     )
 
     register_type(

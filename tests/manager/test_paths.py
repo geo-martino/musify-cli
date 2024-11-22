@@ -44,7 +44,6 @@ class TestPathsManager:
         assert manager._backup is None
         backup_folder = manager.backup
         assert manager._backup is not None
-        print(backup_folder, manager.config.backup)
         assert backup_folder == Path(manager.config.backup).joinpath(manager._dt.dt.strftime("%Y-%m-%d_%H.%M.%S"))
 
         # does not generate a new object when called twice even if config changes

@@ -97,9 +97,11 @@ class MusifyManager:
         self.paths: PathsManager = PathsManager(config=self.config.paths, dt=self)
 
         local_library_config: Namespace = self.config.libraries.local
+        if (local_config := local_library_config.get(local_library_config.type)) is not None:
+            local_config.update(Namespace(rules=config.tags.rules), "tags")
         self.local: LocalLibraryManager = self._local_library_map[local_library_config.type](
             name=local_library_config.name,
-            config=local_library_config.get(local_library_config.type),
+            config=local_config,
             dry_run=self.dry_run,
         )
 

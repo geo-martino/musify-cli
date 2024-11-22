@@ -30,7 +30,7 @@ from musify_cli.exception import ParserError
 from musify_cli.manager._paths import PathsManager
 from musify_cli.manager.library import RemoteLibraryManager, SpotifyLibraryManager
 # noinspection PyProtectedMember
-from musify_cli.parser._utils import get_comparers_filter, LoadTypesRemote, EnrichTypesRemote
+from musify_cli.parser.utils import get_comparers_filter, LoadTypesRemote, EnrichTypesRemote
 from tests.manager.library.testers import LibraryManagerTester
 from tests.utils import random_str
 

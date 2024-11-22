@@ -42,6 +42,22 @@ class Value(Setter):
         item[self.field] = self.value
 
 
+class Field(Setter):
+    @classmethod
+    def from_dict(cls, field: Tag, config: Mapping[str, Any]):
+        if "field" not in config:
+            raise ParserError("No value given", value=config)
+        value_of_field = next(iter(Tag.from_name(config["field"])))
+        return cls(field=field, value_of=value_of_field)
+
+    def __init__(self, field: Tag, value_of: Tag):
+        super().__init__(field)
+        self.value_of = value_of
+
+    def set[T: LocalTrack](self, item: T, collection: Iterable[T]):
+        item[self.field] = item[self.value_of]
+
+
 class Clear(Setter):
 
     @classmethod
@@ -204,6 +220,8 @@ def setter_from_config(field: Tag, config: Any | Mapping[str, Any]) -> Setter:
     if operation not in setters_map:
         if "value" in config:
             return Value.from_dict(field, config)
+        elif "field" in config:
+            return Field.from_dict(field, config)
         raise ParserError("Unrecognised {key}", key="operation", value=operation)
 
     return setters_map[operation].from_dict(field, config)
