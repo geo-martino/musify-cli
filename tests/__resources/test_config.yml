@@ -35,9 +35,6 @@ libraries:
 backup:
   key: test key
 
-tags:
-  config_path: tags.yml
-
 reports:
   playlist_differences:
     enabled: True

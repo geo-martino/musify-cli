@@ -160,57 +160,6 @@ backup_group.add_argument(
     help="The key to give to backups"
 )
 
-###########################################################################
-## Auto-tagger
-###########################################################################
-auto_tag_group = CORE_PARSER.add_argument_group(
-    title="Auto-tagging rules",
-    description="Options for automatically tagging tracks based on a set of user-defined rules"
-)
-auto_tag = ArgumentParser(prog="Auto-tagger", formatter_class=EpilogHelpFormatter)
-
-auto_tag.add_argument(
-    "--config-path", type=Path | None,
-    help="The path to the auto-tagger rules."
-)
-auto_tag.add_argument(
-    "--rules",
-    help="The auto-tagger rules."
-)
-
-auto_tag_group.add_argument("--tags", action=ActionParser(auto_tag))
-
-
-def load_auto_tag_config(config_path: Path | None = None) -> list[dict[str, Any]] | None:
-    """
-    Process the given tagging config  at the ``config_path``.
-    """
-    if config_path is None or not config_path.is_file():
-        return
-
-    with open(config_path, "r", encoding="utf-8") as file:
-        config = yaml.full_load(file)
-    return config
-
-
-def parse_auto_tag_config(config_path: Path | None = None) -> dict[FilterComparers, dict[str, Setter]] | None:
-    """
-    Process the given tagging config  at the ``config_path``.
-    """
-    config = load_auto_tag_config(config_path=config_path)
-    if not config:
-        return
-
-    auto_tag_config = {}
-    for rules in config:
-        condition = get_comparers_filter(rules.pop("filter"))
-        auto_tag_config[condition] = {
-            field: setter_from_config(next(iter(LocalTrackField.from_name(field))), conf)
-            for field, conf in rules.items()
-        }
-
-    return auto_tag_config
-
 
 ###########################################################################
 ## Reports
@@ -385,9 +334,4 @@ CORE_PARSER.link_arguments(
     ("libraries.remote", "libraries.config_path"),
     "libraries.remote",
     parse_library_config
-)
-CORE_PARSER.link_arguments(
-    ("tags.config_path",),
-    "tags.rules",
-    parse_auto_tag_config
 )

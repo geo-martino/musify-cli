@@ -15,6 +15,8 @@ local:
         match_all: False
         contains: cool
         matches_reg_ex: ^awesome.*
+    tags:
+      config_path: test_tagging.yml
 musicbee:
   musicbee:
     paths:
@@ -33,6 +35,8 @@ musicbee:
           - awesome playlist
           - terrible playlist
         is_not: terrible playlist
+    tags:
+      config_path: tags.yml
 spotify:
   spotify:
     api:

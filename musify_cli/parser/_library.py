@@ -11,6 +11,7 @@ from datetime import timedelta
 from pathlib import Path, PurePath, PureWindowsPath, PurePosixPath
 from typing import Any, Self
 
+import yaml
 from aiorequestful.cache.backend import CACHE_TYPES, ResponseCache
 from aiorequestful.timer import GeometricCountTimer, StepCeilingTimer
 from dateutil.relativedelta import relativedelta
@@ -36,6 +37,7 @@ from musify_cli.parser.utils import EpilogHelpFormatter, LOCAL_TRACK_TAG_NAMES, 
 from musify_cli.parser.utils import get_default_args, get_tags, get_comparers_filter
 from musify_cli.exception import ParserError
 from musify_cli.parser.types import SensitiveString
+from musify_cli.tagger.setter import setter_from_config, Setter
 
 LOCAL_LIBRARY_TYPES = [cls.source.lower() for cls in LIBRARY_CLASSES]
 REMOTE_LIBRARY_TYPES = [source.casefold() for source in REMOTE_SOURCES]
@@ -224,6 +226,56 @@ def add_local_updater_arguments(core: ArgumentParser) -> None:
 
     update_tags_group.add_argument("--updater", action=ActionParser(update_tags))
 
+def add_auto_tags_arguments(core: ArgumentParser) -> None:
+    """Create and add arguments for the :py:meth:`LocalTrack.save` method to the given ``core`` parser."""
+    auto_tag_group = core.add_argument_group(
+        title="Auto-tagging rules",
+        description="Options for automatically tagging tracks based on a set of user-defined rules"
+    )
+    auto_tag = ArgumentParser(prog="Auto-tagger", formatter_class=EpilogHelpFormatter)
+
+    auto_tag.add_argument(
+        "--config-path", type=Path | None,
+        help="The path to the auto-tagger rules."
+    )
+    auto_tag.add_argument(
+        "--rules",
+        help="The auto-tagger rules."
+    )
+
+    auto_tag_group.add_argument("--tags", action=ActionParser(auto_tag))
+
+
+def load_auto_tag_config(config_path: Path | None = None) -> list[dict[str, Any]] | None:
+    """
+    Process the given tagging config  at the ``config_path``.
+    """
+    if config_path is None or not config_path.is_file():
+        return
+
+    with open(config_path, "r", encoding="utf-8") as file:
+        config = yaml.full_load(file)
+    return config
+
+
+def parse_auto_tag_config(config_path: Path | None = None) -> dict[FilterComparers, dict[str, Setter]] | None:
+    """
+    Process the given tagging config  at the ``config_path``.
+    """
+    config = load_auto_tag_config(config_path=config_path)
+    if not config:
+        return
+
+    auto_tag_config = {}
+    for rules in config:
+        condition = get_comparers_filter(rules.pop("filter"))
+        auto_tag_config[condition] = {
+            field: setter_from_config(next(iter(LocalTrackField.from_name(field))), conf)
+            for field, conf in rules.items()
+        }
+
+    return auto_tag_config
+
 
 ## LocalLibrary
 local_library = ArgumentParser(
@@ -255,6 +307,13 @@ link_library_map_paths(local_library)
 
 add_local_playlists_arguments(local_library, "Local")
 add_local_updater_arguments(local_library)
+add_auto_tags_arguments(local_library)
+
+local_library.link_arguments(
+    ("tags.config_path",),
+    "tags.rules",
+    parse_auto_tag_config
+)
 
 ## MusicBee
 musicbee = ArgumentParser(
@@ -282,7 +341,13 @@ link_library_map_paths(musicbee)
 
 add_local_playlists_arguments(musicbee, "MusicBee")
 add_local_updater_arguments(musicbee)
+add_auto_tags_arguments(musicbee)
 
+musicbee.link_arguments(
+    ("tags.config_path",),
+    "tags.rules",
+    parse_auto_tag_config
+)
 
 ###########################################################################
 ## Libraries - Remote
