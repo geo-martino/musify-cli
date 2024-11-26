@@ -33,19 +33,6 @@ libraries:
   include: test_libraries.yml
   target:
     remote: spotify
-  remote:
-    spotify:
-      download:
-        urls:
-          - "https://www.google.com/search?q={}"
-          - "https://www.youtube.com/results?search_query={}"
-        fields: [ album, artist ]
-        interval: 1
-
-      new_music:
-        name: New Music - 2023
-        start: 2023-01-01
-        end: 2023-12-31
 
 backup:
   key: test key

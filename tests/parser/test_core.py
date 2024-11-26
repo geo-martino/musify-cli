@@ -1,19 +1,19 @@
 from datetime import datetime
 from pathlib import Path
 from random import choice
-from typing import Any
 
 import pytest
 from musify.field import TagFields
 from musify.libraries.local.track.field import LocalTrackField
 from musify.logger import MusifyLogger
-from musify_cli.parser.types import LoadTypesLocal, LoadTypesRemote, EnrichTypesRemote
 
 from musify_cli import MODULE_ROOT
 # noinspection PyProtectedMember
 from musify_cli.parser.core import AppData, Logging, MUSIFY_ROOT, AIOREQUESTFUL_ROOT, MusifyConfig
 # noinspection PyProtectedMember
-from musify_cli.parser.library import Libraries, RemoteLibrary, SpotifyAPI, LocalLibrary, LocalLibraryPaths, LocalPaths
+from musify_cli.parser.library import LibrariesConfig, RemoteLibraryConfig, SpotifyAPIConfig, LocalLibraryConfig, \
+    LocalPaths
+from musify_cli.parser.types import LoadTypesLocal, LoadTypesRemote, EnrichTypesRemote
 from tests.utils import path_resources
 
 path_core_config = path_resources.joinpath("test_config.yml")
@@ -96,16 +96,16 @@ class TestConfig:
     @pytest.fixture
     def model(self, tmp_path: Path):
         return MusifyConfig(
-            libraries=Libraries(
-                local=LocalLibrary(
+            libraries=LibrariesConfig(
+                local=LocalLibraryConfig(
                     name="test",
                     type="local",
                     paths=LocalPaths(library=tmp_path)
                 ),
-                remote=RemoteLibrary[SpotifyAPI](
+                remote=RemoteLibraryConfig[SpotifyAPIConfig](
                     name="test",
                     type="spotify",
-                    api=SpotifyAPI(
+                    api=SpotifyAPIConfig(
                         client_id="",
                         client_secret="",
                         token_file_path="token.json"
@@ -121,11 +121,11 @@ class TestConfig:
 
     def test_keeps_path_on_absolute(self, model: MusifyConfig, tmp_path: Path):
         model = MusifyConfig(
-            libraries=Libraries(
+            libraries=LibrariesConfig(
                 local=model.libraries.local,
-                remote=RemoteLibrary[SpotifyAPI](
+                remote=RemoteLibraryConfig[SpotifyAPIConfig](
                     name=model.libraries.remote.name,
-                    api=SpotifyAPI(
+                    api=SpotifyAPIConfig(
                         client_id=model.libraries.remote.api.client_id,
                         client_secret=model.libraries.remote.api.client_secret,
                         token_file_path=tmp_path.joinpath("token.json")
@@ -168,8 +168,20 @@ class TestConfig:
 
         assert config.libraries.local.name == "local"
         assert config.libraries.local.type == "local"
+
         assert config.libraries.remote.name == "spotify"
         assert config.libraries.remote.type == "Spotify"
+
+        assert config.libraries.remote.download.urls == [
+            "https://www.google.com/search?q={}",
+            "https://www.youtube.com/results?search_query={}",
+        ]
+        assert config.libraries.remote.download.fields == (TagFields.ARTIST, TagFields.ALBUM)
+        assert config.libraries.remote.download.interval == 1
+
+        assert config.libraries.remote.new_music.name == "New Music - 2023"
+        assert config.libraries.remote.new_music.start == datetime(2023, 1, 1).date()
+        assert config.libraries.remote.new_music.end == datetime(2023, 12, 31).date()
 
         assert config.backup.key == "test key"
 
@@ -187,13 +199,4 @@ class TestConfig:
         )
         assert config.reports.missing_tags.match_all
 
-        assert config.downloader.urls == [
-            "https://www.google.com/search?q={}",
-            "https://www.youtube.com/results?search_query={}",
-        ]
-        assert config.downloader.fields == (TagFields.ARTIST, TagFields.ALBUM)
-        assert config.downloader.interval == 1
 
-        assert config.new_music.name == "New Music - 2023"
-        assert config.new_music.start == datetime(2023, 1, 1).date()
-        assert config.new_music.end == datetime(2023, 12, 31).date()

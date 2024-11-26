@@ -1,10 +1,9 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection
 from datetime import datetime
-from pathlib import Path
 from typing import AsyncContextManager, Self
 
-from aiorequestful.cache.backend import CACHE_CLASSES, ResponseCache, SQLiteCache
+from aiorequestful.cache.backend import CACHE_CLASSES, ResponseCache
 from aiorequestful.timer import GeometricCountTimer, StepCeilingTimer
 from musify.libraries.core.object import Playlist
 from musify.libraries.remote.core.api import RemoteAPI
@@ -136,7 +135,6 @@ class RemoteLibraryManager(LibraryManager[RemoteLibraryConfig], AsyncContextMana
             return selected and can_be_loaded
 
         types = to_collection(types)
-
         if types and self.types_loaded.intersection(types) == set(types) and not force:
             return
         elif not types and (force or not self.types_loaded):

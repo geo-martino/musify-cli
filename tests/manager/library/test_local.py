@@ -15,9 +15,7 @@ from musify.libraries.remote.spotify.wrangle import SpotifyDataWrangler
 from musify.types import UnitIterable
 
 from musify_cli.manager.library import LocalLibraryManager, MusicBeeManager
-from musify_cli.parser.library import LocalLibraryPaths, MusicBeePaths
-from musify_cli.parser.operations.filters import get_comparers_filter
-from musify_cli.parser.operations.tags import get_tags
+from musify_cli.parser.library import LocalLibraryConfig, LocalPaths, PlaylistsConfig, UpdaterConfig
 from musify_cli.parser.types import LoadTypesLocal
 from tests.manager.library.testers import LibraryManagerTester
 from tests.utils import random_str
@@ -30,34 +28,36 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
         return LoadTypesLocal
 
     @pytest.fixture
-    def config(self, tmp_path: Path) -> Namespace:
+    def config(self, tmp_path: Path) -> LocalLibraryConfig:
         library_folder = tmp_path.joinpath("library")
         library_folder.mkdir(parents=True, exist_ok=True)
 
         playlist_folder = tmp_path.joinpath("playlists")
         playlist_folder.mkdir(parents=True, exist_ok=True)
 
-        return Namespace(
-            paths=Namespace(
-                library=LocalLibraryPaths(**{LocalLibraryPaths._platform_key: (library_folder,)}),
+        return LocalLibraryConfig(
+            name="name",
+            type=LocalLibrary.source,
+            paths=LocalPaths(
+                library=library_folder,
                 playlists=playlist_folder,
                 map={
                     "/different/folder": str(library_folder),
                     "/another/path": str(library_folder),
                 }
             ),
-            playlists=Namespace(
-                filter=get_comparers_filter(["playlist 1", "playlist 2"]),
+            playlists=PlaylistsConfig(
+                filter=["playlist 1", "playlist 2"],
             ),
-            updater=Namespace(
-                tags=get_tags(["album", "album_artist", "track", "disc", "compilation"]),
+            updater=UpdaterConfig(
+                tags=["album", "album_artist", "track", "disc", "compilation"],
                 replace=True
             )
         )
 
     @pytest.fixture
-    def manager(self, config: MusifyConfig) -> T:
-        return LocalLibraryManager(name="local", config=config)
+    def manager(self, config: LocalLibraryConfig) -> T:
+        return LocalLibraryManager(config=config)
 
     @pytest.fixture
     def manager_mock(self, manager: T) -> T:
@@ -77,7 +77,7 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
     def test_properties(self, manager: T):
         assert manager.source == LocalLibrary.source
 
-    def test_init_library(self, manager: T, config: MusifyConfig):
+    def test_init_library(self, manager: T, config: LocalLibraryConfig):
         wrangler = SpotifyDataWrangler()
         manager._remote_wrangler = wrangler
 
@@ -85,7 +85,7 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
         library: LocalLibrary = manager.library
         assert manager._library is not None
 
-        assert library.library_folders == list(config.paths.library.paths)
+        assert library.library_folders == [config.paths.library]
         assert library.playlist_folder == config.paths.playlists
         assert library.playlist_filter == manager.playlist_filter == config.playlists.filter
         assert id(library.remote_wrangler) == id(wrangler)
@@ -116,13 +116,13 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
             self.merge_tracks_args.clear()
 
         async def load(self):
-            self.load_calls.append("all")
+            self.load_calls.append("ALL")
 
         async def load_tracks(self):
-            self.load_calls.append("tracks")
+            self.load_calls.append(LoadTypesLocal.TRACKS.name)
 
         async def load_playlists(self):
-            self.load_calls.append("playlists")
+            self.load_calls.append(LoadTypesLocal.PLAYLISTS.name)
 
         async def save_tracks(
                 self,
@@ -164,7 +164,7 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
             self.save_args = {"tags": tags, "replace": replace, "dry_run": dry_run}
             return SyncResultTrack(saved=not dry_run, updated={tag: 0 for tag in tags})
 
-    async def test_save_tracks(self, manager_mock: T, config: MusifyConfig):
+    async def test_save_tracks(self, manager_mock: T, config: LocalLibraryConfig):
         manager_mock.dry_run = False
 
         await manager_mock.save_tracks()
@@ -174,7 +174,8 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
         assert library_mock.save_tracks_args["replace"] == config.updater.replace
         assert library_mock.save_tracks_args["dry_run"] == manager_mock.dry_run
 
-    async def test_save_tracks_in_collections(self, manager_mock: T, config: MusifyConfig):
+    # noinspection PyTestUnpassedFixture
+    async def test_save_tracks_in_collections(self, manager_mock: T, config: LocalLibraryConfig):
         manager_mock.dry_run = False
 
         collections: list[BasicCollection[TestLocalLibraryManager.TrackMock]] = [
@@ -189,7 +190,7 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
                 assert track.save_args["replace"] == config.updater.replace
                 assert track.save_args["dry_run"] == manager_mock.dry_run
 
-    def test_merge_tracks(self, manager_mock: T, config: MusifyConfig):
+    def test_merge_tracks(self, manager_mock: T, config: LocalLibraryConfig):
         manager_mock.dry_run = False
 
         tracks = [self.TrackMock() for _ in range(randrange(2, 5))]
@@ -212,7 +213,7 @@ class TestMusicBeeManager(TestLocalLibraryManager[MusicBeeManager]):
 
     # noinspection PyMethodOverriding
     @pytest.fixture
-    def config(self, tmp_path: Path, library_folders: list[Path]) -> Namespace:
+    def config(self, tmp_path: Path, library_folders: list[Path]) -> LocalLibraryConfig:
         musicbee_folder = tmp_path.joinpath("library")
         musicbee_folder.mkdir(parents=True, exist_ok=True)
 
@@ -254,32 +255,34 @@ class TestMusicBeeManager(TestLocalLibraryManager[MusicBeeManager]):
         with open(musicbee_folder.joinpath(MusicBee.xml_settings_path), "w") as f:
             f.write("\n".join(xml_settings))
 
-        return Namespace(
-            paths=Namespace(
-                library=MusicBeePaths(**{MusicBeePaths._platform_key: musicbee_folder}),
+        return LocalLibraryConfig(
+            name="name",
+            type=MusicBee.source,
+            paths=LocalPaths(
+                library=musicbee_folder,
                 map={
                     "/different/folder": str(musicbee_folder),
                     "/another/path": str(musicbee_folder)
                 }
             ),
-            playlists=Namespace(
-                filter=get_comparers_filter(["playlist 1", "playlist 2"]),
+            playlists=PlaylistsConfig(
+                filter=["playlist 1", "playlist 2"],
             ),
-            updater=Namespace(
-                tags=get_tags(["album", "album_artist", "track", "disc", "compilation"]),
+            updater=UpdaterConfig(
+                tags=["album", "album_artist", "track", "disc", "compilation"],
                 replace=True
             )
         )
 
     @pytest.fixture
-    def manager(self, config: MusifyConfig) -> MusicBeeManager:
-        return MusicBeeManager(name="musicbee", config=config)
+    def manager(self, config: LocalLibraryConfig) -> MusicBeeManager:
+        return MusicBeeManager(config=config)
 
     def test_properties(self, manager: MusicBeeManager):
         assert manager.source == MusicBee.source
 
     # noinspection PyMethodOverriding
-    def test_init_library(self, manager: MusicBeeManager, config: MusifyConfig, library_folders: list[str]):
+    def test_init_library(self, manager: MusicBeeManager, config: LocalLibraryConfig, library_folders: list[str]):
         wrangler = SpotifyDataWrangler()
         manager._remote_wrangler = wrangler
 
@@ -288,7 +291,7 @@ class TestMusicBeeManager(TestLocalLibraryManager[MusicBeeManager]):
         assert manager._library is not None
 
         assert library.library_folders == library_folders
-        assert library.playlist_folder == config.paths.library.paths.joinpath(MusicBee.playlists_path)
+        assert library.playlist_folder == config.paths.library.joinpath(MusicBee.playlists_path)
         assert library.playlist_filter == manager.playlist_filter == config.playlists.filter
         assert id(library.remote_wrangler) == id(wrangler)
         assert isinstance(library.path_mapper, PathStemMapper)

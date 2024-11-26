@@ -1,17 +1,14 @@
 import logging.config
-from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Self
 
 from aiorequestful import MODULE_ROOT as AIOREQUESTFUL_ROOT
-from aiorequestful.types import UnitSequence
 from musify import MODULE_ROOT as MUSIFY_ROOT
 from musify.libraries.local.track.field import LocalTrackField
 from musify.logger import MusifyLogger
-from musify.processors.download import ItemDownloadHelper
 from musify.processors.filter import FilterComparers
 from musify.report import report_missing_tags
-from pydantic import BaseModel, Field, DirectoryPath, conint, computed_field
+from pydantic import BaseModel, Field, DirectoryPath, computed_field
 
 from musify_cli import PACKAGE_ROOT, MODULE_ROOT
 from musify_cli.parser.library import LibrariesConfig, APIConfig
@@ -314,14 +311,3 @@ class MusifyConfig(BaseModel):
         base_config = MusifyConfig(**raw_config)
 
         return base_config, []
-
-
-if __name__ == "__main__":
-    path = "/Volumes/Projects/musify/config/main.yml"
-    base_cfg, func_cfg = MusifyConfig.from_file(path)
-    print(base_cfg)
-
-    data = MultiFileLoader.load(path)
-
-    import json
-    print(json.dumps(data, indent=2))

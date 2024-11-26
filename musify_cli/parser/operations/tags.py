@@ -1,7 +1,8 @@
+from functools import partial
 from typing import Collection, Annotated
 
 from aiorequestful.types import UnitCollection
-from musify.field import TagField, Field, Fields
+from musify.field import TagField, Field, Fields, TagFields
 from musify.libraries.local.track.field import LocalTrackField
 from musify.utils import to_collection
 from pydantic import BeforeValidator
@@ -33,7 +34,14 @@ def get_tags[T: TagField](
     return tuple(sorted(cls.from_name(*tags), key=lambda x: order.index(x)))
 
 
-LocalTrackFields = Annotated[LocalTrackField | tuple[LocalTrackField, ...], BeforeValidator(get_tags)]
+Tags = Annotated[
+    LocalTrackField | tuple[LocalTrackField, ...],
+    BeforeValidator(partial(get_tags, cls=TagFields))
+]
+LocalTrackFields = Annotated[
+    LocalTrackField | tuple[LocalTrackField, ...],
+    BeforeValidator(partial(get_tags, cls=LocalTrackField))
+]
 
 
 def get_tag_filter(config: dict[str, str | tuple[str, ...]]) -> dict[str, tuple[str, ...]]:

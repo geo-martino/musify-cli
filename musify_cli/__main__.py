@@ -15,11 +15,11 @@ from typing import Any
 
 import yaml
 from musify.utils import merge_maps
+from musify_cli.parser_old import CORE_PARSER, LIBRARY_PARSER, load_library_config
 
 from musify_cli import PROGRAM_NAME, MODULE_ROOT
 from musify_cli.exception import ParserError
 from musify_cli.manager import MusifyManager
-from musify_cli.parser_old import CORE_PARSER, LIBRARY_PARSER, load_library_config
 from musify_cli.printers import print_logo, print_line, print_time, get_func_log_name
 from musify_cli.processor import MusifyProcessor
 

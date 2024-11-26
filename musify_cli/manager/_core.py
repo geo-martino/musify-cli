@@ -94,20 +94,16 @@ class MusifyManager:
 
         self._dry_run: bool | None = None
 
-        self.paths: PathsManager = PathsManager(config=self.config.paths, dt=self)
+        self.paths: PathsManager = PathsManager(config=self.config.app_data, dt=self)
 
         local_library_config: MusifyConfig = self.config.libraries.local
-        self.local: LocalLibraryManager = self._local_library_map[local_library_config.type](
-            name=local_library_config.name,
-            config=local_library_config.get(local_library_config.type),
-            dry_run=self.dry_run,
+        self.local: LocalLibraryManager = self._local_library_map[local_library_config.type.casefold()](
+            config=local_library_config, dry_run=self.dry_run,
         )
 
         remote_library_config: MusifyConfig = self.config.libraries.remote
-        self.remote: RemoteLibraryManager = self._remote_library_map[remote_library_config.type](
-            name=remote_library_config.name,
-            config=remote_library_config.get(remote_library_config.type),
-            dry_run=self.dry_run,
+        self.remote: RemoteLibraryManager = self._remote_library_map[remote_library_config.type.casefold()](
+            config=remote_library_config, dry_run=self.dry_run,
         )
 
         self.local._remote_wrangler = self.remote.wrangler
@@ -259,6 +255,7 @@ class MusifyManager:
     ###########################################################################
     def filter[T: Collection](self, items: T) -> T:
         """Run the generic filter on the given ``items`` if configured."""
+        print(self.config.pre_post.filter)
         if (filter_ := self.config.pre_post.filter) is not None and filter_.ready:
             return filter_(items)
         return items

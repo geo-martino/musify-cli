@@ -9,7 +9,7 @@ from datetime import timedelta, date, datetime
 from pathlib import Path, PureWindowsPath, PurePosixPath
 from typing import Literal, Any, Self, Type, Annotated
 
-from aiorequestful.cache.backend import CACHE_TYPES, ResponseCache, CACHE_CLASSES, SQLiteCache
+from aiorequestful.cache.backend import CACHE_TYPES, ResponseCache, SQLiteCache
 from aiorequestful.timer import GeometricCountTimer, StepCeilingTimer
 from aiorequestful.types import UnitSequence
 from musify.field import Fields
@@ -30,7 +30,7 @@ from musify_cli.exception import ParserError
 from musify_cli.parser.operations.filters import Filter
 from musify_cli.parser.operations.signature import get_default_args, get_arg_descriptions
 from musify_cli.parser.operations.tagger import Tagger
-from musify_cli.parser.operations.tags import TagFilter, LocalTrackFields
+from musify_cli.parser.operations.tags import TagFilter, LocalTrackFields, Tags
 
 LOCAL_LIBRARY_TYPES = {cls.source.lower() for cls in LIBRARY_CLASSES}
 REMOTE_LIBRARY_TYPES = {source.casefold() for source in REMOTE_SOURCES}
@@ -152,11 +152,10 @@ class LocalLibraryPaths(LocalLibraryPathsParser[tuple[Path, ...]]):
         default=()
     )
 
-    @computed_field(
-        description="The source type of the library associated with these paths",
-    )
+    # noinspection PyPropertyDefinition
+    @classmethod
     @property
-    def source(self) -> str:
+    def source(cls) -> str:
         return str(LocalLibrary.source)
 
     @model_validator(mode="after")
@@ -185,11 +184,10 @@ class MusicBeePaths(LocalLibraryPathsParser[Path]):
         default=None
     )
 
-    @computed_field(
-        description="The source type of the library associated with these paths",
-    )
+    # noinspection PyPropertyDefinition
+    @classmethod
     @property
-    def source(self) -> str:
+    def source(cls) -> str:
         return str(MusicBee.source)
 
     @model_validator(mode="after")
@@ -197,6 +195,11 @@ class MusicBeePaths(LocalLibraryPathsParser[Path]):
         if not (path := Path(self.paths).joinpath(MusicBee.xml_library_path)).is_file():
             raise ParserError(
                 "No MusicBee library found at the given path",
+                value=path,
+            )
+        if not (path := Path(self.paths).joinpath(MusicBee.xml_settings_path)).is_file():
+            raise ParserError(
+                "No MusicBee settings found at the given path",
                 value=path,
             )
 
@@ -281,7 +284,7 @@ class LocalLibraryConfig[T: LocalLibraryPathsParser](LibraryConfig):
             return data
 
         if (
-                isinstance((paths := data["paths"]), LocalPaths)
+                isinstance((paths := data.get("paths")), LocalPaths)
                 and isinstance((library := paths.library), LocalLibraryPathsParser)
         ):
             data["type"] = library.source
@@ -391,12 +394,11 @@ class APIConfig(BaseModel, metaclass=ABCMeta):
         default=None,
     )
 
-    @computed_field(
-        description="The source type of the library associated with this API",
-    )
+    # noinspection PyPropertyDefinition
+    @classmethod
     @property
     @abstractmethod
-    def source(self) -> str:
+    def source(cls) -> str:
         """The source type of the library associated with this API"""
         raise NotImplementedError
 
@@ -413,11 +415,10 @@ class SpotifyAPIConfig(APIConfig):
         default=()
     )
 
-    @computed_field(
-        description="The source type of the library associated with this API",
-    )
+    # noinspection PyPropertyDefinition
+    @classmethod
     @property
-    def source(self) -> str:
+    def source(cls) -> str:
         return str(_SpotifyLibrary.source)
 
 
@@ -476,7 +477,7 @@ class RemoteItemDownloadConfig(BaseModel):
                     "a query for the item being searched. e.g. *bandcamp.com/search?q={}&item_type=t*",
         default=item_downloader_default_args.get("urls")
     )
-    fields: LocalTrackFields = Field(
+    fields: Tags = Field(
         description=f"The tags to use when searching for items. Accepted tags: {LOCAL_TRACK_TAG_NAMES}",
         default=item_downloader_default_args.get("fields")
     )
@@ -517,7 +518,7 @@ class RemoteLibraryConfig[T: APIConfig](LibraryConfig):
     )
     check: RemoteCheckerConfig = Field(
         description="Configuration for the item checker for this library",
-        default=RemotePlaylistsConfig(),
+        default=RemoteCheckerConfig(),
     )
     download: RemoteItemDownloadConfig = Field(
         description="Configuration for item downloader operations",
@@ -535,7 +536,7 @@ class RemoteLibraryConfig[T: APIConfig](LibraryConfig):
         if not isinstance(data, MutableMapping):
             return data
 
-        if isinstance((api := data["api"]), APIConfig):
+        if isinstance((api := data.get("api")), APIConfig):
             data["type"] = api.source
         return data
 

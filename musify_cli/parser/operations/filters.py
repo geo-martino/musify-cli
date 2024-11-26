@@ -14,8 +14,13 @@ UT = TypeVar("UT")
 MultiType = UnitSequence[UT] | Mapping[str, UnitSequence[UT]]
 
 
-def get_comparers_filter[T](config: MultiType[T]) -> FilterComparers[T | MusifyObject]:
+def get_comparers_filter[T](
+        config: MultiType[T] | FilterComparers[T | MusifyObject]
+) -> FilterComparers[T | MusifyObject]:
     """Generate the :py:class:`FilterComparers` object from the ``config``"""
+    if isinstance(config, FilterComparers):
+        return config
+
     match_all = get_default_args(FilterComparers)["match_all"]
 
     if isinstance(config, Mapping):

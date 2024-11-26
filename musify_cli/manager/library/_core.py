@@ -7,6 +7,7 @@ from musify.libraries.core.object import Library
 from musify.logger import MusifyLogger
 from musify.processors.filter import FilterComparers
 from musify.types import UnitCollection, MusifyEnum
+
 from musify_cli.parser.library import LibraryConfig
 
 

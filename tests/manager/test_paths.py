@@ -5,29 +5,28 @@ import pytest
 from manager.utils import DatetimeStoreImpl
 # noinspection PyProtectedMember
 from musify_cli.manager._paths import PathsManager
+from musify_cli.parser.core import AppData
 
 
 class TestPathsManager:
     @pytest.fixture
-    def config(self, tmp_path: Path) -> Namespace:
+    def config(self, tmp_path: Path) -> AppData:
         """
-        Yields a valid :py:class:`Namespace` representing the config
+        Yields a valid :py:class:`AppData` representing the config
         for the current manager as a pytest.fixture.
         """
-        return Namespace(
-            paths=Namespace(
-                base=tmp_path,
-                backup=Path(tmp_path.parts[0]).joinpath("path", "to", "backup"),
-                token="test_token",
-                cache="test_cache",
-                local_library=Path(tmp_path.parts[0]).joinpath("path", "to", "local_library"),
-            )
+        return AppData(
+            base=tmp_path,
+            backup=Path(tmp_path.parts[0]).joinpath("path", "to", "backup"),
+            token="test_token",
+            cache="test_cache",
+            local_library=Path(tmp_path.parts[0]).joinpath("path", "to", "local_library"),
         )
 
     @pytest.fixture
-    def manager(self, config: MusifyConfig) -> PathsManager:
+    def manager(self, config: AppData) -> PathsManager:
         """Yields a valid :py:class:`MusifyManager` for the current remote source as a pytest.fixture."""
-        return PathsManager(config.paths, dt=DatetimeStoreImpl())
+        return PathsManager(config, dt=DatetimeStoreImpl())
 
     def test_init_base(self, manager: PathsManager):
         assert manager._base is None

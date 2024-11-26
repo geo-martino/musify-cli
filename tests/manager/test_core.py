@@ -4,39 +4,41 @@ from pathlib import Path
 import pytest
 from musify.logger import MusifyLogger
 
+from musify_cli.parser.core import MusifyConfig, Reports, AppData, Backup, PrePost
+from musify_cli.parser.library import LOCAL_LIBRARY_TYPES, REMOTE_LIBRARY_TYPES, LibrariesConfig, LocalLibraryConfig, \
+    RemoteLibraryConfig, LocalPaths, SpotifyAPIConfig
+
 from musify_cli import MODULE_ROOT
 from musify_cli.exception import ParserError
 from musify_cli.manager import MusifyManager
 # noinspection PyProtectedMember
 from musify_cli.manager._core import ReportsManager
-# noinspection PyProtectedMember
-from musify_cli.parser_old._library import LOCAL_LIBRARY_TYPES, REMOTE_LIBRARY_TYPES
-# noinspection PyProtectedMember
-from musify_cli.parser_old.utils import get_comparers_filter
 from tests.utils import path_txt, path_logging_config
 
 
 @pytest.mark.skip(reason="Tests not yet implemented")
 class TestReportsManager:
     @pytest.fixture
-    def config(self) -> Namespace:
+    def config(self, tmp_path: Path) -> MusifyConfig:
         """
         Yields a valid :py:class:`Namespace` representing the config
         for the current manager as a pytest.fixture.
         """
-        return Namespace(
+        return MusifyConfig(
             execute=False,
-            libraries=Namespace(
-                local=Namespace(
+            libraries=LibrariesConfig(
+                local=LocalLibraryConfig(
                     name="local",
                     type="local",
+                    paths=LocalPaths(library=tmp_path),
                 ),
-                remote=Namespace(
+                remote=RemoteLibraryConfig(
                     name="spotify",
                     type="spotify",
+                    api=SpotifyAPIConfig(client_id="", client_secret="")
                 ),
             ),
-            reports=Namespace(
+            reports=Reports(
 
             )
         )
@@ -57,34 +59,38 @@ class TestReportsManager:
 
 class TestMusifyManager:
     @pytest.fixture
-    def config(self, tmp_path: Path) -> Namespace:
+    def config(self, tmp_path: Path) -> MusifyConfig:
         """
         Yields a valid :py:class:`Namespace` representing the config
         for the current manager as a pytest.fixture.
         """
-        return Namespace(
+        return MusifyConfig(
             execute=True,
-            paths=Namespace(
+            app_data=AppData(
                 base=tmp_path,
                 backup=Path("path", "to", "backup"),
                 token="test_token",
                 cache="test_cache",
                 local_library=Path("path", "to", "local_library"),
             ),
-            backup=Namespace(key="KEY"),
-            pause=None,
-            filter=get_comparers_filter(["playlist 1", "playlist 2"]),
-            reports=Namespace(),
-            libraries=Namespace(
-                local=Namespace(
+            pre_post=PrePost(
+                pause=None,
+                filter=["playlist 1", "playlist 2"],
+            ),
+            backup=Backup(key="KEY"),
+            reports=Reports(),
+            libraries=LibrariesConfig(
+                local=LocalLibraryConfig(
                     name="local",
                     type="local",
+                    paths=LocalPaths(library=tmp_path),
                 ),
-                remote=Namespace(
-                    name="remote",
+                remote=RemoteLibraryConfig(
+                    name="spotify",
                     type="spotify",
+                    api=SpotifyAPIConfig(client_id="", client_secret="")
                 ),
-            )
+            ),
         )
 
     @pytest.fixture
@@ -149,10 +155,10 @@ class TestMusifyManager:
     ###########################################################################
     def test_filter(self, manager: MusifyManager, config: MusifyConfig):
         playlists = [f"playlist {i}" for i in range(1, 5)]
-        assert manager.filter(playlists) == config.filter(playlists) == playlists[:2]
+        assert manager.filter(playlists) == config.pre_post.filter(playlists) == playlists[:2]
 
         # uses the new filter in the config
-        config.filter = get_comparers_filter(["new playlist 1", "new playlist 2", "new playlist 3"])
+        config.pre_post = PrePost(filter=["new playlist 1", "new playlist 2", "new playlist 3"])
         assert manager.filter(playlists) != playlists[:2]
         assert len(manager.filter([f"new {pl}" for pl in playlists])) == 3
 

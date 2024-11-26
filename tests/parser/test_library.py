@@ -11,15 +11,16 @@ from pydantic import ValidationError
 
 from musify_cli.exception import ParserError
 # noinspection PyProtectedMember
-from musify_cli.parser.library import LocalLibrary, LOCAL_LIBRARY_TYPES, REMOTE_LIBRARY_TYPES, RemoteLibrary, \
-    LocalLibraryPaths, MusicBeePaths, LocalLibraryPathsParser, LocalPaths, API, SpotifyAPI, Libraries, LibraryTarget
+from musify_cli.parser.library import LOCAL_LIBRARY_TYPES, REMOTE_LIBRARY_TYPES, RemoteLibraryConfig, \
+    LocalLibraryPaths, MusicBeePaths, LocalLibraryPathsParser, LocalPaths, APIConfig, SpotifyAPIConfig, LibrariesConfig, \
+    LibraryTarget, LocalLibraryConfig
 from utils import random_str
 
 
 # noinspection PyUnresolvedReferences
 def test_all_libraries_supported():
-    assert LOCAL_LIBRARY_TYPES == LocalLibrary._type_map.default.keys()
-    assert REMOTE_LIBRARY_TYPES == RemoteLibrary._type_map.default.keys()
+    assert LOCAL_LIBRARY_TYPES == LocalLibraryConfig._type_map.default.keys()
+    assert REMOTE_LIBRARY_TYPES == RemoteLibraryConfig._type_map.default.keys()
 
 
 class TestLocalLibraryPaths:
@@ -85,6 +86,7 @@ class TestMusicBeePaths:
     @classmethod
     def get_valid_paths(cls, tmp_path: Path) -> dict[str, str]:
         tmp_path.joinpath(MusicBee.xml_library_path).touch(exist_ok=True)
+        tmp_path.joinpath(MusicBee.xml_settings_path).touch(exist_ok=True)
 
         paths = deepcopy(cls.paths)
         paths[str(MusicBeePaths._platform_key)] = str(tmp_path)
@@ -128,7 +130,7 @@ class TestLocalLibrary:
             "local": TestLocalLibraryPaths.get_valid_paths(tmp_path),
             "musicbee": TestMusicBeePaths.get_valid_paths(tmp_path),
         }
-        assert paths_map.keys() == LocalLibrary._type_map.default.keys() == LOCAL_LIBRARY_TYPES
+        assert paths_map.keys() == LocalLibraryConfig._type_map.default.keys() == LOCAL_LIBRARY_TYPES
         return paths_map
 
     # noinspection PyUnresolvedReferences,PyProtectedMember
@@ -138,7 +140,7 @@ class TestLocalLibrary:
             "local": LocalLibraryPaths,
             "musicbee": MusicBeePaths,
         }
-        assert type_map.keys() == LocalLibrary._type_map.default.keys() == LOCAL_LIBRARY_TYPES
+        assert type_map.keys() == LocalLibraryConfig._type_map.default.keys() == LOCAL_LIBRARY_TYPES
         return type_map
 
     @pytest.fixture(params=LOCAL_LIBRARY_TYPES)
@@ -156,8 +158,8 @@ class TestLocalLibrary:
     @pytest.fixture
     def library_model(
             self, library_paths: dict[str, Any], library_paths_model: LocalLibraryPathsParser
-    ) -> LocalLibrary:
-        return LocalLibrary[library_paths_model.__class__](
+    ) -> LocalLibraryConfig:
+        return LocalLibraryConfig[library_paths_model.__class__](
             name=random_str(), type=library_paths_model.source, paths={"library": library_paths}
         )
 
@@ -184,20 +186,20 @@ class TestLocalLibrary:
         for path in library_paths:
             assert paths_model.map[path] == expected_path
 
-    def test_assigns_library_paths(self, library_model: LocalLibrary, library_paths_model: LocalLibraryPathsParser):
+    def test_assigns_library_paths(self, library_model: LocalLibraryConfig, library_paths_model: LocalLibraryPathsParser):
         assert library_model.paths.library == library_paths_model.paths
 
     def test_assigns_type_from_paths_parser(self, paths_model: LocalPaths, library_paths_model: LocalLibraryPathsParser):
-        model = LocalLibrary(name="name", paths=paths_model)
+        model = LocalLibraryConfig(name="name", paths=paths_model)
         assert model.type == library_paths_model.source
 
         with pytest.raises(ValidationError):  # library is not a paths parser, fails to assign type from parser
-            LocalLibrary(name="name", paths=LocalPaths(library=library_paths_model.paths))
+            LocalLibraryConfig(name="name", paths=LocalPaths(library=library_paths_model.paths))
 
     def test_determine_library_type_from_config(
             self, kind: str, library_paths: dict[str, Any], library_paths_model: LocalLibraryPathsParser
     ):
-        model: LocalLibrary = LocalLibrary.create_and_determine_library_type(
+        model: LocalLibraryConfig = LocalLibraryConfig.create_and_determine_library_type(
             dict(name=kind, type=kind, paths={"library": library_paths})
         )
         # just check the paths assigned to LocalLibrary model equal the paths for the expected LocalPaths model
@@ -206,32 +208,32 @@ class TestLocalLibrary:
 
 class TestRemoteLibrary:
     @pytest.fixture
-    def api_model(self) -> API:
-        return SpotifyAPI(
+    def api_model(self) -> APIConfig:
+        return SpotifyAPIConfig(
             client_id="",
             client_secret="",
         )
 
-    def test_assigns_type_from_api_model(self, api_model: API):
-        model = RemoteLibrary(name="name", api=api_model)
+    def test_assigns_type_from_api_model(self, api_model: APIConfig):
+        model = RemoteLibraryConfig(name="name", api=api_model)
         assert model.type == api_model.source
 
 
 class TestLibraries:
     @pytest.fixture
-    def local_libraries(self, tmp_path: Path) -> list[LocalLibrary]:
+    def local_libraries(self, tmp_path: Path) -> list[LocalLibraryConfig]:
         return [
-            LocalLibrary(
+            LocalLibraryConfig(
                 name="local1",
                 type="local",
                 paths=LocalPaths(library=tmp_path)
             ),
-            LocalLibrary(
+            LocalLibraryConfig(
                 name="local2",
                 type="local",
                 paths=LocalPaths(library=tmp_path)
             ),
-            LocalLibrary(
+            LocalLibraryConfig(
                 name="local3",
                 type="local",
                 paths=LocalPaths(library=tmp_path)
@@ -239,23 +241,23 @@ class TestLibraries:
         ]
 
     @pytest.fixture
-    def remote_libraries(self) -> list[RemoteLibrary]:
-        api = SpotifyAPI(
+    def remote_libraries(self) -> list[RemoteLibraryConfig]:
+        api = SpotifyAPIConfig(
             client_id="",
             client_secret="",
         )
         return [
-            RemoteLibrary[SpotifyAPI](
+            RemoteLibraryConfig[SpotifyAPIConfig](
                 name="remote1",
                 type="spotify",
                 api=api
             ),
-            RemoteLibrary[SpotifyAPI](
+            RemoteLibraryConfig[SpotifyAPIConfig](
                 name="remote2",
                 type="spotify",
                 api=api
             ),
-            RemoteLibrary[SpotifyAPI](
+            RemoteLibraryConfig[SpotifyAPIConfig](
                 name="remote3",
                 type="spotify",
                 api=api
@@ -263,51 +265,51 @@ class TestLibraries:
         ]
 
     def test_fails_when_no_target_given_on_many_libraries(
-            self, local_libraries: list[LocalLibrary], remote_libraries: list[RemoteLibrary]
+            self, local_libraries: list[LocalLibraryConfig], remote_libraries: list[RemoteLibraryConfig]
     ):
         match = "no target specified"
         with pytest.raises(ParserError, match=match):
-            Libraries(local=local_libraries, remote=remote_libraries)
+            LibrariesConfig(local=local_libraries, remote=remote_libraries)
         with pytest.raises(ParserError, match=match):
-            Libraries(local=local_libraries[0], remote=remote_libraries)
+            LibrariesConfig(local=local_libraries[0], remote=remote_libraries)
         with pytest.raises(ParserError, match=match):
-            Libraries(local=local_libraries, remote=remote_libraries[0])
+            LibrariesConfig(local=local_libraries, remote=remote_libraries[0])
 
     def test_fails_when_target_given_is_invalid(
-            self, local_libraries: list[LocalLibrary], remote_libraries: list[RemoteLibrary]
+            self, local_libraries: list[LocalLibraryConfig], remote_libraries: list[RemoteLibraryConfig]
     ):
         match = "target does not correspond to any configured"
         target = LibraryTarget(local="i am not a valid target", remote="I am also not a valid target")
         with pytest.raises(ParserError, match=match):
-            Libraries(local=local_libraries, remote=remote_libraries, target=target)
+            LibrariesConfig(local=local_libraries, remote=remote_libraries, target=target)
 
         valid_local_name = choice([lib.name for lib in local_libraries])
         target = LibraryTarget(local=valid_local_name, remote="invalid name")
         with pytest.raises(ParserError, match=match):
-            Libraries(local=local_libraries, remote=remote_libraries, target=target)
+            LibrariesConfig(local=local_libraries, remote=remote_libraries, target=target)
 
         valid_remote_name = choice([lib.name for lib in remote_libraries])
         target = LibraryTarget(local="invalid name", remote=valid_remote_name)
         with pytest.raises(ParserError, match=match):
-            Libraries(local=local_libraries, remote=remote_libraries, target=target)
+            LibrariesConfig(local=local_libraries, remote=remote_libraries, target=target)
 
     def test_gets_target_libraries(
-            self, local_libraries: list[LocalLibrary], remote_libraries: list[RemoteLibrary]
+            self, local_libraries: list[LocalLibraryConfig], remote_libraries: list[RemoteLibraryConfig]
     ):
         expected_local = choice(local_libraries)
         expected_remote = choice(remote_libraries)
 
         target = LibraryTarget(local=expected_local.name, remote=expected_remote.name)
-        libraries = Libraries(target=target, local=local_libraries, remote=remote_libraries)
+        libraries = LibrariesConfig(target=target, local=local_libraries, remote=remote_libraries)
         assert libraries.local == expected_local
         assert libraries.remote == expected_remote
 
         target = LibraryTarget(local=expected_local.name)
-        libraries = Libraries(target=target, local=local_libraries, remote=expected_remote)
+        libraries = LibrariesConfig(target=target, local=local_libraries, remote=expected_remote)
         assert libraries.local == expected_local
         assert libraries.remote == expected_remote
 
         target = LibraryTarget(remote=expected_remote.name)
-        libraries = Libraries(target=target, local=expected_local, remote=remote_libraries)
+        libraries = LibrariesConfig(target=target, local=expected_local, remote=remote_libraries)
         assert libraries.local == expected_local
         assert libraries.remote == expected_remote

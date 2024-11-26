@@ -53,3 +53,14 @@ remote:
         filter:
           artist: [bad artist, nonce]
           album: unliked album
+    download:
+      urls:
+        - "https://www.google.com/search?q={}"
+        - "https://www.youtube.com/results?search_query={}"
+      fields: [ album, artist ]
+      interval: 1
+
+    new_music:
+      name: New Music - 2023
+      start: 2023-01-01
+      end: 2023-12-31
