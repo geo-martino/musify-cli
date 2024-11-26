@@ -15,8 +15,8 @@ from musify.utils import to_collection
 
 from musify_cli.manager.library._core import LibraryManager
 from musify_cli.parser.library.local import LocalLibraryConfig
+from musify_cli.parser.library.types import LoadTypesLocal
 from musify_cli.parser.operations.tagger import Tagger
-from musify_cli.parser.types import LoadTypesLocal
 
 
 class LocalLibraryManager(LibraryManager[LocalLibraryConfig]):

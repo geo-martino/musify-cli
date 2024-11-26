@@ -22,7 +22,7 @@ from musify_cli.manager.library import RemoteLibraryManager, SpotifyLibraryManag
 from musify_cli.parser.library.remote import RemoteLibraryConfig, SpotifyAPIConfig, APICacheConfig, \
     APIHandlerConfig, APIHandlerRetry, APIHandlerWait, RemoteCheckerConfig, RemoteItemDownloadConfig, \
     RemotePlaylistsConfig, RemotePlaylistsSync
-from musify_cli.parser.types import LoadTypesRemote, EnrichTypesRemote
+from musify_cli.parser.library.types import LoadTypesRemote, EnrichTypesRemote
 from tests.manager.library.testers import LibraryManagerTester
 from tests.utils import random_str
 

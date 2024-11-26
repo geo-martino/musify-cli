@@ -10,7 +10,7 @@ from musify.utils import to_collection
 from pydantic import BaseModel, computed_field, model_validator, BeforeValidator, Field, DirectoryPath, PrivateAttr
 
 from musify_cli.exception import ParserError
-from musify_cli.parser.library import LibraryConfig
+from musify_cli.parser.library._core import LibraryConfig
 from musify_cli.parser.operations.signature import get_default_args
 from musify_cli.parser.operations.tagger import Tagger
 from musify_cli.parser.operations.tags import LocalTrackFields, LOCAL_TRACK_TAG_NAMES

@@ -26,7 +26,7 @@ from musify.utils import get_max_width, align_string, to_collection
 from musify_cli.exception import ParserError
 from musify_cli.manager.library._core import LibraryManager
 from musify_cli.parser.library.remote import RemoteLibraryConfig
-from musify_cli.parser.types import LoadTypesRemote, EnrichTypesRemote
+from musify_cli.parser.library.types import LoadTypesRemote, EnrichTypesRemote
 
 
 class RemoteLibraryManager(LibraryManager[RemoteLibraryConfig], AsyncContextManager, metaclass=ABCMeta):

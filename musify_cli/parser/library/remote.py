@@ -14,7 +14,7 @@ from musify.processors.download import ItemDownloadHelper
 from pydantic import BaseModel, NonNegativeFloat, Field, PositiveInt, confloat, computed_field, SecretStr, conint, \
     PrivateAttr, model_validator
 
-from musify_cli.parser.library import  LibraryConfig, PlaylistsConfig
+from musify_cli.parser.library._core import LibraryConfig, PlaylistsConfig
 from musify_cli.parser.operations.signature import get_default_args, get_arg_descriptions
 from musify_cli.parser.operations.tags import TAG_NAMES, TagFilter, Tags
 

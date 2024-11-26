@@ -12,7 +12,7 @@ from musify_cli.parser.core import Paths, Logging, MUSIFY_ROOT, AIOREQUESTFUL_RO
 from musify_cli.parser.library import LibrariesConfig
 from musify_cli.parser.library.local import LocalLibraryConfig, LocalPaths
 from musify_cli.parser.library.remote import RemoteLibraryConfig, SpotifyAPIConfig
-from musify_cli.parser.types import LoadTypesLocal, LoadTypesRemote, EnrichTypesRemote
+from musify_cli.parser.library.types import LoadTypesLocal, LoadTypesRemote, EnrichTypesRemote
 from tests.utils import path_resources
 
 path_core_config = path_resources.joinpath("test_config.yml")

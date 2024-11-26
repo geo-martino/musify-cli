@@ -28,7 +28,7 @@ from musify_cli.exception import ParserError
 from musify_cli.manager.library import LocalLibraryManager, MusicBeeManager
 from musify_cli.manager.library import RemoteLibraryManager, SpotifyLibraryManager
 from musify_cli.parser.core import Reports, MusifyConfig
-from musify_cli.parser.types import LoadTypesLocal, LoadTypesRemote
+from musify_cli.parser.library.types import LoadTypesLocal, LoadTypesRemote
 
 
 class ReportsManager:
