@@ -1,4 +1,7 @@
 import logging.config
+import os
+import shutil
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Self
 
@@ -8,7 +11,7 @@ from musify.libraries.local.track.field import LocalTrackField
 from musify.logger import MusifyLogger
 from musify.processors.filter import FilterComparers
 from musify.report import report_missing_tags
-from pydantic import BaseModel, Field, DirectoryPath, computed_field
+from pydantic import BaseModel, Field, DirectoryPath, computed_field, model_validator
 
 from musify_cli import PACKAGE_ROOT, MODULE_ROOT
 from musify_cli.parser.library import LibrariesConfig, APIConfig
@@ -78,13 +81,19 @@ class Logging(BaseModel):
         """The configuration for the selected logger"""
         return self.loggers.get(self.name, {})
 
-    def model_post_init(self, __context: Any) -> None:
+    @model_validator(mode="after")
+    def fix_ansi_codes_in_formatters(self) -> Self:
         for formatter in self.formatters.values():  # ensure ANSI colour codes in format are recognised
             if (format_key := "format") in formatter:
                 formatter[format_key] = formatter[format_key].replace(r"\33", "\33")
 
+        return self
+
+    @model_validator(mode="after")
+    def add_key_loggers(self) -> Self:
         if self.name and self.name in self.loggers:
             self.configure_additional_loggers(MODULE_ROOT, MUSIFY_ROOT, AIOREQUESTFUL_ROOT)
+        return self
 
     def configure_additional_loggers(self, *names: str) -> None:
         """
@@ -111,11 +120,16 @@ class Logging(BaseModel):
             logging.getLogger(MODULE_ROOT).debug(f"Logging config set to: {self.name}")
 
 
-class AppData(BaseModel):
+class Paths(BaseModel):
     base: DirectoryPath = Field(
         description="The base directory to use for output data e.g. backups, API tokens, caches etc.",
         default=PACKAGE_ROOT.joinpath("_data"),
     )
+    dt: datetime = Field(
+        description="The datetime of the current execution. Used to form execution-specific paths.",
+        default=datetime.now()
+    )
+
     backup: Path = Field(
         description="The directory to use for backup output. May either be a full path or relative path to the 'base'",
         default=Path("backup"),
@@ -128,21 +142,59 @@ class AppData(BaseModel):
         description="The directory to use for token files. May either be a full path or relative path to the 'base'",
         default=Path("token")
     )
-    local_library: Path = Field(
+    local_library_exports: Path = Field(
         description="The directory to use for local library export data. "
                     "May either be a full path or relative path to the 'base'",
         default=Path("library", "local")
     )
 
-    def model_post_init(self, __context: Any) -> None:
-        if not self.backup.is_absolute():
-            self.backup = DirectoryPath(self.base.joinpath(self.backup))
-        if not self.cache.is_absolute():
-            self.cache = DirectoryPath(self.base.joinpath(self.cache))
-        if not self.token.is_absolute():
-            self.token = DirectoryPath(self.base.joinpath(self.token))
-        if not self.local_library.is_absolute():
-            self.local_library = DirectoryPath(self.base.joinpath(self.local_library))
+    @computed_field(
+        description="A map of all concrete paths i.e. all paths not including the base path"
+    )
+    @property
+    def _paths(self) -> dict[str, Path]:
+        return {
+            name: path for name, path in vars(self).items()
+            if isinstance(path, Path) and path != self.base
+        }
+
+    @computed_field(
+        description="The execution time formatted as a string for use in paths"
+    )
+    @property
+    def _dt_as_str(self) -> str:
+        return self.dt.strftime("%Y-%m-%d_%H.%M.%S")
+
+    @model_validator(mode="after")
+    def join_paths_with_base(self) -> Self:
+        for name, path in self._paths.items():
+            if not path.is_absolute():
+                self.__setattr__(name, DirectoryPath(self.base.joinpath(path)))
+
+        return self
+
+    @model_validator(mode="after")
+    def extend_paths_with_execution_time(self) -> Self:
+        self.backup = self.backup.joinpath(self._dt_as_str)
+        return self
+
+    @model_validator(mode="after")
+    def create_directories(self) -> Self:
+        if "PYTEST_CURRENT_TEST" in os.environ:  # don't create directories when executing tests
+            return self
+        for path in self._paths.values():
+            path.mkdir(parents=True, exist_ok=True)
+        return self
+
+    def remove_empty_directories(self) -> None:
+        """Remove all empty folders."""
+        for path in list(self._paths.values()) + [self.base]:
+            self._remote_empty_directories_recursively(path)
+
+    def _remote_empty_directories_recursively(self, path: Path) -> None:
+        if path.is_dir() and not list(path.glob("*")):
+            shutil.rmtree(path)
+            self._remote_empty_directories_recursively(path.parent)
 
 
 ###########################################################################
@@ -275,10 +327,10 @@ class MusifyConfig(BaseModel):
         description="Configuration for the runtime logger",
         default=Logging(),
     )
-    app_data: AppData = Field(
+    paths: Paths = Field(
         description="Configuration for the hierarchy of files needed and/or exported by the program "
                     "e.g. backups, API tokens, caches etc.",
-        default=AppData(),
+        default=Paths(),
     )
     pre_post: PrePost = Field(
         description="Configuration for pre-/post- operations e.g. reload, pauses, filtering etc.",
@@ -295,13 +347,16 @@ class MusifyConfig(BaseModel):
         default=Reports(),
     )
 
-    def model_post_init(self, __context: Any) -> None:
+    @model_validator(mode="after")
+    def make_api_paths_absolute(self) -> Self:
         api: APIConfig = self.libraries.remote.api
         if (token_file_path := api.token_file_path) and not token_file_path.is_absolute():
-            api.token_file_path = self.app_data.token.joinpath(token_file_path)
+            api.token_file_path = self.paths.token.joinpath(token_file_path)
 
         if api.cache.is_local and not (db := Path(api.cache.db)).is_absolute():
-            api.cache.db = self.app_data.cache.joinpath(db)
+            api.cache.db = self.paths.cache.joinpath(db)
+
+        return self
 
     @classmethod
     def from_file(cls, config_file_path: str | Path) -> tuple[Self, list[Self]]:

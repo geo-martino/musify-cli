@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection
 from datetime import datetime
+from functools import cached_property
 from typing import AsyncContextManager, Self
 
 from aiorequestful.cache.backend import CACHE_CLASSES, ResponseCache
@@ -31,16 +32,10 @@ from musify_cli.parser.types import LoadTypesRemote, EnrichTypesRemote
 class RemoteLibraryManager(LibraryManager[RemoteLibraryConfig], AsyncContextManager, metaclass=ABCMeta):
     """Instantiates and manages a :py:class:`RemoteLibrary` and related objects from a given ``config``."""
 
+    _library_cls: type[RemoteLibrary] = RemoteLibrary
+
     def __init__(self, config: RemoteLibraryConfig, dry_run: bool = True):
         super().__init__(config=config, dry_run=dry_run)
-
-        self._library: RemoteLibrary | None = None
-        self._api: RemoteAPI | None = None
-
-        # utilities
-        self._cache: ResponseCache | None = None
-        self._factory: RemoteObjectFactory | None = None
-        self._wrangler: RemoteDataWrangler | None = None
 
         self.types_loaded: set[LoadTypesRemote] = set()
         self.extended: bool = False
@@ -54,17 +49,17 @@ class RemoteLibraryManager(LibraryManager[RemoteLibraryConfig], AsyncContextMana
         await self.check.close()
         await self.api.__aexit__(exc_type, exc_val, exc_tb)
 
-    @property
+    @cached_property
     def source(self) -> str:
         return self.wrangler.source
 
-    @property
+    @cached_property
     @abstractmethod
     def library(self) -> RemoteLibrary:
         """The initialised remote library"""
         raise NotImplementedError
 
-    @property
+    @cached_property
     @abstractmethod
     def api(self) -> RemoteAPI:
         """The initialised remote API for this remote library type"""
@@ -75,34 +70,31 @@ class RemoteLibraryManager(LibraryManager[RemoteLibraryConfig], AsyncContextMana
         api.handler.retry_timer = GeometricCountTimer(**config.retry.dict())
         api.handler.wait_timer = StepCeilingTimer(**config.wait.dict())
 
-    @property
+    @cached_property
     def cache(self) -> ResponseCache | None:
         """The initialised cache to use with the remote API for this remote library type"""
-        if self._cache is None:
-            if not (config := self.config.api.cache).type:
-                return
+        if not (config := self.config.api.cache).type:
+            return
 
-            cls = next((cls for cls in CACHE_CLASSES if cls.type == config.type), None)
-            if not cls:
-                return
+        cls = next((cls for cls in CACHE_CLASSES if cls.type == config.type), None)
+        if not cls:
+            return
 
-            self._cache = cls.connect(value=config.db, expire=config.expire_after)
+        return cls.connect(value=config.db, expire=config.expire_after)
 
-        return self._cache
-
-    @property
+    @cached_property
     @abstractmethod
     def factory(self) -> RemoteObjectFactory:
         """The remote object factory for this remote library type"""
         raise NotImplementedError
 
-    @property
+    @cached_property
     @abstractmethod
     def wrangler(self) -> RemoteDataWrangler:
         """The initialised remote data wrangler for this remote library type"""
         raise NotImplementedError
 
-    @property
+    @cached_property
     def match(self) -> ItemMatcher:
         """The initialised item matcher for this remote library type"""
         return ItemMatcher()
@@ -302,41 +294,34 @@ class RemoteLibraryManager(LibraryManager[RemoteLibraryConfig], AsyncContextMana
 class SpotifyLibraryManager(RemoteLibraryManager):
     """Instantiates and manages a generic :py:class:`SpotifyLibrary` and related objects from a given ``config``."""
 
-    @property
+    _library_cls: type[SpotifyLibrary] = SpotifyLibrary
+
+    @cached_property
     def library(self) -> SpotifyLibrary:
-        if self._library is None:
-            self._library = SpotifyLibrary(api=self.api, playlist_filter=self.playlist_filter or ())
-            self.initialised = True
+        self.initialised = True
+        return self._library_cls(api=self.api, playlist_filter=self.playlist_filter or ())
 
-        return self._library
-
-    @property
+    @cached_property
     def api(self) -> SpotifyAPI:
-        if self._api is None:
-            if not self.config.api.client_id or not self.config.api.client_secret:
-                raise ParserError("Cannot create API object without client ID and client secret")
+        if not self.config.api.client_id or not self.config.api.client_secret:
+            raise ParserError("Cannot create API object without client ID and client secret")
 
-            self._api = SpotifyAPI(
-                client_id=self.config.api.client_id,
-                client_secret=self.config.api.client_secret,
-                scope=self.config.api.scope,
-                cache=self.cache,
-                token_file_path=self.config.api.token_file_path,
-            )
-            self.initialised = True
+        api = SpotifyAPI(
+            client_id=self.config.api.client_id,
+            client_secret=self.config.api.client_secret,
+            scope=self.config.api.scope,
+            cache=self.cache,
+            token_file_path=self.config.api.token_file_path,
+        )
+        self._set_handler(api)
 
-            self._set_handler(self._api)
+        self.initialised = True
+        return api
 
-        return self._api
-
-    @property
+    @cached_property
     def factory(self) -> SpotifyObjectFactory:
-        if self._factory is None:
-            self._factory = SpotifyObjectFactory(api=self.api)
-        return self._factory
+        return SpotifyObjectFactory(api=self.api)
 
-    @property
+    @cached_property
     def wrangler(self) -> SpotifyDataWrangler:
-        if self._wrangler is None:
-            self._wrangler = SpotifyDataWrangler()
-        return self._wrangler
+        return SpotifyDataWrangler()

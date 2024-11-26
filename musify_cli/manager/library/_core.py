@@ -1,6 +1,7 @@
 import logging
 import logging.config
 from abc import ABC, abstractmethod
+from functools import cached_property
 
 from musify.base import MusifyObject
 from musify.libraries.core.object import Library
@@ -28,13 +29,13 @@ class LibraryManager[T: LibraryConfig](ABC):
         """The user-defined name of the library"""
         return self.config.name
 
-    @property
+    @cached_property
     @abstractmethod
     def source(self) -> str:
         """The name of the source currently being used for this library"""
         raise NotImplementedError
 
-    @property
+    @cached_property
     @abstractmethod
     def library(self) -> Library:
         """The initialised library"""

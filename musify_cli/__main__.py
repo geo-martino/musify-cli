@@ -220,8 +220,6 @@ def handle_exception(lp: AbstractEventLoop, context: dict[str, Any]) -> None:
 
 def close(processor: MusifyProcessor) -> None:
     """Close the ``processor`` and log closing messages."""
-    processor.manager.paths.clear_empty()
-
     print_header()
     processor.logger.debug(f"Time taken: {processor.time_taken}")
     logging.shutdown()

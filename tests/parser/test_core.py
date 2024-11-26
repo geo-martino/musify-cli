@@ -9,7 +9,7 @@ from musify.logger import MusifyLogger
 
 from musify_cli import MODULE_ROOT
 # noinspection PyProtectedMember
-from musify_cli.parser.core import AppData, Logging, MUSIFY_ROOT, AIOREQUESTFUL_ROOT, MusifyConfig
+from musify_cli.parser.core import Paths, Logging, MUSIFY_ROOT, AIOREQUESTFUL_ROOT, MusifyConfig
 # noinspection PyProtectedMember
 from musify_cli.parser.library import LibrariesConfig, RemoteLibraryConfig, SpotifyAPIConfig, LocalLibraryConfig, \
     LocalPaths
@@ -62,34 +62,47 @@ class TestLogging:
         assert MusifyLogger.disable_bars is not model.bars
 
 
-class TestAppData:
-    def test_assigns_base_path_on_relative(self, tmp_path: Path):
-        model = AppData(
+class TestPaths:
+    @pytest.fixture
+    def model(self, tmp_path: Path) -> Paths:
+        return Paths(
             base=tmp_path,
-            backup="backup",
-            cache="cache",
-            token="token",
-            local_library=Path("local", "library"),
+            backup=Path("path", "to", "backup"),
+            cache="test_cache",
+            token="test_token",
+            local_library_exports=Path("path", "to", "local_library"),
         )
 
-        assert model.backup == tmp_path.joinpath("backup")
-        assert model.cache == tmp_path.joinpath("cache")
-        assert model.token == tmp_path.joinpath("token")
-        assert model.local_library == tmp_path.joinpath("local", "library")
+    def test_assigns_base_path_on_relative(self, model: Paths, tmp_path: Path):
+        assert model.backup == tmp_path.joinpath("path", "to", "backup", model._dt_as_str)
+        assert model.cache == tmp_path.joinpath("test_cache")
+        assert model.token == tmp_path.joinpath("test_token")
+        assert model.local_library_exports == tmp_path.joinpath("path", "to", "local_library")
 
     def test_keeps_path_on_absolute(self, tmp_path: Path):
-        model = AppData(
+        model = Paths(
             base=tmp_path.parent.parent,
-            backup=tmp_path.joinpath("backup"),
-            cache=tmp_path.joinpath("cache"),
-            token=tmp_path.joinpath("token"),
-            local_library=tmp_path.joinpath("local", "library"),
+            backup=tmp_path.joinpath("path", "to", "backup"),
+            cache=tmp_path.joinpath("test_cache"),
+            token=tmp_path.joinpath("test_token"),
+            local_library_exports=tmp_path.joinpath("path", "to", "local_library"),
         )
 
-        assert model.backup == tmp_path.joinpath("backup")
-        assert model.cache == tmp_path.joinpath("cache")
-        assert model.token == tmp_path.joinpath("token")
-        assert model.local_library == tmp_path.joinpath("local", "library")
+        assert model.backup == tmp_path.joinpath("path", "to", "backup", model._dt_as_str)
+        assert model.cache == tmp_path.joinpath("test_cache")
+        assert model.token == tmp_path.joinpath("test_token")
+        assert model.local_library_exports == tmp_path.joinpath("path", "to", "local_library")
+
+    def test_removes_empty_directories(self, model: Paths):
+        assert model._paths
+        paths = list(model._paths.values()) + [model.base]
+        for path in paths:
+            path.mkdir(parents=True, exist_ok=True)
+            assert path.exists()
+
+        model.remove_empty_directories()
+        for path in paths:
+            assert not path.exists()
 
 
 class TestConfig:
@@ -117,7 +130,7 @@ class TestConfig:
     def test_assigns_base_path_on_relative(self, model: MusifyConfig):
         path: Path = model.libraries.remote.api.token_file_path
         assert path.is_absolute()
-        assert path.is_relative_to(model.app_data.base)
+        assert path.is_relative_to(model.paths.base)
 
     def test_keeps_path_on_absolute(self, model: MusifyConfig, tmp_path: Path):
         model = MusifyConfig(
@@ -136,7 +149,7 @@ class TestConfig:
 
         path: Path = model.libraries.remote.api.token_file_path
         assert path.is_absolute()
-        assert not path.is_relative_to(model.app_data.base)
+        assert not path.is_relative_to(model.paths.base)
         assert path == tmp_path.joinpath("token.json")
 
     # noinspection PyTestUnpassedFixture
@@ -145,11 +158,11 @@ class TestConfig:
 
         assert config.execute
 
-        assert config.app_data.base == config.app_data.model_fields.get("base").default
-        assert config.app_data.backup == config.app_data.base.joinpath("test_backups")
-        assert config.app_data.cache == config.app_data.base.joinpath("test_cache")
-        assert config.app_data.token == config.app_data.base.joinpath("test_token")
-        assert config.app_data.local_library == config.app_data.base.joinpath("test_library_local")
+        assert config.paths.base == config.paths.model_fields.get("base").default
+        assert config.paths.backup == config.paths.base.joinpath("test_backups", config.paths._dt_as_str)
+        assert config.paths.cache == config.paths.base.joinpath("test_cache")
+        assert config.paths.token == config.paths.base.joinpath("test_token")
+        assert config.paths.local_library_exports == config.paths.base.joinpath("test_library_local")
 
         assert config.logging.name == "logger"
         assert config.logging.compact

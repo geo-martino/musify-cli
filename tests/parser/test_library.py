@@ -9,7 +9,6 @@ from musify.libraries.local.library import MusicBee
 from musify.utils import to_collection
 from pydantic import ValidationError
 
-from musify_cli.exception import ParserError
 # noinspection PyProtectedMember
 from musify_cli.parser.library import LOCAL_LIBRARY_TYPES, REMOTE_LIBRARY_TYPES, RemoteLibraryConfig, \
     LocalLibraryPaths, MusicBeePaths, LocalLibraryPathsParser, LocalPaths, APIConfig, SpotifyAPIConfig, LibrariesConfig, \
@@ -51,11 +50,11 @@ class TestLocalLibraryPaths:
 
     # noinspection PyStatementEffect
     def test_init_fails(self, invalid_paths: dict[str, Collection[str]]):
-        with pytest.raises(ParserError, match="are not valid directories"):
+        with pytest.raises(ValidationError, match="are not valid directories"):
             LocalLibraryPaths(**invalid_paths)
 
         invalid_paths.pop(str(LocalLibraryPathsParser._platform_key))
-        with pytest.raises(ParserError, match="No valid paths found for the current platform"):
+        with pytest.raises(ValidationError, match="No valid paths found for the current platform"):
             LocalLibraryPaths(**invalid_paths)
 
     def test_properties(self, valid_model: LocalLibraryPaths, valid_paths: dict[str, Collection[str]]):
@@ -113,11 +112,11 @@ class TestMusicBeePaths:
         assert all(path != valid_model.paths for path in valid_model.others)
 
     def test_get_paths_fails(self, invalid_paths: dict[str, str]):
-        with pytest.raises(ParserError, match="No MusicBee library found"):
+        with pytest.raises(ValidationError, match="No MusicBee library found"):
             MusicBeePaths(**invalid_paths)
 
         invalid_paths.pop(str(LocalLibraryPathsParser._platform_key))
-        with pytest.raises(ParserError, match="No valid paths found for the current platform"):
+        with pytest.raises(ValidationError, match="No valid paths found for the current platform"):
             MusicBeePaths(**invalid_paths)
 
 
@@ -268,11 +267,11 @@ class TestLibraries:
             self, local_libraries: list[LocalLibraryConfig], remote_libraries: list[RemoteLibraryConfig]
     ):
         match = "no target specified"
-        with pytest.raises(ParserError, match=match):
+        with pytest.raises(ValidationError, match=match):
             LibrariesConfig(local=local_libraries, remote=remote_libraries)
-        with pytest.raises(ParserError, match=match):
+        with pytest.raises(ValidationError, match=match):
             LibrariesConfig(local=local_libraries[0], remote=remote_libraries)
-        with pytest.raises(ParserError, match=match):
+        with pytest.raises(ValidationError, match=match):
             LibrariesConfig(local=local_libraries, remote=remote_libraries[0])
 
     def test_fails_when_target_given_is_invalid(
@@ -280,17 +279,17 @@ class TestLibraries:
     ):
         match = "target does not correspond to any configured"
         target = LibraryTarget(local="i am not a valid target", remote="I am also not a valid target")
-        with pytest.raises(ParserError, match=match):
+        with pytest.raises(ValidationError, match=match):
             LibrariesConfig(local=local_libraries, remote=remote_libraries, target=target)
 
         valid_local_name = choice([lib.name for lib in local_libraries])
         target = LibraryTarget(local=valid_local_name, remote="invalid name")
-        with pytest.raises(ParserError, match=match):
+        with pytest.raises(ValidationError, match=match):
             LibrariesConfig(local=local_libraries, remote=remote_libraries, target=target)
 
         valid_remote_name = choice([lib.name for lib in remote_libraries])
         target = LibraryTarget(local="invalid name", remote=valid_remote_name)
-        with pytest.raises(ParserError, match=match):
+        with pytest.raises(ValidationError, match=match):
             LibrariesConfig(local=local_libraries, remote=remote_libraries, target=target)
 
     def test_gets_target_libraries(

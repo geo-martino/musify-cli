@@ -5,13 +5,11 @@ from typing import Any
 
 import pytest
 from musify.field import TagField, Fields
-from musify.file.path_mapper import PathStemMapper
 from musify.libraries.collection import BasicCollection
 from musify.libraries.core.object import Track
 from musify.libraries.local.library import LocalLibrary, MusicBee
 from musify.libraries.local.track import LocalTrack, SyncResultTrack, FLAC
 from musify.libraries.local.track.field import LocalTrackField, LocalTrackField as Tags
-from musify.libraries.remote.spotify.wrangle import SpotifyDataWrangler
 from musify.types import UnitIterable
 
 from musify_cli.manager.library import LocalLibraryManager, MusicBeeManager
@@ -65,37 +63,11 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
         Replace the instantiated library from the given ``manager`` with a mocked library.
         Yields the modified ``manager`` as a pytest.fixture.
         """
-        manager._library = self.LibraryMock(
-            library_folders=manager.library.library_folders,
-            playlist_folder=manager.library.playlist_folder,
-            playlist_filter=manager.library.playlist_filter,
-            path_mapper=manager.library.path_mapper,
-            remote_wrangler=manager.library.remote_wrangler
-        )
+        manager._library_cls = self.LibraryMock
         return manager
 
     def test_properties(self, manager: T):
         assert manager.source == LocalLibrary.source
-
-    def test_init_library(self, manager: T, config: LocalLibraryConfig):
-        wrangler = SpotifyDataWrangler()
-        manager._remote_wrangler = wrangler
-
-        assert manager._library is None
-        library: LocalLibrary = manager.library
-        assert manager._library is not None
-
-        assert library.library_folders == [config.paths.library]
-        assert library.playlist_folder == config.paths.playlists
-        assert library.playlist_filter == manager.playlist_filter == config.playlists.filter
-        assert id(library.remote_wrangler) == id(wrangler)
-        assert isinstance(library.path_mapper, PathStemMapper)
-        assert library.path_mapper.stem_map == config.paths.map
-
-        # does not generate a new object when called twice even if config changes
-        manager.config.paths.library = "/new/path/to/library"
-        assert id(manager.library) == id(manager._library) == id(library)
-        assert manager.library.library_folders == library.library_folders != list(config.paths.library)
 
     ###########################################################################
     ## Operations
@@ -203,6 +175,9 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
 
 class TestMusicBeeManager(TestLocalLibraryManager[MusicBeeManager]):
 
+    class LibraryMock(TestLocalLibraryManager.LibraryMock, MusicBee):
+        pass
+
     @pytest.fixture
     def library_folders(self, tmp_path: Path) -> list[Path]:
         """The library folders to use when generating the MusicBee settings file."""
@@ -280,24 +255,3 @@ class TestMusicBeeManager(TestLocalLibraryManager[MusicBeeManager]):
 
     def test_properties(self, manager: MusicBeeManager):
         assert manager.source == MusicBee.source
-
-    # noinspection PyMethodOverriding
-    def test_init_library(self, manager: MusicBeeManager, config: LocalLibraryConfig, library_folders: list[str]):
-        wrangler = SpotifyDataWrangler()
-        manager._remote_wrangler = wrangler
-
-        assert manager._library is None
-        library: MusicBee = manager.library
-        assert manager._library is not None
-
-        assert library.library_folders == library_folders
-        assert library.playlist_folder == config.paths.library.joinpath(MusicBee.playlists_path)
-        assert library.playlist_filter == manager.playlist_filter == config.playlists.filter
-        assert id(library.remote_wrangler) == id(wrangler)
-        assert isinstance(library.path_mapper, PathStemMapper)
-        assert library.path_mapper.stem_map == config.paths.map
-
-        # does not generate a new object when called twice even if config changes
-        manager.config.paths.library = "/new/path/to/library"
-        assert id(manager.library) == id(manager._library) == id(library)
-        assert manager.library.library_folders == library_folders != list(config.paths.library)

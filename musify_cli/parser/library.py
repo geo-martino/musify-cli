@@ -224,12 +224,11 @@ class LocalPaths[T: LocalLibraryPathsParser](BaseModel):
         default_factory=dict
     )
 
-    def model_post_init(self, __context: Any) -> None:
-        self._extend_stem_map_with_other_platforms()
-
-    def _extend_stem_map_with_other_platforms(self) -> None:
+    @model_validator(mode="after")
+    def extend_stem_map_with_other_platforms(self) -> Self:
         if not isinstance(self.library, LocalLibraryPathsParser):
-            return
+            return self
+
         if self.map is None:
             self.map = {}
 
@@ -237,6 +236,7 @@ class LocalPaths[T: LocalLibraryPathsParser](BaseModel):
         other_paths = map(str, self.library.others)
         self.map.update({other_path: actual_path for other_path in other_paths if other_path != actual_path})
 
+        return self
 
 updater_defaults = get_default_args(LocalTrack.save)
 
@@ -279,7 +279,7 @@ class LocalLibraryConfig[T: LocalLibraryPathsParser](LibraryConfig):
     # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
-    def validate_type(cls, data: Any) -> Any:
+    def extract_type_from_input(cls, data: Any) -> Any:
         if not isinstance(data, MutableMapping):
             return data
 
@@ -291,9 +291,11 @@ class LocalLibraryConfig[T: LocalLibraryPathsParser](LibraryConfig):
 
         return data
 
-    def model_post_init(self, __context: Any) -> None:
+    @model_validator(mode="after")
+    def extract_library_paths(self) -> Self:
         if isinstance(self.paths.library, LocalLibraryPathsParser):
             self.paths.library = self.paths.library.paths
+        return self
 
 
 ###########################################################################
@@ -532,7 +534,7 @@ class RemoteLibraryConfig[T: APIConfig](LibraryConfig):
     # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
-    def validate_type(cls, data: Any) -> Any:
+    def extract_type_from_input(cls, data: Any) -> Any:
         if not isinstance(data, MutableMapping):
             return data
 
@@ -578,54 +580,37 @@ class LibrariesConfig(BaseModel):
     )
 
     @model_validator(mode="after")
-    def validate_local_target(self) -> Self:
+    def extract_local_library_from_target(self) -> Self:
         if not isinstance(self.local, list):
             return self
 
-        if not next(iter(lib for lib in self.local if lib.name == self.target.local), None):
+        if not self.target.local:
+            raise ParserError("Many local libraries given but no target specified", key="local")
+
+        self.local: list[LocalLibraryConfig]
+        try:
+            self.local = next(iter(lib for lib in self.local if lib.name == self.target.local))
+        except StopIteration:
             raise ParserError(
-                "Multiple local libraries found but valid target name was not specified",
-                key="target.local",
-                value=self.target.local
-            )
+                "The given local target does not correspond to any configured local library", key="local"
+                )
 
         return self
 
     @model_validator(mode="after")
-    def validate_remote_target(self) -> Self:
+    def extract_remote_library_from_target(self) -> Self:
         if not isinstance(self.remote, list):
             return self
 
-        if not next(iter(lib for lib in self.remote if lib.name == self.target.remote), None):
+        if not self.target.remote:
+            raise ParserError("Many remote libraries given but no target specified", key="local")
+
+        self.remote: list[RemoteLibraryConfig]
+        try:
+            self.remote = next(iter(lib for lib in self.remote if lib.name == self.target.remote))
+        except StopIteration:
             raise ParserError(
-                "Multiple remote libraries found but valid target name was not specified",
-                key="target.remote",
-                value=self.target.remote
+                "The given remote target does not correspond to any configured remote library", key="remote"
             )
 
         return self
-
-    def model_post_init(self, __context: Any) -> None:
-        if isinstance(self.local, list):
-            if not self.target.local:
-                raise ParserError("Many local libraries given but no target specified", key="local")
-
-            self.local: list[LocalLibraryConfig]
-            try:
-                self.local = next(iter(lib for lib in self.local if lib.name == self.target.local))
-            except StopIteration:
-                raise ParserError(
-                    "The given local target does not correspond to any configured local library", key="local"
-                )
-
-        if isinstance(self.remote, list):
-            if not self.target.remote:
-                raise ParserError("Many remote libraries given but no target specified", key="local")
-
-            self.remote: list[RemoteLibraryConfig]
-            try:
-                self.remote = next(iter(lib for lib in self.remote if lib.name == self.target.remote))
-            except StopIteration:
-                raise ParserError(
-                    "The given remote target does not correspond to any configured remote library", key="remote"
-                )

@@ -5,6 +5,7 @@ import logging
 import logging.config
 from collections.abc import Collection, Iterable
 from datetime import datetime
+from functools import cached_property
 from pathlib import Path
 from time import perf_counter
 from typing import Self
@@ -24,7 +25,6 @@ from musify.utils import to_collection
 
 from musify_cli import MODULE_ROOT
 from musify_cli.exception import ParserError
-from musify_cli.manager._paths import PathsManager
 from musify_cli.manager.library import LocalLibraryManager, MusicBeeManager
 from musify_cli.manager.library import RemoteLibraryManager, SpotifyLibraryManager
 from musify_cli.parser.core import Reports, MusifyConfig
@@ -83,6 +83,10 @@ class MusifyManager:
         "spotify": SpotifyLibraryManager,
     }
 
+    @property
+    def dt(self) -> datetime:
+        return self.config.paths.dt
+
     def __init__(self, config: MusifyConfig):
         start_time = perf_counter()
 
@@ -90,23 +94,16 @@ class MusifyManager:
         self.logger: MusifyLogger = logging.getLogger(__name__)
 
         self.config = config
-        self.dt = datetime.now()
-
-        self._dry_run: bool | None = None
-
-        self.paths: PathsManager = PathsManager(config=self.config.app_data, dt=self)
-
-        local_library_config: MusifyConfig = self.config.libraries.local
-        self.local: LocalLibraryManager = self._local_library_map[local_library_config.type.casefold()](
-            config=local_library_config, dry_run=self.dry_run,
-        )
 
         remote_library_config: MusifyConfig = self.config.libraries.remote
         self.remote: RemoteLibraryManager = self._remote_library_map[remote_library_config.type.casefold()](
             config=remote_library_config, dry_run=self.dry_run,
         )
 
-        self.local._remote_wrangler = self.remote.wrangler
+        local_library_config: MusifyConfig = self.config.libraries.local
+        self.local: LocalLibraryManager = self._local_library_map[local_library_config.type.casefold()](
+            config=local_library_config, dry_run=self.dry_run, remote_wrangler=self.remote.wrangler
+        )
 
         self.reports: ReportsManager = ReportsManager(config=self.config.reports, parent=self)
 
@@ -118,6 +115,7 @@ class MusifyManager:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.config.paths.remove_empty_directories()
         await self.remote.__aexit__(exc_type, exc_val, exc_tb)
 
     def set_config(self, config: MusifyConfig) -> None:
@@ -153,12 +151,10 @@ class MusifyManager:
 
         self.reports.config = self.config.reports
 
-    @property
+    @cached_property
     def dry_run(self) -> bool:
         """Whether to run all write operations"""
-        if self._dry_run is None:
-            self._dry_run = not self.config.execute
-        return self._dry_run
+        return not self.config.execute
 
     @property
     def backup_key(self) -> str | None:

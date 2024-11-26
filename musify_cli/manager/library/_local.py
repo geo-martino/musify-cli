@@ -1,4 +1,5 @@
 from collections.abc import Collection
+from functools import cached_property
 
 from musify.file.path_mapper import PathMapper, PathStemMapper
 from musify.libraries.core.collection import MusifyCollection
@@ -21,39 +22,35 @@ from musify_cli.parser.types import LoadTypesLocal
 class LocalLibraryManager(LibraryManager[LocalLibraryConfig]):
     """Instantiates and manages a generic :py:class:`LocalLibrary` and related objects from a given ``config``."""
 
-    def __init__(self, config: LocalLibraryConfig, dry_run: bool = True):
+    _library_cls: type[LocalLibrary] = LocalLibrary
+
+    def __init__(self, config: LocalLibraryConfig, dry_run: bool = True, remote_wrangler: RemoteDataWrangler = None):
         super().__init__(config=config, dry_run=dry_run)
 
-        self._library: LocalLibrary | None = None
-
-        # utilities
-        self._remote_wrangler: RemoteDataWrangler | None = None
+        self._remote_wrangler = remote_wrangler
 
         self.types_loaded: set[LoadTypesLocal] = set()
 
-    @property
+    @cached_property
     def source(self) -> str:
         return str(LocalLibrary.source)
 
-    @property
+    @cached_property
     def path_mapper(self) -> PathMapper:
         """The configured :py:class:`PathMapper` to use when instantiating a library"""
         return PathStemMapper(stem_map=self.config.paths.map)
 
-    @property
+    @cached_property
     def library(self) -> LocalLibrary:
         """The initialised local library"""
-        if self._library is None:
-            self._library = LocalLibrary(
-                library_folders=self.config.paths.library,
-                playlist_folder=self.config.paths.playlists,
-                playlist_filter=self.playlist_filter or (),
-                path_mapper=self.path_mapper,
-                remote_wrangler=self._remote_wrangler,
-            )
-            self.initialised = True
-
-        return self._library
+        self.initialised = True
+        return self._library_cls(
+            library_folders=self.config.paths.library,
+            playlist_folder=self.config.paths.playlists,
+            playlist_filter=self.playlist_filter or (),
+            path_mapper=self.path_mapper,
+            remote_wrangler=self._remote_wrangler,
+        )
 
     ###########################################################################
     ## Operations
@@ -165,19 +162,18 @@ class LocalLibraryManager(LibraryManager[LocalLibraryConfig]):
 class MusicBeeManager(LocalLibraryManager):
     """Instantiates and manages a :py:class:`MusicBee` library and related objects from a given ``config``."""
 
-    @property
+    _library_cls = MusicBee
+
+    @cached_property
     def source(self) -> str:
         return str(MusicBee.source)
 
-    @property
+    @cached_property
     def library(self) -> MusicBee:
-        if self._library is None:
-            self._library = MusicBee(
-                musicbee_folder=self.config.paths.library,
-                playlist_filter=self.config.playlists.filter or (),
-                path_mapper=self.path_mapper,
-                remote_wrangler=self._remote_wrangler,
-            )
-            self.initialised = True
-
-        return self._library
+        self.initialised = True
+        return self._library_cls(
+            musicbee_folder=self.config.paths.library,
+            playlist_filter=self.config.playlists.filter or (),
+            path_mapper=self.path_mapper,
+            remote_wrangler=self._remote_wrangler,
+        )

@@ -5,11 +5,11 @@ logging:
   include: test_logging.yml
   name: logger
 
-app_data:
+paths:
   backup: test_backups
   cache: test_cache
   token: test_token
-  local_library: test_library_local
+  local_library_exports: test_library_local
 
 pre_post:
   reload:

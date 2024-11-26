@@ -8,7 +8,7 @@ from musify.exception import MusifyError
 from musify.utils import SafeDict
 
 
-class ParserError(MusifyError):
+class ParserError(MusifyError, ValueError):
     """
     Exception raised when parsing config gives an exception.
 

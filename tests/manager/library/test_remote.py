@@ -6,30 +6,22 @@ from random import randrange, choice
 from typing import Literal, Any
 
 import pytest
-from aiorequestful.cache.backend import ResponseCache
-from aiorequestful.cache.session import CachedSession
-from aiorequestful.timer import GeometricCountTimer, StepCeilingTimer
 from musify.base import MusifyObject, MusifyItem
 from musify.field import TagFields
 from musify.libraries.core.object import Library, Playlist
-from musify.libraries.remote.core.factory import RemoteObjectFactory
 from musify.libraries.remote.core.library import RemoteLibrary
 from musify.libraries.remote.core.object import RemoteTrack, RemotePlaylist, RemoteAlbum, RemoteArtist
 from musify.libraries.remote.core.object import SyncResultRemotePlaylist
-from musify.libraries.remote.core.wrangle import RemoteDataWrangler
 from musify.libraries.remote.spotify import SOURCE_NAME as SPOTIFY_SOURCE
-from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.libraries.remote.spotify.library import SpotifyLibrary
 from musify.libraries.remote.spotify.object import SpotifyTrack, SpotifyPlaylist, SpotifyAlbum, SpotifyArtist
-from musify.processors.check import RemoteItemChecker
 from musify.processors.filter import FilterDefinedList, FilterIncludeExclude
-from musify.processors.search import RemoteItemSearcher
 
 from musify_cli.exception import ParserError
 from musify_cli.manager.library import RemoteLibraryManager, SpotifyLibraryManager
 from musify_cli.parser.library import RemoteLibraryConfig, SpotifyAPIConfig, APICacheConfig, \
     APIHandlerConfig, APIHandlerRetry, APIHandlerWait, RemoteCheckerConfig, RemoteItemDownloadConfig, \
-    RemotePlaylistsConfig, RemotePlaylistsSync, PlaylistsConfig
+    RemotePlaylistsConfig, RemotePlaylistsSync
 from musify_cli.parser.types import LoadTypesRemote, EnrichTypesRemote
 from tests.manager.library.testers import LibraryManagerTester
 from tests.utils import random_str
@@ -48,67 +40,11 @@ class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, 
         Replace the instantiated library from the given ``manager`` with a mocked library.
         Yields the modified ``manager`` as a pytest.fixture.
         """
-        manager._library = self.LibraryMock(
-            api=manager.library.api,
-            playlist_filter=manager.library.playlist_filter
-        )
-        manager._library.factory.playlist = self.PlaylistMock
-        manager._library.factory.playlist = self.AlbumMock
+        manager._library_cls = self.LibraryMock
+        manager.factory.playlist = self.PlaylistMock
+        manager.factory.album = self.AlbumMock
 
         return manager
-
-    @staticmethod
-    def test_init_factory(manager: T):
-        assert manager._factory is None
-        factory: RemoteObjectFactory = manager.factory
-        assert manager._factory is not None
-
-        assert factory.api.source == manager.source
-
-        # does not generate a new object when called twice
-        assert id(manager.factory) == id(manager._factory) == id(factory)
-
-    @staticmethod
-    def test_init_cache(manager: T, config: RemoteLibraryConfig):
-        cache: ResponseCache = manager.cache
-        assert manager._cache is not None
-
-        assert cache.type == config.api.cache.type
-        assert cache.cache_name.startswith(config.api.cache.db)  # ignore extension
-        assert cache.expire == config.api.cache.expire_after
-
-        # does not generate a new object when called twice even if config changes
-        config.api.cache.expire_after = timedelta(seconds=2)
-        assert id(manager.cache) == id(manager._cache) == id(cache)
-
-    @staticmethod
-    def test_init_wrangler(manager: T):
-        assert manager._wrangler is None
-        wrangler: RemoteDataWrangler = manager.wrangler
-        assert manager._wrangler is not None
-
-        assert wrangler.source == manager.source
-
-        # does not generate a new object when called twice
-        assert id(manager.wrangler) == id(manager._wrangler) == id(wrangler)
-
-    @staticmethod
-    def test_init_check(manager: T, config: RemoteLibraryConfig):
-        checker: RemoteItemChecker = manager.check
-        assert checker.interval == config.check.interval
-        assert checker.allow_karaoke == config.check.allow_karaoke
-
-        # always generates a new object when called twice
-        config.check.interval += 100
-        assert id(checker) != id(manager.check)
-        assert manager.check.interval == config.check.interval
-
-    @staticmethod
-    def test_init_search(manager: T):
-        searcher: RemoteItemSearcher = manager.search
-
-        # always generates a new object when called twice
-        assert id(searcher) != id(manager.search)
 
     ###########################################################################
     ## Operations
@@ -409,44 +345,6 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
         with pytest.raises(ParserError):
             # noinspection PyStatementEffect
             manager.api
-
-    # noinspection PyTestUnpassedFixture,PyUnresolvedReferences
-    async def test_init_api(self, manager: SpotifyLibraryManager, config: RemoteLibraryConfig):
-        api: SpotifyAPI = manager.api
-        assert manager._api is not None
-
-        assert api.handler.authoriser.response.file_path == config.api.token_file_path
-
-        assert isinstance(api.handler.retry_timer, GeometricCountTimer)
-        assert api.handler.retry_timer.initial == 2
-        assert api.handler.retry_timer.count == 20
-        assert api.handler.retry_timer.factor == 1.5
-
-        assert isinstance(api.handler.wait_timer, StepCeilingTimer)
-        assert api.handler.wait_timer.initial == 1
-        assert api.handler.wait_timer.final == 3
-        assert api.handler.wait_timer.step == 0.3
-
-        assert isinstance(api.handler.session, CachedSession)
-
-        # does not generate a new object when called twice even if config changes
-        config.api.token_file_path = "/new/path/to/token.json"
-        config.api.cache.db = "/new/path/to/cache_db"
-        assert id(manager.api) == id(manager._api) == id(api)
-
-    # noinspection PyTestUnpassedFixture
-    def test_init_library(self, manager: SpotifyLibraryManager, config: RemoteLibraryConfig):
-        assert manager._library is None
-        library: SpotifyLibrary = manager.library
-        assert manager._library is not None
-        assert manager._api is not None
-
-        assert id(library.api) == id(manager.api)
-        assert library.playlist_filter == manager.playlist_filter == config.playlists.filter
-
-        # does not generate a new object when called twice even if config changes
-        config.playlists = PlaylistsConfig(filter=["new playlist 1", "new playlist 2", "new playlist 3"])
-        assert id(manager.library) == id(manager._library) == id(library)
 
     ###########################################################################
     ## Operations

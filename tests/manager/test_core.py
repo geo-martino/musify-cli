@@ -4,15 +4,14 @@ from pathlib import Path
 import pytest
 from musify.logger import MusifyLogger
 
-from musify_cli.parser.core import MusifyConfig, Reports, AppData, Backup, PrePost
-from musify_cli.parser.library import LOCAL_LIBRARY_TYPES, REMOTE_LIBRARY_TYPES, LibrariesConfig, LocalLibraryConfig, \
-    RemoteLibraryConfig, LocalPaths, SpotifyAPIConfig
-
 from musify_cli import MODULE_ROOT
 from musify_cli.exception import ParserError
 from musify_cli.manager import MusifyManager
 # noinspection PyProtectedMember
 from musify_cli.manager._core import ReportsManager
+from musify_cli.parser.core import MusifyConfig, Reports, Paths, Backup, PrePost
+from musify_cli.parser.library import LOCAL_LIBRARY_TYPES, REMOTE_LIBRARY_TYPES, LibrariesConfig, LocalLibraryConfig, \
+    RemoteLibraryConfig, LocalPaths, SpotifyAPIConfig
 from tests.utils import path_txt, path_logging_config
 
 
@@ -66,12 +65,12 @@ class TestMusifyManager:
         """
         return MusifyConfig(
             execute=True,
-            app_data=AppData(
+            paths=Paths(
                 base=tmp_path,
                 backup=Path("path", "to", "backup"),
                 token="test_token",
                 cache="test_cache",
-                local_library=Path("path", "to", "local_library"),
+                local_library_exports=Path("path", "to", "local_library"),
             ),
             pre_post=PrePost(
                 pause=None,
@@ -107,23 +106,6 @@ class TestMusifyManager:
     @pytest.mark.skip(reason="Test not yet implemented")
     def test_set_config(self, manager: MusifyManager):
         pass  # TODO
-
-    def test_init_dry_run(self, manager: MusifyManager):
-        dry_run = manager.dry_run
-        assert dry_run is not manager.config.execute
-        assert not manager._dry_run
-
-        # does not generate a new object when called twice even if config changes
-        manager.config.execute = not manager.config.execute
-        assert manager.dry_run is manager.config.execute
-        assert id(manager.dry_run) == id(manager._dry_run) == id(dry_run)
-
-    def test_init_backup_key(self, manager: MusifyManager):
-        assert manager.backup_key == manager.config.backup.key
-
-        # always generates a new object when called twice
-        manager.config.backup.key = "i am a new key"
-        assert manager.backup_key == manager.config.backup.key
 
     @pytest.mark.skip(reason="This removes all handlers hence removing ability to see logs for tests that follow this")
     def test_configure_logging(self):
