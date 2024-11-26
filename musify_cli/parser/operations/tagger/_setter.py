@@ -10,7 +10,7 @@ from musify.types import UnitCollection
 from musify.utils import to_collection
 
 from musify_cli.exception import ParserError
-from musify_cli.tagger.getter import Getter, getter_from_config
+from musify_cli.parser.operations.tagger._getter import Getter, getter_from_config
 
 
 class Setter(metaclass=ABCMeta):

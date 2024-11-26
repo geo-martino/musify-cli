@@ -6,7 +6,6 @@ from typing import AsyncContextManager, Self
 
 from aiorequestful.cache.backend import CACHE_CLASSES, ResponseCache, SQLiteCache
 from aiorequestful.timer import GeometricCountTimer, StepCeilingTimer
-from jsonargparse import Namespace
 from musify.libraries.core.object import Playlist
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.factory import RemoteObjectFactory
@@ -25,18 +24,16 @@ from musify.types import UnitCollection
 from musify.utils import get_max_width, align_string, to_collection
 
 from musify_cli.exception import ParserError
-from musify_cli.manager._paths import PathsManager
 from musify_cli.manager.library._core import LibraryManager
-from musify_cli.parser import LoadTypesRemote, EnrichTypesRemote
+from musify_cli.parser.library import RemoteLibraryConfig
+from musify_cli.parser.types import LoadTypesRemote, EnrichTypesRemote
 
 
-class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMeta):
+class RemoteLibraryManager(LibraryManager[RemoteLibraryConfig], AsyncContextManager, metaclass=ABCMeta):
     """Instantiates and manages a :py:class:`RemoteLibrary` and related objects from a given ``config``."""
 
-    def __init__(self, name: str, config: Namespace, paths: PathsManager, dry_run: bool = True):
-        super().__init__(name=name, config=config, dry_run=dry_run)
-
-        self._paths: PathsManager = paths
+    def __init__(self, config: RemoteLibraryConfig, dry_run: bool = True):
+        super().__init__(config=config, dry_run=dry_run)
 
         self._library: RemoteLibrary | None = None
         self._api: RemoteAPI | None = None
@@ -75,32 +72,22 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
         raise NotImplementedError
 
     def _set_handler(self, api: RemoteAPI) -> None:
-        config: Namespace = self.config.api.handler
-        if not self.config.api.handler:
-            return
-
-        if config_retry := config.get("retry"):
-            api.handler.retry_timer = GeometricCountTimer(**config_retry)
-        if config_wait := config.get("wait"):
-            api.handler.wait_timer = StepCeilingTimer(**config_wait)
+        config = self.config.api.handler
+        api.handler.retry_timer = GeometricCountTimer(**config.retry.dict())
+        api.handler.wait_timer = StepCeilingTimer(**config.wait.dict())
 
     @property
     def cache(self) -> ResponseCache | None:
         """The initialised cache to use with the remote API for this remote library type"""
         if self._cache is None:
-            if (config := self.config.api.cache) is None:
+            if not (config := self.config.api.cache).type:
                 return
 
             cls = next((cls for cls in CACHE_CLASSES if cls.type == config.type), None)
             if not cls:
                 return
 
-            local_caches = [SQLiteCache]
-            db = config.db
-            if cls in local_caches and not Path(config.db).is_absolute():
-                db = self._paths.cache.joinpath(db)
-
-            self._cache = cls.connect(value=db, expire=config.expire_after)
+            self._cache = cls.connect(value=config.db, expire=config.expire_after)
 
         return self._cache
 
@@ -158,34 +145,34 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
             return
 
         loaded = set()
-        if _should_load(LoadTypesRemote.playlists):
+        if _should_load(LoadTypesRemote.PLAYLISTS):
             await self.library.load_playlists()
-            self.types_loaded.add(LoadTypesRemote.playlists)
-            loaded.add(LoadTypesRemote.playlists)
-        if _should_load(LoadTypesRemote.saved_tracks):
+            self.types_loaded.add(LoadTypesRemote.PLAYLISTS)
+            loaded.add(LoadTypesRemote.PLAYLISTS)
+        if _should_load(LoadTypesRemote.SAVED_TRACKS):
             await self.library.load_tracks()
-            self.types_loaded.add(LoadTypesRemote.saved_tracks)
-            loaded.add(LoadTypesRemote.saved_tracks)
-        if _should_load(LoadTypesRemote.saved_albums):
+            self.types_loaded.add(LoadTypesRemote.SAVED_TRACKS)
+            loaded.add(LoadTypesRemote.SAVED_TRACKS)
+        if _should_load(LoadTypesRemote.SAVED_ALBUMS):
             await self.library.load_saved_albums()
-            self.types_loaded.add(LoadTypesRemote.saved_albums)
-            loaded.add(LoadTypesRemote.saved_albums)
-        if _should_load(LoadTypesRemote.saved_artists):
+            self.types_loaded.add(LoadTypesRemote.SAVED_ALBUMS)
+            loaded.add(LoadTypesRemote.SAVED_ALBUMS)
+        if _should_load(LoadTypesRemote.SAVED_ARTISTS):
             await self.library.load_saved_artists()
-            self.types_loaded.add(LoadTypesRemote.saved_artists)
-            loaded.add(LoadTypesRemote.saved_artists)
+            self.types_loaded.add(LoadTypesRemote.SAVED_ARTISTS)
+            loaded.add(LoadTypesRemote.SAVED_ARTISTS)
 
         if not loaded:
             return
 
         self.logger.print_line(STAT)
-        if LoadTypesRemote.playlists in loaded:
+        if LoadTypesRemote.PLAYLISTS in loaded:
             self.library.log_playlists()
-        if LoadTypesRemote.saved_tracks in loaded:
+        if LoadTypesRemote.SAVED_TRACKS in loaded:
             self.library.log_tracks()
-        if LoadTypesRemote.saved_albums in loaded:
+        if LoadTypesRemote.SAVED_ALBUMS in loaded:
             self.library.log_albums()
-        if LoadTypesRemote.saved_artists in loaded:
+        if LoadTypesRemote.SAVED_ARTISTS in loaded:
             self.library.log_artists()
         self.logger.print_line()
 
@@ -219,28 +206,28 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
             can_be_loaded = force or enrich_type not in self.types_enriched.get(load_type, [])
             return selected and can_be_loaded
 
-        if _loaded(LoadTypesRemote.saved_tracks) and (force or not _enriched(LoadTypesRemote.saved_tracks)):
-            artists = _should_enrich(LoadTypesRemote.saved_tracks, EnrichTypesRemote.artists)
-            albums = _should_enrich(LoadTypesRemote.saved_tracks, EnrichTypesRemote.albums)
+        if _loaded(LoadTypesRemote.SAVED_TRACKS) and (force or not _enriched(LoadTypesRemote.SAVED_TRACKS)):
+            artists = _should_enrich(LoadTypesRemote.SAVED_TRACKS, EnrichTypesRemote.ARTISTS)
+            albums = _should_enrich(LoadTypesRemote.SAVED_TRACKS, EnrichTypesRemote.ALBUMS)
             await self.library.enrich_tracks(artists=artists, albums=albums)
 
-            types_enriched = self.types_enriched.get(LoadTypesRemote.saved_tracks, set())
+            types_enriched = self.types_enriched.get(LoadTypesRemote.SAVED_TRACKS, set())
             if artists:
-                types_enriched.add(EnrichTypesRemote.artists)
+                types_enriched.add(EnrichTypesRemote.ARTISTS)
             if albums:
-                types_enriched.add(EnrichTypesRemote.albums)
-            self.types_enriched[LoadTypesRemote.saved_tracks] = types_enriched
-        if _loaded(LoadTypesRemote.saved_albums) and (force or not _enriched(LoadTypesRemote.saved_albums)):
+                types_enriched.add(EnrichTypesRemote.ALBUMS)
+            self.types_enriched[LoadTypesRemote.SAVED_TRACKS] = types_enriched
+        if _loaded(LoadTypesRemote.SAVED_ALBUMS) and (force or not _enriched(LoadTypesRemote.SAVED_ALBUMS)):
             await self.library.enrich_saved_albums()
-            self.types_enriched[LoadTypesRemote.saved_albums] = set()
-        if _loaded(LoadTypesRemote.saved_artists) and (force or not _enriched(LoadTypesRemote.saved_artists)):
-            tracks = _should_enrich(LoadTypesRemote.saved_artists, EnrichTypesRemote.tracks)
+            self.types_enriched[LoadTypesRemote.SAVED_ALBUMS] = set()
+        if _loaded(LoadTypesRemote.SAVED_ARTISTS) and (force or not _enriched(LoadTypesRemote.SAVED_ARTISTS)):
+            tracks = _should_enrich(LoadTypesRemote.SAVED_ARTISTS, EnrichTypesRemote.TRACKS)
             await self.library.enrich_saved_artists(tracks=tracks)
 
-            types_enriched = self.types_enriched.get(LoadTypesRemote.saved_artists, set())
+            types_enriched = self.types_enriched.get(LoadTypesRemote.SAVED_ARTISTS, set())
             if tracks:
-                types_enriched.add(EnrichTypesRemote.tracks)
-            self.types_enriched[LoadTypesRemote.saved_artists] = types_enriched
+                types_enriched.add(EnrichTypesRemote.TRACKS)
+            self.types_enriched[LoadTypesRemote.SAVED_ARTISTS] = types_enriched
 
     def _filter_playlists[T: Playlist](self, playlists: Collection[T]) -> Collection[T]:
         """
@@ -331,16 +318,12 @@ class SpotifyLibraryManager(RemoteLibraryManager):
             if not self.config.api.client_id or not self.config.api.client_secret:
                 raise ParserError("Cannot create API object without client ID and client secret")
 
-            token_file_path = Path(self.config.api.token_file_path)
-            if not token_file_path.is_absolute():
-                token_file_path = self._paths.token.joinpath(token_file_path)
-
             self._api = SpotifyAPI(
                 client_id=self.config.api.client_id,
                 client_secret=self.config.api.client_secret,
                 scope=self.config.api.scope,
                 cache=self.cache,
-                token_file_path=token_file_path,
+                token_file_path=self.config.api.token_file_path,
             )
             self.initialised = True
 

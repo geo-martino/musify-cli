@@ -11,12 +11,11 @@ from typing import Self
 
 import yaml
 from aiorequestful import MODULE_ROOT as AIOREQUESTFUL_ROOT
-from jsonargparse import Namespace
 from musify import MODULE_ROOT as MUSIFY_ROOT
 from musify.base import MusifyItem
 from musify.libraries.core.collection import MusifyCollection
-from musify.libraries.remote.core.types import RemoteObjectType
 from musify.libraries.remote.core.object import RemoteAlbum, SyncResultRemotePlaylist
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.logger import MusifyLogger, STAT
 from musify.processors.download import ItemDownloadHelper
 from musify.report import report_playlist_differences, report_missing_tags
@@ -28,12 +27,13 @@ from musify_cli.exception import ParserError
 from musify_cli.manager._paths import PathsManager
 from musify_cli.manager.library import LocalLibraryManager, MusicBeeManager
 from musify_cli.manager.library import RemoteLibraryManager, SpotifyLibraryManager
-from musify_cli.parser import LoadTypesLocal, LoadTypesRemote
+from musify_cli.parser.core import Reports, MusifyConfig
+from musify_cli.parser.types import LoadTypesLocal, LoadTypesRemote
 
 
 class ReportsManager:
     """Configures options for running reports on Musify objects from a given ``config``."""
-    def __init__(self, config: Namespace, parent: MusifyManager):
+    def __init__(self, config: Reports, parent: MusifyManager):
         self.config = config
         self._parent: MusifyManager = parent
 
@@ -51,8 +51,8 @@ class ReportsManager:
         if not config.enabled:
             return {}
 
-        await self._parent.local.load(types=[LoadTypesLocal.tracks, LoadTypesLocal.playlists])
-        await self._parent.remote.load(types=[LoadTypesRemote.playlists])
+        await self._parent.local.load(types=[LoadTypesLocal.TRACKS, LoadTypesLocal.PLAYLISTS])
+        await self._parent.remote.load(types=[LoadTypesRemote.PLAYLISTS])
 
         return report_playlist_differences(
             source=config.filter(self._parent.local.library.playlists.values()),
@@ -65,7 +65,7 @@ class ReportsManager:
         if not config.enabled:
             return {}
 
-        await self._parent.local.load(types=LoadTypesLocal.tracks)
+        await self._parent.local.load(types=LoadTypesLocal.TRACKS)
 
         source = config.filter(self._parent.local.library.albums)
         return report_missing_tags(collections=source, tags=config.tags, match_all=config.match_all)
@@ -83,7 +83,7 @@ class MusifyManager:
         "spotify": SpotifyLibraryManager,
     }
 
-    def __init__(self, config: Namespace):
+    def __init__(self, config: MusifyConfig):
         start_time = perf_counter()
 
         # noinspection PyTypeChecker
@@ -96,18 +96,17 @@ class MusifyManager:
 
         self.paths: PathsManager = PathsManager(config=self.config.paths, dt=self)
 
-        local_library_config: Namespace = self.config.libraries.local
+        local_library_config: MusifyConfig = self.config.libraries.local
         self.local: LocalLibraryManager = self._local_library_map[local_library_config.type](
             name=local_library_config.name,
             config=local_library_config.get(local_library_config.type),
             dry_run=self.dry_run,
         )
 
-        remote_library_config: Namespace = self.config.libraries.remote
+        remote_library_config: MusifyConfig = self.config.libraries.remote
         self.remote: RemoteLibraryManager = self._remote_library_map[remote_library_config.type](
             name=remote_library_config.name,
             config=remote_library_config.get(remote_library_config.type),
-            paths=self.paths,
             dry_run=self.dry_run,
         )
 
@@ -125,11 +124,11 @@ class MusifyManager:
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.remote.__aexit__(exc_type, exc_val, exc_tb)
 
-    def set_config(self, config: Namespace) -> None:
+    def set_config(self, config: MusifyConfig) -> None:
         """Set a new config for this manager and all composite managers"""
         self.config = config
 
-        remote_library_config: Namespace = self.config.libraries.remote
+        remote_library_config = self.config.libraries.remote
         if remote_library_config.name != self.remote.name:
             if self.remote.initialised:
                 raise ParserError(
@@ -137,14 +136,12 @@ class MusifyManager:
                     f"Current: {self.remote.name!r} | New: {remote_library_config.name!r}"
                 )
             self.remote = self._remote_library_map[remote_library_config.type](
-                name=remote_library_config.name,
-                config=remote_library_config.get(remote_library_config.type),
-                dry_run=self.dry_run,
+                config=remote_library_config, dry_run=self.dry_run,
             )
         else:
             self.remote.config = remote_library_config.get(remote_library_config.type)
 
-        local_library_config: Namespace = self.config.libraries.local
+        local_library_config = self.config.libraries.local
         if local_library_config.name != self.local.name:
             if self.local.initialised:
                 raise ParserError(
@@ -152,9 +149,7 @@ class MusifyManager:
                     f"Current: {self.local.name!r} | New: {local_library_config.name!r}"
                 )
             self.local = self._local_library_map[local_library_config.type](
-                name=local_library_config.name,
-                config=local_library_config.get(local_library_config.type),
-                dry_run=self.dry_run,
+                config=local_library_config, dry_run=self.dry_run,
             )
             self.local._remote_wrangler = self.remote.wrangler
         else:
@@ -230,13 +225,13 @@ class MusifyManager:
 
     async def load(self, force: bool = False) -> None:
         """Reload the libraries according to the configured settings."""
-        config_local = self.config.reload.local
+        config_local = self.config.pre_post.reload.local
         if config_local.types:
             self.logger.debug("Load local library: START")
             await self.local.load(types=config_local.types or (), force=force)
             self.logger.debug("Load local library: DONE")
 
-        config_remote = self.config.reload.remote
+        config_remote = self.config.pre_post.reload.remote
         if any([config_remote.types, config_remote.extend, config_remote.enrich.enabled]):
             self.logger.debug("Load remote library: START")
 
@@ -255,24 +250,23 @@ class MusifyManager:
 
     def pause(self) -> None:
         """Pause the application and display message if configured."""
-        if self.config.pause:
+        if pause := self.config.pre_post.pause:
             self.logger.print_line()
-            input(f"\33[93m{self.config.pause}\33[0m ")
+            input(f"\33[93m{pause}\33[0m ")
 
     ###########################################################################
     ## Utilities
     ###########################################################################
     def filter[T: Collection](self, items: T) -> T:
         """Run the generic filter on the given ``items`` if configured."""
-        if self.config.filter is not None and self.config.filter.ready:
-            return self.config.filter(items)
+        if (filter_ := self.config.pre_post.filter) is not None and filter_.ready:
+            return filter_(items)
         return items
 
     def get_new_artist_albums(self) -> list[RemoteAlbum]:
         """Wrapper for :py:meth:`RemoteLibraryManager.filter_artist_albums_by_date`"""
-        start = self.config.new_music.start
-        end = self.config.new_music.end
-        return self.remote.filter_artist_albums_by_date(start=start, end=end)
+        config = self.config.libraries.remote.new_music
+        return self.remote.filter_artist_albums_by_date(start=config.start, end=config.end)
 
     async def extend_albums(self, albums: Iterable[RemoteAlbum]) -> None:
         """Extend responses of given ``albums`` to include all available tracks for each album."""
@@ -292,10 +286,9 @@ class MusifyManager:
     ###########################################################################
     def run_download_helper(self, collections: UnitIterable[MusifyCollection]) -> None:
         """Run the :py:class:`ItemDownloadHelper` for the given ``collections``"""
+        config = self.config.libraries.remote.download
         download_helper = ItemDownloadHelper(
-            urls=self.config.download.urls,
-            fields=self.config.download.fields,
-            interval=self.config.download.interval,
+            urls=config.urls, fields=config.fields, interval=config.interval,
         )
         download_helper(collections)
 
@@ -308,9 +301,7 @@ class MusifyManager:
         :param collections: The collections of items to add to the playlist.
         :return: The name of the new playlist and results of the sync as a :py:class:`SyncResultRemotePlaylist` object.
         """
-        name = self.config.new_music.name
-        start = self.config.new_music.start
-        end = self.config.new_music.end
+        config = self.config.libraries.remote.new_music
 
         collections = to_collection(collections)
         tracks = [
@@ -318,13 +309,13 @@ class MusifyManager:
         ]
 
         self.logger.info(
-            f"\33[1;95m  >\33[1;97m Creating {name!r} {self.remote.source} playlist "
-            f"for {len(tracks)} new tracks by followed artists released between {start} and {end} \33[0m"
+            f"\33[1;95m  >\33[1;97m Creating {config.name!r} {self.remote.source} playlist "
+            f"for {len(tracks)} new tracks by followed artists released between {config.start} and {config.end} \33[0m"
         )
 
         # add tracks to remote playlist
-        response = await self.remote.api.get_or_create_playlist(name)
+        response = await self.remote.api.get_or_create_playlist(config.name)
         pl = self.remote.factory.playlist(response, skip_checks=True)
         pl.clear()
         pl.extend(tracks, allow_duplicates=False)
-        return name, await pl.sync(kind="refresh", reload=False, dry_run=self.dry_run)
+        return config.name, await pl.sync(kind="refresh", reload=False, dry_run=self.dry_run)

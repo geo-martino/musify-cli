@@ -1,6 +1,6 @@
+from abc import ABCMeta
 from collections.abc import Mapping, Iterable, Collection
 from datetime import datetime, timedelta
-from abc import ABCMeta
 from pathlib import Path
 from random import randrange, choice
 from typing import Literal, Any
@@ -9,7 +9,6 @@ import pytest
 from aiorequestful.cache.backend import ResponseCache
 from aiorequestful.cache.session import CachedSession
 from aiorequestful.timer import GeometricCountTimer, StepCeilingTimer
-from jsonargparse import Namespace
 from musify.base import MusifyObject, MusifyItem
 from musify.libraries.core.object import Library, Playlist
 from musify.libraries.remote.core.factory import RemoteObjectFactory
@@ -30,7 +29,7 @@ from musify_cli.exception import ParserError
 from musify_cli.manager._paths import PathsManager
 from musify_cli.manager.library import RemoteLibraryManager, SpotifyLibraryManager
 # noinspection PyProtectedMember
-from musify_cli.parser.utils import get_comparers_filter, LoadTypesRemote, EnrichTypesRemote
+from musify_cli.parser_old.utils import get_comparers_filter, LoadTypesRemote, EnrichTypesRemote
 from tests.manager.library.testers import LibraryManagerTester
 from tests.utils import random_str
 
@@ -69,7 +68,7 @@ class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, 
         assert id(manager.factory) == id(manager._factory) == id(factory)
 
     @staticmethod
-    def test_init_cache(manager: T, config: Namespace):
+    def test_init_cache(manager: T, config: MusifyConfig):
         cache: ResponseCache = manager.cache
         assert manager._cache is not None
 
@@ -93,7 +92,7 @@ class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, 
         assert id(manager.wrangler) == id(manager._wrangler) == id(wrangler)
 
     @staticmethod
-    def test_init_check(manager: T, config: Namespace):
+    def test_init_check(manager: T, config: MusifyConfig):
         checker: RemoteItemChecker = manager.check
         assert checker.interval == config.check.interval
         assert checker.allow_karaoke == config.check.allow_karaoke
@@ -283,7 +282,7 @@ class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, 
             assert len(pl) == expected_counts[pl.name]
 
     @staticmethod
-    async def test_sync(manager_mock: T, config: Namespace, playlists: list[PlaylistMock]):
+    async def test_sync(manager_mock: T, config: MusifyConfig, playlists: list[PlaylistMock]):
         manager_mock.dry_run = False
 
         include = FilterDefinedList([pl.name for pl in playlists][:3])
@@ -328,7 +327,7 @@ class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, 
 
 class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager]):
     @pytest.fixture
-    def config(self, tmp_path: Path) -> Namespace:
+    def config(self, tmp_path: Path) -> MusifyConfig:
         return Namespace(
             api=Namespace(
                 client_id="<CLIENT ID>",
@@ -374,7 +373,7 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
         )
 
     @pytest.fixture
-    async def paths(self, config: Namespace, tmp_path: Path) -> PathsManager:
+    async def paths(self, config: MusifyConfig, tmp_path: Path) -> PathsManager:
         config = Namespace(
             base=tmp_path,
             backup=Path("path", "to", "backup"),
@@ -386,7 +385,7 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
 
     # noinspection PyMethodOverriding
     @pytest.fixture
-    async def manager(self, config: Namespace, paths: PathsManager) -> SpotifyLibraryManager:
+    async def manager(self, config: MusifyConfig, paths: PathsManager) -> SpotifyLibraryManager:
         manager = SpotifyLibraryManager(name="spotify", config=config, paths=paths)
 
         authoriser = manager.api.handler.authoriser
@@ -400,10 +399,10 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
         async with manager as m:
             yield m
 
-    def test_properties(self, manager: SpotifyLibraryManager, config: Namespace):
+    def test_properties(self, manager: SpotifyLibraryManager, config: MusifyConfig):
         assert manager.source == SPOTIFY_SOURCE
 
-    def test_init_api_fails(self, config: Namespace, paths: PathsManager):
+    def test_init_api_fails(self, config: MusifyConfig, paths: PathsManager):
         manager = SpotifyLibraryManager(name="test", config=config, paths=paths)
         config.api.client_id = None
         config.api.client_secret = None
@@ -413,7 +412,7 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
             manager.api
 
     # noinspection PyTestUnpassedFixture,PyUnresolvedReferences
-    async def test_init_api(self, manager: SpotifyLibraryManager, config: Namespace, paths: PathsManager):
+    async def test_init_api(self, manager: SpotifyLibraryManager, config: MusifyConfig, paths: PathsManager):
         api: SpotifyAPI = manager.api
         assert manager._api is not None
 
@@ -437,7 +436,7 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibraryManager
         assert id(manager.api) == id(manager._api) == id(api)
 
     # noinspection PyTestUnpassedFixture
-    def test_init_library(self, manager: SpotifyLibraryManager, config: Namespace):
+    def test_init_library(self, manager: SpotifyLibraryManager, config: MusifyConfig):
         assert manager._library is None
         library: SpotifyLibrary = manager.library
         assert manager._library is not None

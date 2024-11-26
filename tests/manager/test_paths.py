@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-from jsonargparse import Namespace
 
 from manager.utils import DatetimeStoreImpl
 # noinspection PyProtectedMember
@@ -26,7 +25,7 @@ class TestPathsManager:
         )
 
     @pytest.fixture
-    def manager(self, config: Namespace) -> PathsManager:
+    def manager(self, config: MusifyConfig) -> PathsManager:
         """Yields a valid :py:class:`MusifyManager` for the current remote source as a pytest.fixture."""
         return PathsManager(config.paths, dt=DatetimeStoreImpl())
 

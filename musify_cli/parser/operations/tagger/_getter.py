@@ -8,7 +8,7 @@ from musify.libraries.local.base import LocalItem
 from musify.processors.filter import FilterComparers
 
 from musify_cli.exception import ParserError
-from musify_cli.parser.utils import get_comparers_filter
+from musify_cli.parser.operations.filters import get_comparers_filter
 
 
 class Getter(metaclass=ABCMeta):

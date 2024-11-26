@@ -2,26 +2,30 @@ import logging
 import logging.config
 from abc import ABC, abstractmethod
 
-from jsonargparse import Namespace
 from musify.base import MusifyObject
 from musify.libraries.core.object import Library
 from musify.logger import MusifyLogger
 from musify.processors.filter import FilterComparers
 from musify.types import UnitCollection, MusifyEnum
+from musify_cli.parser.library import LibraryConfig
 
 
-class LibraryManager(ABC):
+class LibraryManager[T: LibraryConfig](ABC):
     """Generic base class for instantiating and managing a library and related objects from a given ``config``."""
 
-    def __init__(self, name: str, config: Namespace, dry_run: bool = True):
+    def __init__(self, config: T, dry_run: bool = True):
         # noinspection PyTypeChecker
         self.logger: MusifyLogger = logging.getLogger(__name__)
 
         self.initialised = False
 
-        self.name = name
         self.config = config
         self.dry_run = dry_run
+
+    @property
+    def name(self) -> str:
+        """The user-defined name of the library"""
+        return self.config.name
 
     @property
     @abstractmethod

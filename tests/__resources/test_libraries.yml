@@ -1,44 +1,26 @@
 #file: noinspection SpellCheckingInspection
 local:
-  local:
-    paths:
-      library: .
-      playlists: .
-      map:
-        /different/folder: /path/to/library
-        /another/path: /path/to/library
-    updater:
-      tags: [title, album, artist]
-      replace: False
-    playlists:
-      filter:
-        match_all: False
-        contains: cool
-        matches_reg_ex: ^awesome.*
-    tags:
-      config_path: test_tagging.yml
-musicbee:
-  musicbee:
-    paths:
-      library:
-        win: .
-        mac: .
-        lin: .
-      map: {../:  /path/to/library}
-    updater:
-      tags: title
-      replace: True
-    playlists:
-      filter:
-        is_in:
-          - cool playlist 1
-          - awesome playlist
-          - terrible playlist
-        is_not: terrible playlist
-    tags:
-      config_path: tags.yml
-spotify:
-  spotify:
+  name: local
+  type: local
+  paths:
+    library: .
+    playlists: .
+    map:
+      /different/folder: /path/to/library
+      /another/path: /path/to/library
+  updater:
+    tags: [title, album, artist]
+    replace: False
+  playlists:
+    filter:
+      match_all: False
+      contains: cool
+      matches_reg_ex: ^awesome.*
+  tags:
+    include: test_tagging.yml
+remote:
+  - name: spotify
+    type: spotify
     api:
       client_id: <CLIENT_ID>
       client_secret: <CLIENT_SECRET>
@@ -57,7 +39,7 @@ spotify:
       cache:
         type: sqlite
         db: cache_db
-        expire_after: 2w
+        expire_after: P15DT
       #token_file_path: /path/to/token.json
     check:
       interval: 200

@@ -3,81 +3,82 @@
 # Add `rename` method to File objects.
 #   Filename can be set with patterns/functions from tagger config
 
-- filter:
-    field: path
-    matches_reg_ex: ".*/folder_name(\\d+)/.*"
-  album: &album_as_folder
-    field: folder
-  album_artist: &various_artists_arg "Various"
-  track_number: &track_number
-    operation: incremental
-    group: [album, disc_number]
-    sort: filename
-    start: 1
-    increment: 1
-  track_total: &track_total
-    operation: max
-    group: [album, disc_number, filename]
-    field: track_number
-  disc_total: &disc_total
-    operation: max
-    field: disc_number
-  compilation: yes
-  filename: &filename_standard
-    operation: template
-    template: "{disc}{sep}{track} - {title}"
-    disc:
-      field: disc_number
-      when:
-        is_not: 1
-    sep:
-      value: "-"
-      when:
-        field: disc_number
-        is_not: 1
-    track:
+rules:
+  - filter:
+      field: path
+      matches_reg_ex: ".*/folder_name(\\d+)/.*"
+    album: &album_as_folder
+      field: folder
+    album_artist: &various_artists_arg "Various"
+    track_number: &track_number
+      operation: incremental
+      group: [album, disc_number]
+      sort: filename
+      start: 1
+      increment: 1
+    track_total: &track_total
+      operation: max
+      group: [album, disc_number, filename]
       field: track_number
-      leading_zero: track_total
-- filter:
-    field: folder
-    is_in:
-     - folder1
-     - folder2
-     - folder3
-  album:
-    operation: join
-    seperator: " - "
-    values:
-      - field: path
-        parent: 2
-      - field: folder
-  album_artist: *various_artists_arg
-  track_number: *track_number
-  track_total: *track_total
-  disc_total: *disc_total
-  compilation: yes
-- filter:
-    field: folder
-    is: music album
-  album:
-    operation: join
-    values:
-      - field: path
-        parent: 2
-      - field: folder
-  album_artist: *various_artists_arg
-  track_number:
-    operation: incremental
-    sort: [year, filename]
-    start: 1
-    increment: 1
-  track_total: *track_total
-  disc_total: *disc_total
-  compilation: yes
-- filter: unmatched
-  album: *album_as_folder
-  track_number: *track_number
-  track_total: *track_total
-  disc_total: *disc_total
-  compilation: no
-  filename: *filename_standard
+    disc_total: &disc_total
+      operation: max
+      field: disc_number
+    compilation: yes
+    filename: &filename_standard
+      operation: template
+      template: "{disc}{sep}{track} - {title}"
+      disc:
+        field: disc_number
+        when:
+          is_not: 1
+      sep:
+        value: "-"
+        when:
+          field: disc_number
+          is_not: 1
+      track:
+        field: track_number
+        leading_zero: track_total
+  - filter:
+      field: folder
+      is_in:
+       - folder1
+       - folder2
+       - folder3
+    album:
+      operation: join
+      seperator: " - "
+      values:
+        - field: path
+          parent: 2
+        - field: folder
+    album_artist: *various_artists_arg
+    track_number: *track_number
+    track_total: *track_total
+    disc_total: *disc_total
+    compilation: yes
+  - filter:
+      field: folder
+      is: music album
+    album:
+      operation: join
+      values:
+        - field: path
+          parent: 2
+        - field: folder
+    album_artist: *various_artists_arg
+    track_number:
+      operation: incremental
+      sort: [year, filename]
+      start: 1
+      increment: 1
+    track_total: *track_total
+    disc_total: *disc_total
+    compilation: yes
+  - filter: unmatched
+    album: *album_as_folder
+    track_number: *track_number
+    track_total: *track_total
+    disc_total: *disc_total
+    compilation: no
+    filename: *filename_standard

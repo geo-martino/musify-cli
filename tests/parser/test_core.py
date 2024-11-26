@@ -1,124 +1,199 @@
 from datetime import datetime
 from pathlib import Path
+from random import choice
 from typing import Any
 
 import pytest
-import yaml
 from musify.field import TagFields
 from musify.libraries.local.track.field import LocalTrackField
+from musify.logger import MusifyLogger
+from musify_cli.parser.types import LoadTypesLocal, LoadTypesRemote, EnrichTypesRemote
 
-from musify_cli.exception import ParserError
-from musify_cli.parser import LoadTypesLocal, LoadTypesRemote, EnrichTypesRemote
+from musify_cli import MODULE_ROOT
 # noinspection PyProtectedMember
-from musify_cli.parser._core import CORE_PARSER, append_parent_folder
+from musify_cli.parser.core import AppData, Logging, MUSIFY_ROOT, AIOREQUESTFUL_ROOT, MusifyConfig
 # noinspection PyProtectedMember
-from musify_cli.parser._core import parse_library_config
-from tests.parser.utils import path_core_config, path_library_config, path_tags_config
-from tests.parser.utils import assert_local_parse, assert_musicbee_parse, assert_spotify_parse
-from tests.utils import path_logging_config
+from musify_cli.parser.library import Libraries, RemoteLibrary, SpotifyAPI, LocalLibrary, LocalLibraryPaths, LocalPaths
+from tests.utils import path_resources
+
+path_core_config = path_resources.joinpath("test_config.yml")
 
 
-def test_append_parent_folder(tmp_path: Path):
-    relative_path = "i_am_a_relative_path.txt"
-    absolute_path = append_parent_folder(relative_path, tmp_path)
-    assert absolute_path == tmp_path.joinpath(relative_path)
-    assert append_parent_folder(absolute_path, tmp_path.joinpath("folder1", "folder2")) == absolute_path
+class TestLogging:
+    @pytest.fixture
+    def model(self) -> Logging:
+        return Logging(
+            name="test",
+            compact=choice([True, False]),
+            bars=choice([True, False]),
+            formatters={
+                "formatter1": {"format": "\\33[92mGreen text\\33[0m normal test: %(message)s"},
+                "formatter2": {"format": "normal test \\33[91m Red text\\33[0m: %(message)s"},
+            },
+            loggers={
+                "dev": {"level": "DEBUG"},
+                "test": {"level": "INFO"},
+                "prod": {"level": "WARNING"},
+            }
+        )
+
+    def test_gets_logger(self, model: Logging):
+        assert model.logger == model.loggers.get(model.name)
+        model.name = "I am not a valid logger name"
+        assert not model.logger
+
+    def test_configures_additional_loggers(self, model: Logging):
+        name = "i am an additional logger name"
+        model.configure_additional_loggers(name)
+        assert name in model.loggers
+        assert model.loggers[name] == model.logger
+
+        additional_logger_names = {MODULE_ROOT, MUSIFY_ROOT, AIOREQUESTFUL_ROOT}
+        assert all(name in model.loggers and model.loggers[name] == model.logger for name in additional_logger_names)
+
+    def test_ansi_codes_fixed(self, model: Logging):
+        for formatter in model.formatters.values():
+            assert "\\33" not in formatter["format"]
+
+    def test_configure_logging(self, model: Logging):
+        model.configure_logging()
+
+        assert MusifyLogger.compact is model.compact
+        assert MusifyLogger.disable_bars is not model.bars
 
 
-def test_parse_library_config_fails(tmp_path: Path):
-    with pytest.raises(ParserError):  # key to library config given, but no config given
-        parse_library_config(lib="local")
+class TestAppData:
+    def test_assigns_base_path_on_relative(self, tmp_path: Path):
+        model = AppData(
+            base=tmp_path,
+            backup="backup",
+            cache="cache",
+            token="token",
+            local_library=Path("local", "library"),
+        )
 
-    with pytest.raises(ParserError):  # key to library config given which doesn't exist in config file
-        parse_library_config(lib="key does not exist", config_path=path_library_config)
+        assert model.backup == tmp_path.joinpath("backup")
+        assert model.cache == tmp_path.joinpath("cache")
+        assert model.token == tmp_path.joinpath("token")
+        assert model.local_library == tmp_path.joinpath("local", "library")
+
+    def test_keeps_path_on_absolute(self, tmp_path: Path):
+        model = AppData(
+            base=tmp_path.parent.parent,
+            backup=tmp_path.joinpath("backup"),
+            cache=tmp_path.joinpath("cache"),
+            token=tmp_path.joinpath("token"),
+            local_library=tmp_path.joinpath("local", "library"),
+        )
+
+        assert model.backup == tmp_path.joinpath("backup")
+        assert model.cache == tmp_path.joinpath("cache")
+        assert model.token == tmp_path.joinpath("token")
+        assert model.local_library == tmp_path.joinpath("local", "library")
 
 
-# noinspection PyTestUnpassedFixture
-def test_parse_library_config(tmp_path: Path):
-    parsed = parse_library_config(lib="local", config_path=path_library_config)
-    assert_local_parse(parsed.get(parsed.type))
+class TestConfig:
+    @pytest.fixture
+    def model(self, tmp_path: Path):
+        return MusifyConfig(
+            libraries=Libraries(
+                local=LocalLibrary(
+                    name="test",
+                    type="local",
+                    paths=LocalPaths(library=tmp_path)
+                ),
+                remote=RemoteLibrary[SpotifyAPI](
+                    name="test",
+                    type="spotify",
+                    api=SpotifyAPI(
+                        client_id="",
+                        client_secret="",
+                        token_file_path="token.json"
+                    )
+                )
+            )
+        )
 
-    with open(path_library_config, "r") as file:
-        config: dict[str, Any] = yaml.full_load(file)
+    def test_assigns_base_path_on_relative(self, model: MusifyConfig):
+        path: Path = model.libraries.remote.api.token_file_path
+        assert path.is_absolute()
+        assert path.is_relative_to(model.app_data.base)
 
-    parsed = parse_library_config({"name": "local"} | config["local"])
-    assert_local_parse(parsed.get(parsed.type))
+    def test_keeps_path_on_absolute(self, model: MusifyConfig, tmp_path: Path):
+        model = MusifyConfig(
+            libraries=Libraries(
+                local=model.libraries.local,
+                remote=RemoteLibrary[SpotifyAPI](
+                    name=model.libraries.remote.name,
+                    api=SpotifyAPI(
+                        client_id=model.libraries.remote.api.client_id,
+                        client_secret=model.libraries.remote.api.client_secret,
+                        token_file_path=tmp_path.joinpath("token.json")
+                    )
+                )
+            )
+        )
 
-    parsed = parse_library_config(lib="musicbee", config_path=path_library_config)
-    assert_musicbee_parse(parsed.get(parsed.type))
+        path: Path = model.libraries.remote.api.token_file_path
+        assert path.is_absolute()
+        assert not path.is_relative_to(model.app_data.base)
+        assert path == tmp_path.joinpath("token.json")
 
-    parsed = parse_library_config(lib="spotify", config_path=path_library_config)
-    assert_spotify_parse(parsed.get(parsed.type))
+    # noinspection PyTestUnpassedFixture
+    def test_load_from_file(self, tmp_path: Path):
+        config, functions = MusifyConfig.from_file(path_core_config)
 
+        assert config.execute
 
-# noinspection PyTestUnpassedFixture
-def test_core(tmp_path: Path):
-    with open(path_core_config, "r") as file:
-        config: dict[str, Any] = yaml.full_load(file)
+        assert config.app_data.base == config.app_data.model_fields.get("base").default
+        assert config.app_data.backup == config.app_data.base.joinpath("test_backups")
+        assert config.app_data.cache == config.app_data.base.joinpath("test_cache")
+        assert config.app_data.token == config.app_data.base.joinpath("test_token")
+        assert config.app_data.local_library == config.app_data.base.joinpath("test_library_local")
 
-    config["paths"]["base"] = tmp_path
-    config["paths"]["backup"] = "backup"
-    config["paths"]["cache"] = "cache"
-    config["paths"]["token"] = tmp_path.joinpath("token")
-    config["paths"].pop("local_library")
+        assert config.logging.name == "logger"
+        assert config.logging.compact
+        assert config.logging.bars
+        assert config.logging.disable_existing_loggers
 
-    config["logging"]["config_path"] = path_logging_config
-    config["libraries"]["config_path"] = path_library_config
+        values = ["include me", "exclude me", "and me"]
+        assert config.pre_post.filter(values) == ["include me"]
+        assert config.pre_post.pause == "this is a test message"
 
-    parsed = CORE_PARSER.parse_object(config)
+        assert config.pre_post.reload.local.types == [LoadTypesLocal.TRACKS]
+        assert config.pre_post.reload.remote.types == [LoadTypesRemote.SAVED_TRACKS, LoadTypesRemote.SAVED_ALBUMS]
+        assert config.pre_post.reload.remote.extend
+        assert config.pre_post.reload.remote.enrich.enabled
+        assert config.pre_post.reload.remote.enrich.types == [EnrichTypesRemote.TRACKS, EnrichTypesRemote.ALBUMS]
 
-    assert parsed.execute
+        assert config.libraries.local.name == "local"
+        assert config.libraries.local.type == "local"
+        assert config.libraries.remote.name == "spotify"
+        assert config.libraries.remote.type == "Spotify"
 
-    assert parsed.paths.base == tmp_path
-    assert parsed.paths.backup == Path("backup")
-    assert parsed.paths.cache == Path("cache")
-    assert parsed.paths.token == tmp_path.joinpath("token")
-    assert parsed.paths.local_library == Path("library", "local")
+        assert config.backup.key == "test key"
 
-    assert parsed.logging.config_path == path_logging_config
-    assert parsed.logging.name == "logger"
+        assert config.reports.playlist_differences.enabled
+        values = ["a", "b", "c", 1, 2, 3, "you", "and", "me"]
+        assert config.reports.playlist_differences.filter(values) == ["a", "b", "c"]
+        assert not config.reports.missing_tags.enabled
+        assert not config.reports.missing_tags.filter.ready
+        assert config.reports.missing_tags.tags == (
+            LocalTrackField.TITLE,
+            LocalTrackField.ARTIST,
+            LocalTrackField.ALBUM,
+            LocalTrackField.TRACK_NUMBER,
+            LocalTrackField.TRACK_TOTAL,
+        )
+        assert config.reports.missing_tags.match_all
 
-    values = ["include me", "exclude me", "and me"]
-    assert parsed.filter(values) == ["include me"]
-    assert parsed.pause == "this is a test message"
+        assert config.downloader.urls == [
+            "https://www.google.com/search?q={}",
+            "https://www.youtube.com/results?search_query={}",
+        ]
+        assert config.downloader.fields == (TagFields.ARTIST, TagFields.ALBUM)
+        assert config.downloader.interval == 1
 
-    assert parsed.reload.local.types == [LoadTypesLocal.tracks]
-    assert parsed.reload.remote.types == [LoadTypesRemote.saved_tracks, LoadTypesRemote.saved_albums]
-    assert parsed.reload.remote.extend
-    assert parsed.reload.remote.enrich.enabled
-    assert parsed.reload.remote.enrich.types == [EnrichTypesRemote.tracks, EnrichTypesRemote.albums]
-
-    assert parsed.libraries.local.name == "local"
-    assert parsed.libraries.local.type == "local"
-    assert parsed.libraries.remote.name == "spotify"
-    assert parsed.libraries.remote.type == "spotify"
-
-    assert parsed.backup.key == "test key"
-
-    assert parsed.reports.playlist_differences.enabled
-    values = ["a", "b", "c", 1, 2, 3, "you", "and", "me"]
-    assert parsed.reports.playlist_differences.filter(values) == ["a", "b", "c"]
-    assert not parsed.reports.missing_tags.enabled
-    assert not parsed.reports.missing_tags.filter.ready
-    assert parsed.reports.missing_tags.tags == (
-        LocalTrackField.TITLE,
-        LocalTrackField.ARTIST,
-        LocalTrackField.ALBUM,
-        LocalTrackField.TRACK_NUMBER,
-        LocalTrackField.TRACK_TOTAL,
-    )
-    assert parsed.reports.missing_tags.match_all
-
-    assert parsed.download.urls == [
-        "https://www.google.com/search?q={}",
-        "https://www.youtube.com/results?search_query={}",
-    ]
-    assert parsed.download.fields == (TagFields.ARTIST, TagFields.ALBUM)
-    assert parsed.download.interval == 1
-
-    assert parsed.new_music.name == "New Music - 2023"
-    assert parsed.new_music.start == datetime(2023, 1, 1).date()
-    assert parsed.new_music.end == datetime(2023, 12, 31).date()
-
-    # just check it can be dumped without failing
-    CORE_PARSER.dump(parsed)
+        assert config.new_music.name == "New Music - 2023"
+        assert config.new_music.start == datetime(2023, 1, 1).date()
+        assert config.new_music.end == datetime(2023, 12, 31).date()

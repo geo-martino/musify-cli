@@ -2,7 +2,6 @@ import logging
 from pathlib import Path
 
 import pytest
-from jsonargparse import Namespace
 from musify.logger import MusifyLogger
 
 from musify_cli import MODULE_ROOT
@@ -10,10 +9,10 @@ from musify_cli.exception import ParserError
 from musify_cli.manager import MusifyManager
 # noinspection PyProtectedMember
 from musify_cli.manager._core import ReportsManager
-from musify_cli.parser import LOCAL_LIBRARY_TYPES, REMOTE_LIBRARY_TYPES
 # noinspection PyProtectedMember
-from musify_cli.parser.utils import get_comparers_filter
-from parser.utils import path_tags_config, path_library_config
+from musify_cli.parser_old._library import LOCAL_LIBRARY_TYPES, REMOTE_LIBRARY_TYPES
+# noinspection PyProtectedMember
+from musify_cli.parser_old.utils import get_comparers_filter
 from tests.utils import path_txt, path_logging_config
 
 
@@ -43,7 +42,7 @@ class TestReportsManager:
         )
 
     @pytest.fixture
-    def manager(self, config: Namespace) -> ReportsManager:
+    def manager(self, config: MusifyConfig) -> ReportsManager:
         """Yields a valid :py:class:`MusifyManager` for the current remote source as a pytest.fixture."""
         return ReportsManager(config.reports, parent=MusifyManager(config))
 
@@ -89,7 +88,7 @@ class TestMusifyManager:
         )
 
     @pytest.fixture
-    def manager(self, config: Namespace) -> MusifyManager:
+    def manager(self, config: MusifyConfig) -> MusifyManager:
         """Yields a valid :py:class:`MusifyManager` for the current remote source as a pytest.fixture."""
         return MusifyManager(config=config)
 
@@ -148,7 +147,7 @@ class TestMusifyManager:
     ###########################################################################
     ## Utilities
     ###########################################################################
-    def test_filter(self, manager: MusifyManager, config: Namespace):
+    def test_filter(self, manager: MusifyManager, config: MusifyConfig):
         playlists = [f"playlist {i}" for i in range(1, 5)]
         assert manager.filter(playlists) == config.filter(playlists) == playlists[:2]
 

@@ -6,8 +6,10 @@ from musify.libraries.local.track import LocalTrack
 from musify.libraries.local.track.field import LocalTrackField
 
 from musify_cli.exception import ParserError
-from musify_cli.tagger.getter import TagGetter
-from musify_cli.tagger.setter import SETTERS, setter_from_config, \
+# noinspection PyProtectedMember
+from musify_cli.parser.operations.tagger._getter import TagGetter
+# noinspection PyProtectedMember
+from musify_cli.parser.operations.tagger._setter import SETTERS, setter_from_config, \
     Value, Clear, GroupedValueSetter, Min, Max, Join, Incremental, GroupedSetter, Template, Field
 
 

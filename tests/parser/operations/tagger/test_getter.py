@@ -9,7 +9,9 @@ from musify.processors.compare import Comparer
 from musify.processors.filter import FilterComparers
 
 from musify_cli.exception import ParserError
-from musify_cli.tagger.getter import GETTERS, getter_from_config, TagGetter, ConditionalGetter, PathGetter
+# noinspection PyProtectedMember
+from musify_cli.parser.operations.tagger._getter import GETTERS, getter_from_config, TagGetter, ConditionalGetter, \
+    PathGetter
 
 
 def test_value_as_config():
@@ -40,7 +42,8 @@ class TagGetterTester(metaclass=ABCMeta):
         assert isinstance(result, str)
         assert result == result.zfill(expected_width)
 
-    def test_from_field(self, getter: TagGetter):
+    @staticmethod
+    def test_from_field(getter: TagGetter):
         getter = getter.__class__.from_field("track_number")
         assert getter.field == LocalTrackField.TRACK_NUMBER
 
@@ -57,6 +60,7 @@ class TestTagGetter(TagGetterTester):
         getter = getter_from_config(config)
         assert isinstance(getter, TagGetter)
 
+    # noinspection PyTestUnpassedFixture
     def test_from_dict(self):
         config = {"field": "name"}
         getter = TagGetter.from_dict(config)

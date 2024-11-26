@@ -23,8 +23,9 @@ classifiers = [
 dependencies = [
     "musify[all]",
     "pyyaml",
-    "jsonargparse[signatures]~=4.29",
+    "pydantic~=2.10",
     "pyfiglet~=1.0",
+    "docstring_parser>=0.16,<1.0",
 ]
 
 [project.optional-dependencies]

@@ -4,7 +4,6 @@ from random import randrange
 from typing import Any
 
 import pytest
-from jsonargparse import Namespace
 from musify.field import TagField, Fields
 from musify.file.path_mapper import PathStemMapper
 from musify.libraries.collection import BasicCollection
@@ -16,10 +15,10 @@ from musify.libraries.remote.spotify.wrangle import SpotifyDataWrangler
 from musify.types import UnitIterable
 
 from musify_cli.manager.library import LocalLibraryManager, MusicBeeManager
-# noinspection PyProtectedMember
-from musify_cli.parser._library import LocalLibraryPaths, MusicBeePaths
-# noinspection PyProtectedMember
-from musify_cli.parser.utils import get_comparers_filter, get_tags, LoadTypesLocal
+from musify_cli.parser.library import LocalLibraryPaths, MusicBeePaths
+from musify_cli.parser.operations.filters import get_comparers_filter
+from musify_cli.parser.operations.tags import get_tags
+from musify_cli.parser.types import LoadTypesLocal
 from tests.manager.library.testers import LibraryManagerTester
 from tests.utils import random_str
 
@@ -57,7 +56,7 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
         )
 
     @pytest.fixture
-    def manager(self, config: Namespace) -> T:
+    def manager(self, config: MusifyConfig) -> T:
         return LocalLibraryManager(name="local", config=config)
 
     @pytest.fixture
@@ -78,7 +77,7 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
     def test_properties(self, manager: T):
         assert manager.source == LocalLibrary.source
 
-    def test_init_library(self, manager: T, config: Namespace):
+    def test_init_library(self, manager: T, config: MusifyConfig):
         wrangler = SpotifyDataWrangler()
         manager._remote_wrangler = wrangler
 
@@ -165,7 +164,7 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
             self.save_args = {"tags": tags, "replace": replace, "dry_run": dry_run}
             return SyncResultTrack(saved=not dry_run, updated={tag: 0 for tag in tags})
 
-    async def test_save_tracks(self, manager_mock: T, config: Namespace):
+    async def test_save_tracks(self, manager_mock: T, config: MusifyConfig):
         manager_mock.dry_run = False
 
         await manager_mock.save_tracks()
@@ -175,7 +174,7 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
         assert library_mock.save_tracks_args["replace"] == config.updater.replace
         assert library_mock.save_tracks_args["dry_run"] == manager_mock.dry_run
 
-    async def test_save_tracks_in_collections(self, manager_mock: T, config: Namespace):
+    async def test_save_tracks_in_collections(self, manager_mock: T, config: MusifyConfig):
         manager_mock.dry_run = False
 
         collections: list[BasicCollection[TestLocalLibraryManager.TrackMock]] = [
@@ -190,7 +189,7 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
                 assert track.save_args["replace"] == config.updater.replace
                 assert track.save_args["dry_run"] == manager_mock.dry_run
 
-    def test_merge_tracks(self, manager_mock: T, config: Namespace):
+    def test_merge_tracks(self, manager_mock: T, config: MusifyConfig):
         manager_mock.dry_run = False
 
         tracks = [self.TrackMock() for _ in range(randrange(2, 5))]
@@ -273,14 +272,14 @@ class TestMusicBeeManager(TestLocalLibraryManager[MusicBeeManager]):
         )
 
     @pytest.fixture
-    def manager(self, config: Namespace) -> MusicBeeManager:
+    def manager(self, config: MusifyConfig) -> MusicBeeManager:
         return MusicBeeManager(name="musicbee", config=config)
 
     def test_properties(self, manager: MusicBeeManager):
         assert manager.source == MusicBee.source
 
     # noinspection PyMethodOverriding
-    def test_init_library(self, manager: MusicBeeManager, config: Namespace, library_folders: list[str]):
+    def test_init_library(self, manager: MusicBeeManager, config: MusifyConfig, library_folders: list[str]):
         wrangler = SpotifyDataWrangler()
         manager._remote_wrangler = wrangler
 

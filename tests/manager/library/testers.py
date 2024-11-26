@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from random import shuffle, sample
 
-from jsonargparse import Namespace
 from musify.types import MusifyEnum
 
 # noinspection PyProtectedMember
@@ -26,7 +25,7 @@ class LibraryManagerTester[T: LibraryManager](ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def manager(self, config: Namespace) -> T:
+    def manager(self, config: MusifyConfig) -> T:
         """Yields a valid :py:class:`LibraryManager` for the current remote source as a pytest.fixture."""
         raise NotImplementedError
 

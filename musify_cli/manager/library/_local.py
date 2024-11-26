@@ -1,6 +1,5 @@
 from collections.abc import Collection
 
-from jsonargparse import Namespace
 from musify.file.path_mapper import PathMapper, PathStemMapper
 from musify.libraries.core.collection import MusifyCollection
 from musify.libraries.core.object import Track
@@ -10,20 +9,20 @@ from musify.libraries.local.track import LocalTrack, SyncResultTrack
 from musify.libraries.local.track.field import LocalTrackField
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
 from musify.logger import STAT
-from musify.processors.filter import FilterComparers
 from musify.types import UnitIterable, UnitCollection
 from musify.utils import to_collection
+from musify_cli.parser.library import LocalLibraryConfig
 
 from musify_cli.manager.library._core import LibraryManager
-from musify_cli.parser import LoadTypesLocal
-from musify_cli.tagger.setter import Setter
+from musify_cli.parser.operations.tagger import Tagger
+from musify_cli.parser.types import LoadTypesLocal
 
 
-class LocalLibraryManager(LibraryManager):
+class LocalLibraryManager(LibraryManager[LocalLibraryConfig]):
     """Instantiates and manages a generic :py:class:`LocalLibrary` and related objects from a given ``config``."""
 
-    def __init__(self, name: str, config: Namespace, dry_run: bool = True):
-        super().__init__(name=name, config=config, dry_run=dry_run)
+    def __init__(self, config: LocalLibraryConfig, dry_run: bool = True):
+        super().__init__(config=config, dry_run=dry_run)
 
         self._library: LocalLibrary | None = None
 
@@ -46,7 +45,7 @@ class LocalLibraryManager(LibraryManager):
         """The initialised local library"""
         if self._library is None:
             self._library = LocalLibrary(
-                library_folders=self.config.paths.library.paths,
+                library_folders=self.config.paths.library,
                 playlist_folder=self.config.paths.playlists,
                 playlist_filter=self.playlist_filter or (),
                 path_mapper=self.path_mapper,
@@ -75,22 +74,22 @@ class LocalLibraryManager(LibraryManager):
             return
 
         loaded = set()
-        if _should_load(LoadTypesLocal.tracks):
+        if _should_load(LoadTypesLocal.TRACKS):
             await self.library.load_tracks()
-            self.types_loaded.add(LoadTypesLocal.tracks)
-            loaded.add(LoadTypesLocal.tracks)
-        if _should_load(LoadTypesLocal.playlists):
+            self.types_loaded.add(LoadTypesLocal.TRACKS)
+            loaded.add(LoadTypesLocal.TRACKS)
+        if _should_load(LoadTypesLocal.PLAYLISTS):
             await self.library.load_playlists()
-            self.types_loaded.add(LoadTypesLocal.playlists)
-            loaded.add(LoadTypesLocal.playlists)
+            self.types_loaded.add(LoadTypesLocal.PLAYLISTS)
+            loaded.add(LoadTypesLocal.PLAYLISTS)
 
         if not loaded:
             return
 
         self.logger.print_line(STAT)
-        if LoadTypesLocal.tracks in loaded:
+        if LoadTypesLocal.TRACKS in loaded:
             self.library.log_tracks()
-        if LoadTypesLocal.playlists in loaded:
+        if LoadTypesLocal.PLAYLISTS in loaded:
             self.library.log_playlists()
         self.logger.print_line()
 
@@ -154,26 +153,11 @@ class LocalLibraryManager(LibraryManager):
 
         :return: A map of the :py:class:`LocalTrack` saved to its result as a :py:class:`SyncResultTrack` object
         """
-        rules: dict[FilterComparers, list[Setter]] = self.config.tags.rules
-        if not rules:
+        tagger: Tagger = self.config.tags.rules
+        if not tagger.setters:
             return {}
 
-        folders = {folder.name: folder for folder in self.library.folders}
-        for filter_, setters in rules.items():
-            print(filter_.comparers)
-            tracks = filter_.process(self.library)
-            for comparer in filter_.comparers:
-                for track in self.library:
-                    print(track.name, comparer.compare(track))
-
-            for track in tracks:
-                print(track.name)
-                folder = folders[track.folder]
-
-                for setter in setters:
-                    print(setter.field)
-                    setter.set(track, folder)
-
+        tagger.set_tags(self.library, self.library.folders)
         assert self.dry_run
         return await self.save_tracks()
 
@@ -189,7 +173,7 @@ class MusicBeeManager(LocalLibraryManager):
     def library(self) -> MusicBee:
         if self._library is None:
             self._library = MusicBee(
-                musicbee_folder=self.config.paths.library.paths,
+                musicbee_folder=self.config.paths.library,
                 playlist_filter=self.config.playlists.filter or (),
                 path_mapper=self.path_mapper,
                 remote_wrangler=self._remote_wrangler,

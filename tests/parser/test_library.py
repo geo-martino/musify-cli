@@ -1,133 +1,313 @@
-from argparse import Namespace
-from collections.abc import Collection, Callable
-from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
+from collections.abc import Collection
+from copy import deepcopy
+from pathlib import Path, PureWindowsPath, PurePosixPath
+from random import choice
 from typing import Any
 
 import pytest
-import yaml
+from musify.libraries.local.library import MusicBee
+from musify.utils import to_collection
+from pydantic import ValidationError
 
 from musify_cli.exception import ParserError
-from musify_cli.parser import LIBRARY_TYPES
 # noinspection PyProtectedMember
-from musify_cli.parser._library import LIBRARY_PARSER, LocalLibraryPaths, MusicBeePaths, library_sub_map
-from tests.parser.utils import path_library_config
-from tests.parser.utils import assert_local_parse, assert_musicbee_parse, assert_spotify_parse
+from musify_cli.parser.library import LocalLibrary, LOCAL_LIBRARY_TYPES, REMOTE_LIBRARY_TYPES, RemoteLibrary, \
+    LocalLibraryPaths, MusicBeePaths, LocalLibraryPathsParser, LocalPaths, API, SpotifyAPI, Libraries, LibraryTarget
+from utils import random_str
 
 
-@pytest.fixture
-def library_paths_platform_map() -> dict[str, Collection[PurePath]]:
-    """PurePaths test map for various platforms supported by the paths parser."""
-    return dict(
-        win=(PureWindowsPath(r"C:\windows\path"),),
-        lin=[PurePosixPath("/linux/path")],
-        mac={PurePosixPath("/mac/path")}
+# noinspection PyUnresolvedReferences
+def test_all_libraries_supported():
+    assert LOCAL_LIBRARY_TYPES == LocalLibrary._type_map.default.keys()
+    assert REMOTE_LIBRARY_TYPES == RemoteLibrary._type_map.default.keys()
+
+
+class TestLocalLibraryPaths:
+
+    paths = dict(
+        win=(r"C:\windows\path1", r"C:\windows\path2"),
+        lin=["/linux/path1", "/linux/path2"],
+        mac={"/mac/path1", "/mac/path2"},
     )
 
+    @classmethod
+    def get_valid_paths(cls, tmp_path: Path) -> dict[str, Collection[str]]:
+        paths = deepcopy(cls.paths)
+        paths[str(LocalLibraryPathsParser._platform_key)] = [str(tmp_path)]
+        return paths
 
-def test_all_libraries_supported():
-    assert len(library_sub_map) == len(LIBRARY_TYPES)
-    assert all(kind.lower() in LIBRARY_TYPES for kind in library_sub_map)
+    @pytest.fixture
+    def valid_paths(self, tmp_path: Path) -> dict[str, Collection[str]]:
+        return self.get_valid_paths(tmp_path)
 
+    @pytest.fixture
+    def invalid_paths(self) -> dict[str, Collection[str]]:
+        return deepcopy(self.paths)
 
-def test_local_library_paths_parser(library_paths_platform_map: dict[str, Collection[PurePath]]):
-    config = Path("i/am/a/path")
-    assert LocalLibraryPaths.parse_config(config).paths == (config,)
+    @pytest.fixture
+    def valid_model(self, valid_paths: dict[str, Collection[str]]) -> LocalLibraryPaths:
+        return LocalLibraryPaths(**valid_paths)
 
-    config = [config, Path("i/am/also/a/path")]
-    assert LocalLibraryPaths.parse_config(config).paths == tuple(config)
+    # noinspection PyStatementEffect
+    def test_init_fails(self, invalid_paths: dict[str, Collection[str]]):
+        with pytest.raises(ParserError, match="are not valid directories"):
+            LocalLibraryPaths(**invalid_paths)
 
-    config = library_paths_platform_map
-    platform_key = str(LocalLibraryPaths._platform_key)
-    assert LocalLibraryPaths.parse_config(config).paths == tuple(config[platform_key])
+        invalid_paths.pop(str(LocalLibraryPathsParser._platform_key))
+        with pytest.raises(ParserError, match="No valid paths found for the current platform"):
+            LocalLibraryPaths(**invalid_paths)
 
-    config.pop(platform_key)
-    parsed = LocalLibraryPaths.parse_config(config)
-    with pytest.raises(ParserError):
-        LocalLibraryPaths.parse_config(parsed)
+    def test_properties(self, valid_model: LocalLibraryPaths, valid_paths: dict[str, Collection[str]]):
+        assert valid_model.win == tuple(PureWindowsPath(path) for path in valid_paths["win"])
+        assert valid_model.lin == tuple(PurePosixPath(path) for path in valid_paths["lin"])
+        assert valid_model.mac == tuple(PurePosixPath(path) for path in valid_paths["mac"])
 
+        assert valid_model.paths == tuple(Path(path) for path in valid_paths[str(valid_model._platform_key)])
+        assert all(path not in valid_model.paths for path in valid_model.others)
 
-def test_musicbee_paths_parser(library_paths_platform_map: dict[str, Collection[PurePath]]):
-    config = Path("i/am/a/path")
-    assert MusicBeePaths.parse_config(config).paths == config
+    def test_properties_on_unit_path(self, valid_paths: dict[str, Collection[str]]):
+        paths = {k: next(iter(v)) for k, v in valid_paths.items()}
+        model = LocalLibraryPaths(**paths)
 
-    config = [Path("i/am/also/a/path"), config]
-    assert MusicBeePaths.parse_config(config).paths == config[0]
-
-    config = library_paths_platform_map
-    platform_key = str(LocalLibraryPaths._platform_key)
-    assert MusicBeePaths.parse_config(config).paths == next(iter(config[platform_key]))
-
-    config.pop(platform_key)
-    parsed = MusicBeePaths.parse_config(config)
-    with pytest.raises(ParserError):
-        MusicBeePaths.parse_config(parsed)
-
-
-def parse_library(name: str, extend_input: Callable[[dict[str, Any]], None] = lambda x: x) -> Namespace:
-    """
-    Parse the library from the library config file and run basic assertions on it.
-
-    :return: The library Namespace as given by the type of the given ``name``.
-    """
-    with open(path_library_config, "r") as file:
-        config: dict[str, Any] = yaml.full_load(file)
-
-    config = {"name": name} | config[name]
-    extend_input(config[name])
-
-    parsed = LIBRARY_PARSER.parse_object(config)
-    assert parsed.name == name
-    assert parsed.type == name
-
-    return parsed.get(parsed.type)
+        assert isinstance(model.win, tuple)
+        assert isinstance(model.lin, tuple)
+        assert isinstance(model.mac, tuple)
 
 
-def test_local_parser(library_paths_platform_map: dict[str, Collection[PurePath]], tmp_path: Path):
-    def _extend_input(config: dict[str, Any]) -> None:
-        config["paths"]["library"] = tmp_path
-        config["paths"]["playlists"] = tmp_path
+class TestMusicBeePaths:
 
-    parsed = parse_library(name="local", extend_input=_extend_input)
-    assert_local_parse(parsed, library_path=tmp_path)
+    paths = dict(
+        win=r"C:\windows\path",
+        lin="/linux/path",
+        mac="/mac/path",
+    )
 
-    def _extend_input(config: dict[str, Any]) -> None:
-        config["paths"]["library"] = library_paths_platform_map
+    @classmethod
+    def get_valid_paths(cls, tmp_path: Path) -> dict[str, str]:
+        tmp_path.joinpath(MusicBee.xml_library_path).touch(exist_ok=True)
 
-    parsed = parse_library(name="local", extend_input=_extend_input)
+        paths = deepcopy(cls.paths)
+        paths[str(MusicBeePaths._platform_key)] = str(tmp_path)
+        return paths
 
-    assert parsed.paths.library == LocalLibraryPaths(**{k: tuple(v) for k, v in library_paths_platform_map.items()})
-    library_path = next(iter(parsed.paths.library.paths))
-    assert parsed.paths.map == {
-        "/different/folder": "/path/to/library",
-        "/another/path": "/path/to/library"
-    } | {str(path): str(library_path) for path in parsed.paths.library.others}
+    @pytest.fixture
+    def valid_paths(self, tmp_path: Path) -> dict[str, str]:
+        return self.get_valid_paths(tmp_path)
+
+    @pytest.fixture
+    def invalid_paths(self) -> dict[str, Collection[str]]:
+        return deepcopy(self.paths)
+
+    @pytest.fixture
+    def valid_model(self, valid_paths: dict[str, str]) -> MusicBeePaths:
+        return MusicBeePaths(**valid_paths)
+
+    def test_properties(self, valid_model: MusicBeePaths, valid_paths: dict[str, str]):
+        assert valid_model.win == PureWindowsPath(valid_paths["win"])
+        assert valid_model.lin == PurePosixPath(valid_paths["lin"])
+        assert valid_model.mac == PurePosixPath(valid_paths["mac"])
+
+        assert valid_model.paths == Path(valid_paths[str(valid_model._platform_key)])
+        assert all(path != valid_model.paths for path in valid_model.others)
+
+    def test_get_paths_fails(self, invalid_paths: dict[str, str]):
+        with pytest.raises(ParserError, match="No MusicBee library found"):
+            MusicBeePaths(**invalid_paths)
+
+        invalid_paths.pop(str(LocalLibraryPathsParser._platform_key))
+        with pytest.raises(ParserError, match="No valid paths found for the current platform"):
+            MusicBeePaths(**invalid_paths)
 
 
-def test_musicbee_parser(library_paths_platform_map: dict[str, Collection[PurePath]], tmp_path: Path):
-    def _extend_input(config: dict[str, Any]) -> None:
-        config["paths"]["library"] = tmp_path
+class TestLocalLibrary:
 
-    parsed = parse_library(name="musicbee", extend_input=_extend_input)
-    assert_musicbee_parse(parsed, library_path=tmp_path)
+    # noinspection PyUnresolvedReferences,PyProtectedMember
+    @pytest.fixture
+    def paths_map(self, tmp_path: Path) -> dict[str, dict[str, Any]]:
+        paths_map = {
+            "local": TestLocalLibraryPaths.get_valid_paths(tmp_path),
+            "musicbee": TestMusicBeePaths.get_valid_paths(tmp_path),
+        }
+        assert paths_map.keys() == LocalLibrary._type_map.default.keys() == LOCAL_LIBRARY_TYPES
+        return paths_map
 
-    library_paths_platform_map = {k: next(iter(v)) for k, v in library_paths_platform_map.items()}
+    # noinspection PyUnresolvedReferences,PyProtectedMember
+    @pytest.fixture
+    def paths_type_map(self) -> dict[str, type[LocalLibraryPathsParser]]:
+        type_map = {
+            "local": LocalLibraryPaths,
+            "musicbee": MusicBeePaths,
+        }
+        assert type_map.keys() == LocalLibrary._type_map.default.keys() == LOCAL_LIBRARY_TYPES
+        return type_map
 
-    def _extend_input(config: dict[str, Any]) -> None:
-        config["paths"]["library"] = {k: str(v) for k, v in library_paths_platform_map.items()}
+    @pytest.fixture(params=LOCAL_LIBRARY_TYPES)
+    def kind(self, request) -> str:
+        return request.param
 
-    parsed = parse_library(name="musicbee", extend_input=_extend_input)
+    @pytest.fixture
+    def library_paths(self, kind: str, paths_map: dict[str, dict[str, Any]]):
+        return paths_map[kind]
 
-    assert parsed.paths.library == MusicBeePaths(**library_paths_platform_map)
-    assert parsed.paths.map == {
-        "../": "/path/to/library",
-    } | {str(path): str(parsed.paths.library.paths) for path in parsed.paths.library.others}
+    @pytest.fixture
+    def library_paths_type(self, kind: str, paths_type_map: dict[str, type[LocalLibraryPathsParser]]):
+        return paths_type_map[kind]
+
+    @pytest.fixture
+    def library_model(
+            self, library_paths: dict[str, Any], library_paths_model: LocalLibraryPathsParser
+    ) -> LocalLibrary:
+        return LocalLibrary[library_paths_model.__class__](
+            name=random_str(), type=library_paths_model.source, paths={"library": library_paths}
+        )
+
+    @pytest.fixture
+    def paths_model(
+            self, kind: str, library_paths: dict[str, Any], library_paths_type: type[LocalLibraryPathsParser]
+    ) -> LocalPaths:
+        return LocalPaths[library_paths_type](library=library_paths)
+
+    @pytest.fixture
+    def library_paths_model(
+            self, kind: str, library_paths: dict[str, Any], library_paths_type: type[LocalLibraryPathsParser]
+    ) -> LocalPaths:
+        return library_paths_type(**library_paths)
+
+    def test_updates_map_with_other_platform_paths(self, paths_model: LocalPaths, library_paths: dict[str, Any]):
+        assert len(paths_model.map) >= len(library_paths) - 1
+
+        expected_path = next(iter(to_collection(library_paths[str(LocalLibraryPathsParser._platform_key)])))
+        library_paths = [
+            path for key, paths in library_paths.items() for path in to_collection(paths)
+            if key != str(LocalLibraryPathsParser._platform_key)
+        ]
+        for path in library_paths:
+            assert paths_model.map[path] == expected_path
+
+    def test_assigns_library_paths(self, library_model: LocalLibrary, library_paths_model: LocalLibraryPathsParser):
+        assert library_model.paths.library == library_paths_model.paths
+
+    def test_assigns_type_from_paths_parser(self, paths_model: LocalPaths, library_paths_model: LocalLibraryPathsParser):
+        model = LocalLibrary(name="name", paths=paths_model)
+        assert model.type == library_paths_model.source
+
+        with pytest.raises(ValidationError):  # library is not a paths parser, fails to assign type from parser
+            LocalLibrary(name="name", paths=LocalPaths(library=library_paths_model.paths))
+
+    def test_determine_library_type_from_config(
+            self, kind: str, library_paths: dict[str, Any], library_paths_model: LocalLibraryPathsParser
+    ):
+        model: LocalLibrary = LocalLibrary.create_and_determine_library_type(
+            dict(name=kind, type=kind, paths={"library": library_paths})
+        )
+        # just check the paths assigned to LocalLibrary model equal the paths for the expected LocalPaths model
+        assert model.paths.library == library_paths_model.paths
 
 
-def test_spotify_parser(tmp_path: Path):
-    token_file_path = tmp_path.joinpath("token").with_suffix(".json")
+class TestRemoteLibrary:
+    @pytest.fixture
+    def api_model(self) -> API:
+        return SpotifyAPI(
+            client_id="",
+            client_secret="",
+        )
 
-    def _extend_input(config: dict[str, Any]) -> None:
-        config["api"]["token_file_path"] = token_file_path
+    def test_assigns_type_from_api_model(self, api_model: API):
+        model = RemoteLibrary(name="name", api=api_model)
+        assert model.type == api_model.source
 
-    parsed = parse_library(name="spotify", extend_input=_extend_input)
-    assert_spotify_parse(parsed, token_file_path=token_file_path)
+
+class TestLibraries:
+    @pytest.fixture
+    def local_libraries(self, tmp_path: Path) -> list[LocalLibrary]:
+        return [
+            LocalLibrary(
+                name="local1",
+                type="local",
+                paths=LocalPaths(library=tmp_path)
+            ),
+            LocalLibrary(
+                name="local2",
+                type="local",
+                paths=LocalPaths(library=tmp_path)
+            ),
+            LocalLibrary(
+                name="local3",
+                type="local",
+                paths=LocalPaths(library=tmp_path)
+            )
+        ]
+
+    @pytest.fixture
+    def remote_libraries(self) -> list[RemoteLibrary]:
+        api = SpotifyAPI(
+            client_id="",
+            client_secret="",
+        )
+        return [
+            RemoteLibrary[SpotifyAPI](
+                name="remote1",
+                type="spotify",
+                api=api
+            ),
+            RemoteLibrary[SpotifyAPI](
+                name="remote2",
+                type="spotify",
+                api=api
+            ),
+            RemoteLibrary[SpotifyAPI](
+                name="remote3",
+                type="spotify",
+                api=api
+            )
+        ]
+
+    def test_fails_when_no_target_given_on_many_libraries(
+            self, local_libraries: list[LocalLibrary], remote_libraries: list[RemoteLibrary]
+    ):
+        match = "no target specified"
+        with pytest.raises(ParserError, match=match):
+            Libraries(local=local_libraries, remote=remote_libraries)
+        with pytest.raises(ParserError, match=match):
+            Libraries(local=local_libraries[0], remote=remote_libraries)
+        with pytest.raises(ParserError, match=match):
+            Libraries(local=local_libraries, remote=remote_libraries[0])
+
+    def test_fails_when_target_given_is_invalid(
+            self, local_libraries: list[LocalLibrary], remote_libraries: list[RemoteLibrary]
+    ):
+        match = "target does not correspond to any configured"
+        target = LibraryTarget(local="i am not a valid target", remote="I am also not a valid target")
+        with pytest.raises(ParserError, match=match):
+            Libraries(local=local_libraries, remote=remote_libraries, target=target)
+
+        valid_local_name = choice([lib.name for lib in local_libraries])
+        target = LibraryTarget(local=valid_local_name, remote="invalid name")
+        with pytest.raises(ParserError, match=match):
+            Libraries(local=local_libraries, remote=remote_libraries, target=target)
+
+        valid_remote_name = choice([lib.name for lib in remote_libraries])
+        target = LibraryTarget(local="invalid name", remote=valid_remote_name)
+        with pytest.raises(ParserError, match=match):
+            Libraries(local=local_libraries, remote=remote_libraries, target=target)
+
+    def test_gets_target_libraries(
+            self, local_libraries: list[LocalLibrary], remote_libraries: list[RemoteLibrary]
+    ):
+        expected_local = choice(local_libraries)
+        expected_remote = choice(remote_libraries)
+
+        target = LibraryTarget(local=expected_local.name, remote=expected_remote.name)
+        libraries = Libraries(target=target, local=local_libraries, remote=remote_libraries)
+        assert libraries.local == expected_local
+        assert libraries.remote == expected_remote
+
+        target = LibraryTarget(local=expected_local.name)
+        libraries = Libraries(target=target, local=local_libraries, remote=expected_remote)
+        assert libraries.local == expected_local
+        assert libraries.remote == expected_remote
+
+        target = LibraryTarget(remote=expected_remote.name)
+        libraries = Libraries(target=target, local=expected_local, remote=remote_libraries)
+        assert libraries.local == expected_local
+        assert libraries.remote == expected_remote

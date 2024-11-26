@@ -7,7 +7,6 @@ import pytest
 import yaml
 from aiorequestful.request import RequestHandler
 from musify.libraries.local.track import LocalTrack
-
 from musify.libraries.remote.spotify.wrangle import SpotifyDataWrangler
 from musify.logger import MusifyLogger
 from pytest_mock import MockerFixture

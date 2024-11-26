@@ -3,21 +3,18 @@ Meta-functionality for the program.
 
 Uses the :py:class:`MusifyManager` to run complex operations on various Musify objects.
 """
-import itertools
 import json
 import logging
 import os
 import re
 import sys
-from collections.abc import Mapping, Callable, Iterable
+from collections.abc import Mapping, Callable
 from copy import copy
 from pathlib import Path
 from time import perf_counter
 from typing import Any, AsyncContextManager, Self
 
-from jsonargparse import Namespace
 from musify.libraries.core.object import Library
-from musify.libraries.local.collection import LocalFolder
 from musify.libraries.local.library import LocalLibrary
 from musify.libraries.local.playlist import M3U, LocalPlaylist
 from musify.libraries.local.track.field import LocalTrackField
@@ -30,7 +27,7 @@ from musify.utils import get_user_input
 from musify_cli.log.handlers import CurrentTimeRotatingFileHandler
 from musify_cli.manager import MusifyManager
 from musify_cli.manager.library import LocalLibraryManager, RemoteLibraryManager
-from musify_cli.parser import LoadTypesRemote, EnrichTypesRemote, LoadTypesLocal
+from musify_cli.parser_old import LoadTypesRemote, EnrichTypesRemote, LoadTypesLocal
 
 
 class MusifyProcessor(DynamicProcessor, AsyncContextManager):
@@ -87,7 +84,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         await super().__call__()
         self.logger.debug(f"Called processor '{self._processor_name}': DONE\n")
 
-    def set_processor(self, name: str, config: Namespace = None) -> Callable[[], None]:
+    def set_processor(self, name: str, config: MusifyConfig = None) -> Callable[[], None]:
         """Set the processor to use from the given name"""
         name = name.replace("-", "_")
         self._set_processor_name(name)

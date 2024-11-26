@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 from musify.processors.time import TimeMapper
+
 from musify_cli.log import LOGGING_DT_FORMAT
 
 

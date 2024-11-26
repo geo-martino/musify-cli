@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Protocol
 
-from jsonargparse import Namespace
+from musify_cli.parser.core import AppData
 
 
 class DatetimeStore(Protocol):
@@ -15,7 +15,7 @@ class DatetimeStore(Protocol):
 
 class PathsManager:
     """Configures options for app data paths."""
-    def __init__(self, config: Namespace, dt: DatetimeStore):
+    def __init__(self, config: AppData, dt: DatetimeStore):
         self.config = config
         self._dt: DatetimeStore = dt
 
