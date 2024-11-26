@@ -181,8 +181,9 @@ class Paths(BaseModel):
 
     @model_validator(mode="after")
     def create_directories(self) -> Self:
-        if "PYTEST_CURRENT_TEST" in os.environ:  # don't create directories when executing tests
+        if "PYTEST_VERSION" in os.environ:  # don't create directories when executing tests
             return self
+
         for path in self._paths.values():
             path.mkdir(parents=True, exist_ok=True)
         return self
