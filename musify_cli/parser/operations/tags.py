@@ -9,10 +9,11 @@ from pydantic import BeforeValidator
 
 from musify_cli.exception import ParserError
 
-TAG_ORDER = [field.name.lower() for field in Fields.all()]
+FIELD_NAMES = [field.name.lower() for field in Fields.all()]
+TAG_NAMES = [field.name.lower() for field in TagFields.all()]
 # noinspection PyTypeChecker
 LOCAL_TRACK_TAG_NAMES: list[str] = list(sorted(
-    set(LocalTrackField.__tags__), key=lambda x: TAG_ORDER.index(x)
+    set(LocalTrackField.__tags__), key=lambda x: FIELD_NAMES.index(x)
 ))
 
 

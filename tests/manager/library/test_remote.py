@@ -19,7 +19,7 @@ from musify.processors.filter import FilterDefinedList, FilterIncludeExclude
 
 from musify_cli.exception import ParserError
 from musify_cli.manager.library import RemoteLibraryManager, SpotifyLibraryManager
-from musify_cli.parser.library import RemoteLibraryConfig, SpotifyAPIConfig, APICacheConfig, \
+from musify_cli.parser.library.remote import RemoteLibraryConfig, SpotifyAPIConfig, APICacheConfig, \
     APIHandlerConfig, APIHandlerRetry, APIHandlerWait, RemoteCheckerConfig, RemoteItemDownloadConfig, \
     RemotePlaylistsConfig, RemotePlaylistsSync
 from musify_cli.parser.types import LoadTypesRemote, EnrichTypesRemote
@@ -33,7 +33,6 @@ class RemoteLibraryManagerTester[T: RemoteLibraryManager](LibraryManagerTester, 
     def load_types(self) -> type[LoadTypesRemote]:
         return LoadTypesRemote
 
-    # noinspection PyProtectedMember
     @pytest.fixture
     async def manager_mock(self, manager: T) -> T:
         """

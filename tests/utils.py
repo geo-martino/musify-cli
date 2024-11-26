@@ -48,7 +48,6 @@ class MutagenMock(mutagen.FileType):
         self.pictures.clear()
 
 
-# noinspection PyProtectedMember
 def random_track[T: LocalTrack](cls: type[T] | None = None) -> T:
     """Generates a new, random track of the given class."""
     if cls is None:

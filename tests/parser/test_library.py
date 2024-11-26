@@ -9,10 +9,10 @@ from musify.libraries.local.library import MusicBee
 from musify.utils import to_collection
 from pydantic import ValidationError
 
-# noinspection PyProtectedMember
-from musify_cli.parser.library import LOCAL_LIBRARY_TYPES, REMOTE_LIBRARY_TYPES, RemoteLibraryConfig, \
-    LocalLibraryPaths, MusicBeePaths, LocalLibraryPathsParser, LocalPaths, APIConfig, SpotifyAPIConfig, LibrariesConfig, \
-    LibraryTarget, LocalLibraryConfig
+from musify_cli.parser.library import LibrariesConfig, LibraryTarget
+from musify_cli.parser.library.local import LOCAL_LIBRARY_TYPES, LocalLibraryPathsParser, LocalPaths, \
+    LocalLibraryPaths, MusicBeePaths, LocalLibraryConfig
+from musify_cli.parser.library.remote import REMOTE_LIBRARY_TYPES, RemoteLibraryConfig, APIConfig, SpotifyAPIConfig
 from utils import random_str
 
 

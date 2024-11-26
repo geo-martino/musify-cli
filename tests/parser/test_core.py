@@ -8,11 +8,10 @@ from musify.libraries.local.track.field import LocalTrackField
 from musify.logger import MusifyLogger
 
 from musify_cli import MODULE_ROOT
-# noinspection PyProtectedMember
 from musify_cli.parser.core import Paths, Logging, MUSIFY_ROOT, AIOREQUESTFUL_ROOT, MusifyConfig
-# noinspection PyProtectedMember
-from musify_cli.parser.library import LibrariesConfig, RemoteLibraryConfig, SpotifyAPIConfig, LocalLibraryConfig, \
-    LocalPaths
+from musify_cli.parser.library import LibrariesConfig
+from musify_cli.parser.library.local import LocalLibraryConfig, LocalPaths
+from musify_cli.parser.library.remote import RemoteLibraryConfig, SpotifyAPIConfig
 from musify_cli.parser.types import LoadTypesLocal, LoadTypesRemote, EnrichTypesRemote
 from tests.utils import path_resources
 

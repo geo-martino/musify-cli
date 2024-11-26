@@ -8,9 +8,6 @@ from musify_cli.parser.operations.filters import get_comparers_filter, Filter
 from musify_cli.parser.operations.signature import get_default_args
 
 
-# noinspection PyProtectedMember
-
-
 class TestFilter:
     @pytest.fixture
     def annotation(self) -> TypeAdapter:

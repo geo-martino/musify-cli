@@ -14,7 +14,7 @@ from musify.types import UnitIterable, UnitCollection
 from musify.utils import to_collection
 
 from musify_cli.manager.library._core import LibraryManager
-from musify_cli.parser.library import LocalLibraryConfig
+from musify_cli.parser.library.local import LocalLibraryConfig
 from musify_cli.parser.operations.tagger import Tagger
 from musify_cli.parser.types import LoadTypesLocal
 

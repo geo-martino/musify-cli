@@ -8,9 +8,6 @@ from musify_cli.exception import ParserError
 from musify_cli.parser.operations.tags import get_tags, TagFilter, LocalTrackFields, get_tag_filter
 
 
-# noinspection PyProtectedMember
-
-
 class TestTags:
 
     @pytest.fixture

@@ -14,7 +14,8 @@ from musify.report import report_missing_tags
 from pydantic import BaseModel, Field, DirectoryPath, computed_field, model_validator
 
 from musify_cli import PACKAGE_ROOT, MODULE_ROOT
-from musify_cli.parser.library import LibrariesConfig, APIConfig
+from musify_cli.parser.library import LibrariesConfig
+from musify_cli.parser.library.remote import APIConfig
 from musify_cli.parser.loader import MultiFileLoader
 from musify_cli.parser.operations.filters import Filter
 from musify_cli.parser.operations.signature import get_default_args
