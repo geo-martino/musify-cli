@@ -3,19 +3,17 @@ import logging.config
 from abc import ABC, abstractmethod
 from functools import cached_property
 
-from musify.base import MusifyObject
 from musify.libraries.core.object import Library
 from musify.logger import MusifyLogger
-from musify.processors.filter import FilterComparers
 from musify.types import UnitCollection, MusifyEnum
 
 from musify_cli.config.library import LibraryConfig
 
 
-class LibraryManager[T: LibraryConfig](ABC):
+class LibraryManager[L: Library, C: LibraryConfig](ABC):
     """Generic base class for instantiating and managing a library and related objects from a given ``config``."""
 
-    def __init__(self, config: T, dry_run: bool = True):
+    def __init__(self, config: C, dry_run: bool = True):
         # noinspection PyTypeChecker
         self.logger: MusifyLogger = logging.getLogger(__name__)
 
@@ -29,22 +27,16 @@ class LibraryManager[T: LibraryConfig](ABC):
         """The user-defined name of the library"""
         return self.config.name
 
-    @cached_property
-    @abstractmethod
+    @property
     def source(self) -> str:
         """The name of the source currently being used for this library"""
-        raise NotImplementedError
+        return self.config.source
 
     @cached_property
-    @abstractmethod
-    def library(self) -> Library:
+    def library(self) -> L:
         """The initialised library"""
-        raise NotImplementedError
-
-    @property
-    def playlist_filter(self) -> FilterComparers[str | MusifyObject] | None:
-        """The configured :py:class:`FilterComparers` to use when filtering playlists by name"""
-        return self.config.playlists.filter if self.config.playlists.filter.ready else None
+        self.initialised = True
+        return self.config.create()
 
     @abstractmethod
     async def load(self, types: UnitCollection[MusifyEnum] = (), force: bool = False) -> None:

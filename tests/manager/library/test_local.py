@@ -1,33 +1,29 @@
-from collections.abc import Collection
 from pathlib import Path
 from random import randrange
-from typing import Any
 
 import pytest
-from musify.field import TagField, Fields
 from musify.libraries.collection import BasicCollection
-from musify.libraries.core.object import Track
 from musify.libraries.local.library import LocalLibrary, MusicBee
-from musify.libraries.local.track import LocalTrack, SyncResultTrack, FLAC
-from musify.libraries.local.track.field import LocalTrackField, LocalTrackField as Tags
-from musify.types import UnitIterable
 
-from musify_cli.manager.library import LocalLibraryManager, MusicBeeManager
+from mocks.local import LocalLibraryMock, LocalTrackMock, MusicBeeMock
 from musify_cli.config.library import PlaylistsConfig
-from musify_cli.config.library.local import LocalLibraryConfig, LocalPaths, UpdaterConfig
+from musify_cli.config.library.local import LocalLibraryConfig, LocalPaths, UpdaterConfig, MusicBeeConfig, MusicBeePaths
 from musify_cli.config.library.types import LoadTypesLocal
+from musify_cli.manager.library import LocalLibraryManager
 from tests.manager.library.testers import LibraryManagerTester
-from tests.utils import random_str
 
 
-class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
+class TestLocalLibraryManager[L: LocalLibrary, C: LocalLibraryConfig](LibraryManagerTester[LocalLibraryManager[L, C]]):
+
+    library_mock: type[LocalLibraryMock] = LocalLibraryMock
+    track_mock: type[LocalTrackMock] = LocalTrackMock
 
     @pytest.fixture
     def load_types(self) -> type[LoadTypesLocal]:
         return LoadTypesLocal
 
     @pytest.fixture
-    def config(self, tmp_path: Path) -> LocalLibraryConfig:
+    def config(self, tmp_path: Path) -> C:
         library_folder = tmp_path.joinpath("library")
         library_folder.mkdir(parents=True, exist_ok=True)
 
@@ -36,7 +32,6 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
 
         return LocalLibraryConfig(
             name="name",
-            type=LocalLibrary.source,
             paths=LocalPaths(
                 library=library_folder,
                 playlists=playlist_folder,
@@ -55,129 +50,38 @@ class TestLocalLibraryManager[T: LocalLibraryManager](LibraryManagerTester[T]):
         )
 
     @pytest.fixture
-    def manager(self, config: LocalLibraryConfig) -> T:
-        return LocalLibraryManager(config=config)
+    def manager(self, config: C) -> LocalLibraryManager[L, C]:
+        return LocalLibraryManager[L, C](config=config)
 
     @pytest.fixture
-    def manager_mock(self, manager: T) -> T:
+    def manager_mock(self, manager: LocalLibraryManager[L, C]) -> LocalLibraryManager[L, C]:
         """
         Replace the instantiated library from the given ``manager`` with a mocked library.
         Yields the modified ``manager`` as a pytest.fixture.
         """
-        manager._library_cls = self.LibraryMock
+        manager.config.__class__._library_cls = self.library_mock
         return manager
 
-    def test_properties(self, manager: T):
+    def test_properties(self, manager: LocalLibraryManager[L, C]):
         assert manager.source == LocalLibrary.source
 
     ###########################################################################
     ## Operations
     ###########################################################################
-    class LibraryMock(LocalLibrary):
-
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-
-            self.load_calls: list[str] = []
-            self.save_tracks_args: dict[str, Any] = {}
-            self.merge_tracks_args: dict[str, Any] = {}
-
-        def reset(self):
-            """Reset all mock attributes"""
-            self.load_calls.clear()
-            self.save_tracks_args.clear()
-            self.merge_tracks_args.clear()
-
-        async def load(self):
-            self.load_calls.append("ALL")
-
-        async def load_tracks(self):
-            self.load_calls.append(LoadTypesLocal.TRACKS.name)
-
-        async def load_playlists(self):
-            self.load_calls.append(LoadTypesLocal.PLAYLISTS.name)
-
-        async def save_tracks(
-                self,
-                tags: UnitIterable[LocalTrackField] = LocalTrackField.ALL,
-                replace: bool = False,
-                dry_run: bool = True
-        ) -> dict[LocalTrack, SyncResultTrack]:
-            self.save_tracks_args = {"tags": tags, "replace": replace, "dry_run": dry_run}
-            return {}
-
-        def merge_tracks(self, tracks: Collection[Track], tags: UnitIterable[TagField] = Fields.ALL) -> None:
-            self.merge_tracks_args = {"tracks": tracks, "tags": tags}
-
-    class TrackMock(FLAC):
-
-        # noinspection PyMissingConstructor
-        def __init__(self):
-            self.save_args: dict[str, Any] = {}
-            self.merge_tracks_args: dict[str, Any] = {}
-
-        def reset(self):
-            """Reset all mock attributes"""
-            self.save_args.clear()
-
-        @property
-        def path(self):
-            return random_str()
-
-        @property
-        def album(self):
-            return random_str()
-
-        async def save(
-                self,
-                tags: UnitIterable[Tags] = Tags.ALL,
-                replace: bool = False,
-                dry_run: bool = True
-        ) -> SyncResultTrack:
-            self.save_args = {"tags": tags, "replace": replace, "dry_run": dry_run}
-            return SyncResultTrack(saved=not dry_run, updated={tag: 0 for tag in tags})
-
-    async def test_save_tracks(self, manager_mock: T, config: LocalLibraryConfig):
+    def test_merge_tracks(self, manager_mock: LocalLibraryManager[L, C], config: C):
         manager_mock.dry_run = False
 
-        await manager_mock.save_tracks()
-
-        library_mock: TestLocalLibraryManager.LibraryMock = manager_mock.library
-        assert library_mock.save_tracks_args["tags"] == config.updater.tags
-        assert library_mock.save_tracks_args["replace"] == config.updater.replace
-        assert library_mock.save_tracks_args["dry_run"] == manager_mock.dry_run
-
-    # noinspection PyTestUnpassedFixture
-    async def test_save_tracks_in_collections(self, manager_mock: T, config: LocalLibraryConfig):
-        manager_mock.dry_run = False
-
-        collections: list[BasicCollection[TestLocalLibraryManager.TrackMock]] = [
-            BasicCollection(name=f"collection {i}", items=[self.TrackMock() for _ in range(randrange(2, 5))])
-            for i in range(randrange(2, 5))
-        ]
-        await manager_mock.save_tracks_in_collections(collections)
-
-        for coll in collections:
-            for track in coll:
-                assert track.save_args["tags"] == config.updater.tags
-                assert track.save_args["replace"] == config.updater.replace
-                assert track.save_args["dry_run"] == manager_mock.dry_run
-
-    def test_merge_tracks(self, manager_mock: T, config: LocalLibraryConfig):
-        manager_mock.dry_run = False
-
-        tracks = [self.TrackMock() for _ in range(randrange(2, 5))]
+        tracks = [self.track_mock() for _ in range(randrange(2, 5))]
         manager_mock.merge_tracks(tracks)
 
-        library_mock: TestLocalLibraryManager.LibraryMock = manager_mock.library
+        library_mock: LocalLibraryMock = manager_mock.library
         assert library_mock.merge_tracks_args["tracks"] == tracks
         assert library_mock.merge_tracks_args["tags"] == config.updater.tags
 
 
-class TestMusicBeeManager(TestLocalLibraryManager[MusicBeeManager]):
+class TestMusicBeeManager(TestLocalLibraryManager[MusicBee, MusicBeeConfig]):
 
-    class LibraryMock(TestLocalLibraryManager.LibraryMock, MusicBee):
-        pass
+    library_mock: type[MusicBeeMock] = MusicBeeMock
 
     @pytest.fixture
     def library_folders(self, tmp_path: Path) -> list[Path]:
@@ -189,7 +93,7 @@ class TestMusicBeeManager(TestLocalLibraryManager[MusicBeeManager]):
 
     # noinspection PyMethodOverriding
     @pytest.fixture
-    def config(self, tmp_path: Path, library_folders: list[Path]) -> LocalLibraryConfig:
+    def config(self, tmp_path: Path, library_folders: list[Path]) -> MusicBeeConfig:
         musicbee_folder = tmp_path.joinpath("library")
         musicbee_folder.mkdir(parents=True, exist_ok=True)
 
@@ -231,9 +135,8 @@ class TestMusicBeeManager(TestLocalLibraryManager[MusicBeeManager]):
         with open(musicbee_folder.joinpath(MusicBee.xml_settings_path), "w") as f:
             f.write("\n".join(xml_settings))
 
-        return LocalLibraryConfig(
+        return MusicBeeConfig(
             name="name",
-            type=MusicBee.source,
             paths=LocalPaths(
                 library=musicbee_folder,
                 map={
@@ -251,8 +154,8 @@ class TestMusicBeeManager(TestLocalLibraryManager[MusicBeeManager]):
         )
 
     @pytest.fixture
-    def manager(self, config: LocalLibraryConfig) -> MusicBeeManager:
-        return MusicBeeManager(config=config)
+    def manager(self, config: MusicBeeConfig):
+        return LocalLibraryManager[MusicBee, MusicBeePaths](config=config)
 
-    def test_properties(self, manager: MusicBeeManager):
+    def test_properties(self, manager: MusicBeeConfig):
         assert manager.source == MusicBee.source

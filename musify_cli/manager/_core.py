@@ -18,11 +18,12 @@ from musify.report import report_playlist_differences, report_missing_tags
 from musify.types import UnitIterable
 from musify.utils import to_collection
 
+from musify_cli.config.library.remote import SpotifyLibraryConfig
 from musify_cli.exception import ParserError
-from musify_cli.manager.library import LocalLibraryManager, MusicBeeManager
-from musify_cli.manager.library import RemoteLibraryManager, SpotifyLibraryManager
+from musify_cli.manager.library import LocalLibraryManager
+from musify_cli.manager.library import RemoteLibraryManager
 from musify_cli.config.core import Reports, MusifyConfig
-from musify_cli.config.library.local import LocalLibraryConfig
+from musify_cli.config.library.local import LocalLibraryConfig, MusicBeeConfig
 from musify_cli.config.library.types import LoadTypesLocal, LoadTypesRemote
 
 
@@ -68,15 +69,6 @@ class ReportsManager:
 
 class MusifyManager:
     """General class for managing various Musify objects, configured from a given ``config``."""
-
-    _local_library_map: dict[str, type[LocalLibraryManager]] = {
-        "local": LocalLibraryManager,
-        "musicbee": MusicBeeManager,
-    }
-
-    _remote_library_map: dict[str, type[RemoteLibraryManager]] = {
-        "spotify": SpotifyLibraryManager,
-    }
 
     def __init__(self, config: MusifyConfig):
         start_time = perf_counter()
@@ -127,15 +119,11 @@ class MusifyManager:
 
         self.reports.config = self.config.reports
 
-    def _create_local_library_manager(self, config: LocalLibraryConfig) -> LocalLibraryManager:
-        return self._local_library_map[config.type.casefold()](
-            config=config, dry_run=self.dry_run, remote_wrangler=self.remote.wrangler
-        )
-
     def _create_remote_library_manager(self, config: LocalLibraryConfig) -> RemoteLibraryManager:
-        return self._remote_library_map[config.type.casefold()](
-            config=config, dry_run=self.dry_run,
-        )
+        return RemoteLibraryManager(config=config, dry_run=self.dry_run)
+
+    def _create_local_library_manager(self, config: LocalLibraryConfig) -> LocalLibraryManager:
+        return LocalLibraryManager(config=config, dry_run=self.dry_run, remote_wrangler=self.remote.wrangler)
 
     @property
     def execution_dt(self) -> datetime:
@@ -199,7 +187,6 @@ class MusifyManager:
     ###########################################################################
     def filter[T: Collection](self, items: T) -> T:
         """Run the generic filter on the given ``items`` if configured."""
-        print(self.config.pre_post.filter)
         if (filter_ := self.config.pre_post.filter) is not None and filter_.ready:
             return filter_(items)
         return items

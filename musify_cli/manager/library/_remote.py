@@ -1,39 +1,25 @@
-from abc import ABCMeta, abstractmethod
-from collections.abc import Collection
-from datetime import datetime
 from functools import cached_property
 from typing import AsyncContextManager, Self
 
-from aiorequestful.cache.backend import CACHE_CLASSES, ResponseCache
-from aiorequestful.timer import GeometricCountTimer, StepCeilingTimer
-from musify.libraries.core.collection import MusifyCollection
-from musify.libraries.core.object import Playlist
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.factory import RemoteObjectFactory
 from musify.libraries.remote.core.library import RemoteLibrary
-from musify.libraries.remote.core.object import SyncResultRemotePlaylist, RemoteAlbum
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
-from musify.libraries.remote.spotify.api import SpotifyAPI
-from musify.libraries.remote.spotify.factory import SpotifyObjectFactory
-from musify.libraries.remote.spotify.library import SpotifyLibrary
-from musify.libraries.remote.spotify.wrangle import SpotifyDataWrangler
 from musify.logger import STAT
 from musify.processors.check import RemoteItemChecker
+from musify.processors.download import ItemDownloadHelper
 from musify.processors.match import ItemMatcher
 from musify.processors.search import RemoteItemSearcher
-from musify.types import UnitCollection, UnitIterable
-from musify.utils import get_max_width, align_string, to_collection
+from musify.types import UnitCollection
+from musify.utils import to_collection
 
-from musify_cli.exception import ParserError
-from musify_cli.manager.library._core import LibraryManager
 from musify_cli.config.library.remote import RemoteLibraryConfig
 from musify_cli.config.library.types import LoadTypesRemote, EnrichTypesRemote
+from musify_cli.manager.library._core import LibraryManager
 
 
-class RemoteLibraryManager(LibraryManager[RemoteLibraryConfig], AsyncContextManager, metaclass=ABCMeta):
+class RemoteLibraryManager[L: RemoteLibrary, C: RemoteLibraryConfig](LibraryManager[L, C], AsyncContextManager):
     """Instantiates and manages a :py:class:`RemoteLibrary` and related objects from a given ``config``."""
-
-    _library_cls: type[RemoteLibrary] = RemoteLibrary
 
     def __init__(self, config: RemoteLibraryConfig, dry_run: bool = True):
         super().__init__(config=config, dry_run=dry_run)
@@ -43,57 +29,32 @@ class RemoteLibraryManager(LibraryManager[RemoteLibraryConfig], AsyncContextMana
         self.types_enriched: dict[LoadTypesRemote, set[EnrichTypesRemote]] = {}
 
     async def __aenter__(self) -> Self:
-        await self.api.__aenter__()
+        if self.initialised:
+            await self.api.__aenter__()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.check.close()
-        await self.api.__aexit__(exc_type, exc_val, exc_tb)
+        if self.initialised:
+            await self.api.__aexit__(exc_type, exc_val, exc_tb)
 
     @cached_property
-    def source(self) -> str:
-        return self.wrangler.source
-
-    @cached_property
-    @abstractmethod
-    def library(self) -> RemoteLibrary:
-        """The initialised remote library"""
-        raise NotImplementedError
-
-    @cached_property
-    @abstractmethod
     def api(self) -> RemoteAPI:
         """The initialised remote API for this remote library type"""
-        raise NotImplementedError
-
-    def _set_handler(self, api: RemoteAPI) -> None:
-        config = self.config.api.handler
-        api.handler.retry_timer = GeometricCountTimer(**config.retry.dict())
-        api.handler.wait_timer = StepCeilingTimer(**config.wait.dict())
+        self.initialised = True
+        return self.config.api.create()
 
     @cached_property
-    def cache(self) -> ResponseCache | None:
-        """The initialised cache to use with the remote API for this remote library type"""
-        if not (config := self.config.api.cache).type:
-            return
-
-        cls = next((cls for cls in CACHE_CLASSES if cls.type == config.type), None)
-        if not cls:
-            return
-
-        return cls.connect(value=config.db, expire=config.expire_after)
-
-    @cached_property
-    @abstractmethod
     def factory(self) -> RemoteObjectFactory:
         """The remote object factory for this remote library type"""
-        raise NotImplementedError
+        factory = self.config.factory
+        factory.api = self.api
+        return factory
 
     @cached_property
-    @abstractmethod
     def wrangler(self) -> RemoteDataWrangler:
         """The initialised remote data wrangler for this remote library type"""
-        raise NotImplementedError
+        return self.config.wrangler
 
     @cached_property
     def match(self) -> ItemMatcher:
@@ -103,20 +64,17 @@ class RemoteLibraryManager(LibraryManager[RemoteLibraryConfig], AsyncContextMana
     @property
     def check(self) -> RemoteItemChecker:
         """The initialised remote item checker for this remote library type"""
-        return RemoteItemChecker(
-            matcher=self.match,
-            object_factory=self.factory,
-            interval=self.config.check.interval,
-            allow_karaoke=self.config.check.allow_karaoke,
-        )
+        return self.config.check.create(factory=self.factory, matcher=self.match)
 
     @property
     def search(self) -> RemoteItemSearcher:
         """The initialised remote item searcher for this remote library type"""
-        return RemoteItemSearcher(
-            matcher=self.match,
-            object_factory=self.factory,
-        )
+        return self.config.search.create(factory=self.factory, matcher=self.match)
+
+    @property
+    def download(self) -> ItemDownloadHelper:
+        """The initialised remote download helper for this remote library type"""
+        return self.config.download.create()
 
     ###########################################################################
     ## Operations
@@ -219,145 +177,3 @@ class RemoteLibraryManager(LibraryManager[RemoteLibraryConfig], AsyncContextMana
             if tracks:
                 types_enriched.add(EnrichTypesRemote.TRACKS)
             self.types_enriched[LoadTypesRemote.SAVED_ARTISTS] = types_enriched
-
-    async def sync(self, playlists: Collection[Playlist]) -> dict[str, SyncResultRemotePlaylist]:
-        """
-        Sync the given ``playlists`` with the instantiated remote library.
-
-        :param playlists: The playlists to be synchronised.
-        :return: Map of playlist name to the results of the sync as a :py:class:`SyncResultRemotePlaylist` object.
-        """
-        playlists = self._filter_playlists(playlists=playlists)
-        return await self.library.sync(
-            playlists=playlists,
-            kind=self.config.playlists.sync.kind,
-            reload=self.config.playlists.sync.reload,
-            dry_run=self.dry_run
-        )
-
-    def _filter_playlists[T: Playlist](self, playlists: Collection[T]) -> Collection[T]:
-        """
-        Returns a filtered set of the given ``playlists`` according to the config for this library.
-
-        :param playlists: The playlists to be filtered.
-        :return: Filtered playlists.
-        """
-        tag_filter = self.config.playlists.sync.filter
-        self.logger.info(
-            f"\33[1;95m ->\33[1;97m Filtering playlists and tracks from {len(playlists)} playlists\n"
-            f"\33[0;90m    Filter out tags: {tag_filter} \33[0m"
-        )
-
-        pl_filtered: Collection[T] = self.playlist_filter(playlists) if self.playlist_filter is not None else playlists
-
-        max_width = get_max_width([pl.name for pl in pl_filtered])
-        for pl in pl_filtered:
-            initial_count = len(pl)
-            tracks = []
-            for track in pl.tracks:
-                keep = True
-
-                for tag, values in tag_filter.items():
-                    item_val = str(track[tag])
-
-                    if any(v.strip().casefold() in item_val.strip().casefold() for v in values):
-                        keep = False
-                        break
-
-                if keep:
-                    tracks.append(track)
-
-            pl.clear()
-            pl.extend(tracks)
-
-            self.logger.debug(
-                f"{align_string(pl.name, max_width=max_width)} | Filtered out {initial_count - len(pl):>3} items"
-            )
-
-        self.logger.print_line()
-        return pl_filtered
-
-    def run_download_helper(self, collections: UnitIterable[MusifyCollection]) -> None:
-        """Run the :py:class:`ItemDownloadHelper` for the given ``collections``"""
-        config = self.config.download
-        download_helper = ItemDownloadHelper(
-            urls=config.urls, fields=config.fields, interval=config.interval,
-        )
-        download_helper(collections)
-
-
-    async def create_new_music_playlist(self) -> tuple[str, SyncResultRemotePlaylist]:
-        """
-        Create a new music playlist for followed artists with music released between ``start`` and ``end``.
-
-        :return: The name of the new playlist and results of the sync as a :py:class:`SyncResultRemotePlaylist` object.
-        """
-        config = self.config.new_music
-        collections = self._filter_artist_albums_by_date(config.start, config.end)
-
-        collections = to_collection(collections)
-        tracks = [
-            track for collection in sorted(collections, key=lambda x: x.date, reverse=True) for track in collection
-        ]
-
-        self.logger.info(
-            f"\33[1;95m  >\33[1;97m Creating {config.name!r} {self.source} playlist "
-            f"for {len(tracks)} new tracks by followed artists released between {config.start} and {config.end} \33[0m"
-        )
-
-        # add tracks to remote playlist
-        response = await self.api.get_or_create_playlist(config.name)
-        pl = self.factory.playlist(response, skip_checks=True)
-        pl.clear()
-        pl.extend(tracks, allow_duplicates=False)
-        return config.name, await pl.sync(kind="refresh", reload=False, dry_run=self.dry_run)
-
-    def _filter_artist_albums_by_date(self, start: datetime.date, end: datetime.date) -> list[RemoteAlbum]:
-        """Returns all loaded artist albums that are within the given ``start`` and ``end`` dates inclusive"""
-        def match_date(alb: RemoteAlbum) -> bool:
-            """Match start and end dates to the release date of the given ``alb``"""
-            if alb.date:
-                return start <= alb.date <= end
-            if alb.month:
-                return start.year <= alb.year <= end.year and start.month <= alb.month <= end.month
-            if alb.year:
-                return start.year <= alb.year <= end.year
-            return False
-
-        return [album for artist in self.library.artists for album in artist.albums if match_date(album)]
-
-
-class SpotifyLibraryManager(RemoteLibraryManager):
-    """Instantiates and manages a generic :py:class:`SpotifyLibrary` and related objects from a given ``config``."""
-
-    _library_cls: type[SpotifyLibrary] = SpotifyLibrary
-
-    @cached_property
-    def library(self) -> SpotifyLibrary:
-        self.initialised = True
-        return self._library_cls(api=self.api, playlist_filter=self.playlist_filter or ())
-
-    @cached_property
-    def api(self) -> SpotifyAPI:
-        if not self.config.api.client_id or not self.config.api.client_secret:
-            raise ParserError("Cannot create API object without client ID and client secret")
-
-        api = SpotifyAPI(
-            client_id=self.config.api.client_id,
-            client_secret=self.config.api.client_secret,
-            scope=self.config.api.scope,
-            cache=self.cache,
-            token_file_path=self.config.api.token_file_path,
-        )
-        self._set_handler(api)
-
-        self.initialised = True
-        return api
-
-    @cached_property
-    def factory(self) -> SpotifyObjectFactory:
-        return SpotifyObjectFactory(api=self.api)
-
-    @cached_property
-    def wrangler(self) -> SpotifyDataWrangler:
-        return SpotifyDataWrangler()

@@ -1,17 +1,37 @@
-from abc import ABCMeta
-from typing import Type, Any, Self, Mapping
+import logging
+from abc import ABCMeta, ABC, abstractmethod
+from collections.abc import Awaitable
+from typing import Any, ClassVar
 
+from musify.libraries.core.object import Library
+from musify.logger import MusifyLogger
 from musify.processors.filter import FilterComparers
 from pydantic import BaseModel, Field
 
-from musify_cli.exception import ParserError
 from musify_cli.config.operations.filters import Filter
 
 
-class Instantiator[T: Any](BaseModel):
-    def create(self) -> T:
+class Instantiator[T: Any](BaseModel, ABC):
+    @abstractmethod
+    def create(self, *args, **kwargs) -> T:
         """Instantiate a new instance of the associated object based on the current configuration"""
         raise NotImplementedError
+
+
+class Runner[T: Any](BaseModel, ABC):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        # noinspection PyTypeChecker
+        self._logger: MusifyLogger = logging.getLogger(__name__)
+
+    @abstractmethod
+    async def run(self, *args, **kwargs) -> T:
+        """Run the associated callable based on the current configuration"""
+        raise NotImplementedError
+
+    def __call__(self, *args, **kwargs) -> Awaitable[T]:
+        return self.run(*args, **kwargs)
 
 
 class PlaylistsConfig(BaseModel):
@@ -21,32 +41,21 @@ class PlaylistsConfig(BaseModel):
     )
 
 
-class LibraryConfig(BaseModel, metaclass=ABCMeta):
-    _type_map: dict[str, Type[BaseModel]]
+class LibraryConfig[T: Library](Instantiator[T], metaclass=ABCMeta):
+
+    _library_cls: ClassVar[type[Library]] = Library
 
     name: str = Field(
         description="The user-assigned name of this library",
-    )
-    type: str = Field(
-        description="The source type of this library",
     )
     playlists: PlaylistsConfig = Field(
         description="Configures handling for this library's playlists",
         default=PlaylistsConfig()
     )
 
-    # noinspection PyUnresolvedReferences
+    # noinspection PyPropertyDefinition
     @classmethod
-    def create_and_determine_library_type(cls, kwargs: Any | Self) -> Self:
-        """
-        Create a new :py:class:`.Library` object and determine its type dynamically from the given ``config``
-        """
-        if not isinstance(kwargs, Mapping):
-            return kwargs
-
-        library_type = kwargs.get(type_key := "type", "").strip().casefold()
-        if library_type not in cls._type_map.default:
-            raise ParserError("Unrecognised library type", key=type_key, value=library_type)
-
-        sub_type = cls._type_map.default[library_type]
-        return cls[sub_type](**kwargs)
+    @property
+    def source(cls) -> str:
+        """The source type of the library"""
+        return str(cls._library_cls.source)

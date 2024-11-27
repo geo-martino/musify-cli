@@ -5,14 +5,15 @@ import pytest
 from musify.logger import MusifyLogger
 
 from musify_cli import MODULE_ROOT
+from musify_cli.config.core import MusifyConfig, Reports, Paths, Backup, PrePost
+from musify_cli.config.library import LibrariesConfig
+from musify_cli.config.library.local import LOCAL_LIBRARY_CONFIG, LocalLibraryConfig, LocalPaths
+from musify_cli.config.library.remote import REMOTE_LIBRARY_CONFIG, RemoteLibraryConfig, SpotifyAPIConfig, \
+    SpotifyLibraryConfig
 from musify_cli.exception import ParserError
 from musify_cli.manager import MusifyManager
 # noinspection PyProtectedMember
 from musify_cli.manager._core import ReportsManager
-from musify_cli.config.core import MusifyConfig, Reports, Paths, Backup, PrePost
-from musify_cli.config.library import LibrariesConfig
-from musify_cli.config.library.local import LOCAL_LIBRARY_TYPES, LocalLibraryConfig, LocalPaths
-from musify_cli.config.library.remote import REMOTE_LIBRARY_TYPES, RemoteLibraryConfig, SpotifyAPIConfig
 from tests.utils import path_txt, path_logging_config
 
 
@@ -82,13 +83,11 @@ class TestMusifyManager:
             libraries=LibrariesConfig(
                 local=LocalLibraryConfig(
                     name="local",
-                    type="local",
                     paths=LocalPaths(library=tmp_path),
                 ),
-                remote=RemoteLibraryConfig(
+                remote=SpotifyLibraryConfig(
                     name="spotify",
-                    type="spotify",
-                    api=SpotifyAPIConfig(client_id="", client_secret="")
+                    api=SpotifyAPIConfig(client_id="<CLIENT ID>", client_secret="<CLIENT SECRET>")
                 ),
             ),
         )
@@ -97,12 +96,6 @@ class TestMusifyManager:
     def manager(self, config: MusifyConfig) -> MusifyManager:
         """Yields a valid :py:class:`MusifyManager` for the current remote source as a pytest.fixture."""
         return MusifyManager(config=config)
-
-    def test_all_libraries_supported(self):
-        # noinspection PyProtectedMember
-        assert set(MusifyManager._local_library_map) == set(LOCAL_LIBRARY_TYPES)
-        # noinspection PyProtectedMember
-        assert set(MusifyManager._remote_library_map) == set(REMOTE_LIBRARY_TYPES)
 
     @pytest.mark.skip(reason="Test not yet implemented")
     def test_set_config(self, manager: MusifyManager):

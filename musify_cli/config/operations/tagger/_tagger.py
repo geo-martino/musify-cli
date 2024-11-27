@@ -1,11 +1,12 @@
 from collections.abc import Mapping, Collection
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Self
 
 from musify.base import MusifyItemSettable
 from musify.libraries.local.track import LocalTrack
 from musify.libraries.local.track.field import LocalTrackField
 from musify.processors.base import Filter
+from musify.processors.filter import FilterDefinedList
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema
 
@@ -16,8 +17,8 @@ from musify_cli.config.operations.tagger._setter import Setter, setter_from_conf
 @dataclass
 class FilteredSetter[T: MusifyItemSettable]:
     """Stores the settings to apply setters to a limited set of filtered items based on a configured filter."""
-    filter: Filter[T]
-    setters: Collection[Setter]
+    filter: Filter[T] = field(default_factory=FilterDefinedList)
+    setters: Collection[Setter] = ()
 
     def set_tags(self, item: T, collection: Collection[T]) -> None:
         """
@@ -32,6 +33,8 @@ class FilteredSetter[T: MusifyItemSettable]:
 
 class Tagger[T: MusifyItemSettable]:
     """Apply tags to a set of items based on a set of tagging rules."""
+
+    # noinspection PyUnusedLocal
     @classmethod
     def __get_pydantic_core_schema__(
         cls, source_type: Any, handler: GetCoreSchemaHandler
@@ -41,16 +44,24 @@ class Tagger[T: MusifyItemSettable]:
         )
 
     @classmethod
-    def from_config(cls, config: list[Mapping[str, Any]]) -> Self:
+    def from_config(cls, config: list[Mapping[str, Any]] | Self) -> Self:
         """Generate the :py:class:`FilterComparers` and :py:class:`Setter` objects from the ``config``"""
+        if isinstance(config, Tagger):
+            return config
+
         tag_setters = []
         for rule_set in config:
-            condition = get_comparers_filter(rule_set["filter"])
-            setters = [
-                setter_from_config(next(iter(LocalTrackField.from_name(field))), rule_config)
-                for field, rule_config in rule_set.items() if field not in ["filter", "field"]
-            ]
-            tag_setters.append(FilteredSetter[LocalTrack](filter=condition, setters=setters))
+            if isinstance(rule_set, FilteredSetter):
+                setter = rule_set
+            else:
+                condition = get_comparers_filter(rule_set["filter"])
+                setters = [
+                    setter_from_config(next(iter(LocalTrackField.from_name(fld))), rule_config)
+                    for fld, rule_config in rule_set.items() if fld not in ["filter", "field"]
+                ]
+                setter = FilteredSetter[LocalTrack](filter=condition, setters=setters)
+
+            tag_setters.append(setter)
 
         return cls(tag_setters)
 

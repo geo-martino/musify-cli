@@ -1,16 +1,23 @@
 from collections.abc import Collection
 from copy import deepcopy
 from pathlib import Path, PureWindowsPath, PurePosixPath
+from random import choice, randrange
 from typing import Any
 
 import pytest
+from musify.libraries.local.collection import BasicLocalCollection, LocalCollection
 from musify.libraries.local.library import MusicBee
+from musify.libraries.local.track.field import LocalTrackField
 from musify.utils import to_collection
 from pydantic import ValidationError
 
-from musify_cli.config.library.local import LOCAL_LIBRARY_TYPES, LocalLibraryPathsParser, LocalPaths, \
-    LocalLibraryPaths, MusicBeePaths, LocalLibraryConfig
-from utils import random_str
+from mocks.local import LocalLibraryMock, LocalTrackMock
+from musify_cli.config.library.local import LOCAL_LIBRARY_CONFIG, LocalLibraryPathsParser, LocalPaths, \
+    LocalLibraryPaths, MusicBeePaths, LocalLibraryConfig, MusicBeeConfig, UpdaterConfig, TagsConfig
+from musify_cli.config.operations.tagger import FilteredSetter
+# noinspection PyProtectedMember
+from musify_cli.config.operations.tagger._setter import Value
+from utils import random_str, random_tracks
 
 
 class TestLocalLibraryPaths:
@@ -111,59 +118,165 @@ class TestMusicBeePaths:
             MusicBeePaths(**invalid_paths)
 
 
-class TestLocalLibrary:
-
-    # noinspection PyUnresolvedReferences,PyProtectedMember
+class TestUpdater:
     @pytest.fixture
-    def paths_map(self, tmp_path: Path) -> dict[str, dict[str, Any]]:
-        paths_map = {
-            "local": TestLocalLibraryPaths.get_valid_paths(tmp_path),
-            "musicbee": TestMusicBeePaths.get_valid_paths(tmp_path),
-        }
-        assert paths_map.keys() == LocalLibraryConfig._type_map.default.keys() == LOCAL_LIBRARY_TYPES
-        return paths_map
-
-    # noinspection PyUnresolvedReferences,PyProtectedMember
-    @pytest.fixture
-    def paths_type_map(self) -> dict[str, type[LocalLibraryPathsParser]]:
-        type_map = {
-            "local": LocalLibraryPaths,
-            "musicbee": MusicBeePaths,
-        }
-        assert type_map.keys() == LocalLibraryConfig._type_map.default.keys() == LOCAL_LIBRARY_TYPES
-        return type_map
-
-    @pytest.fixture(params=LOCAL_LIBRARY_TYPES)
-    def kind(self, request) -> str:
-        return request.param
-
-    @pytest.fixture
-    def library_paths(self, kind: str, paths_map: dict[str, dict[str, Any]]):
-        return paths_map[kind]
-
-    @pytest.fixture
-    def library_paths_type(self, kind: str, paths_type_map: dict[str, type[LocalLibraryPathsParser]]):
-        return paths_type_map[kind]
-
-    @pytest.fixture
-    def library_model(
-            self, library_paths: dict[str, Any], library_paths_model: LocalLibraryPathsParser
-    ) -> LocalLibraryConfig:
-        return LocalLibraryConfig[library_paths_model.__class__](
-            name=random_str(), type=library_paths_model.source, paths={"library": library_paths}
+    def model(self) -> UpdaterConfig:
+        return UpdaterConfig(
+            tags=["album", "album_artist", "track", "disc", "compilation"],
+            replace=choice([True, False]),
         )
 
     @pytest.fixture
+    def library(self, collections: list[LocalCollection[LocalTrackMock]]) -> LocalLibraryMock:
+        library = LocalLibraryMock()
+        # noinspection PyTestUnpassedFixture
+        library._tracks = [track for collection in collections for track in collection]
+        return library
+
+    @pytest.fixture
+    def collections(self) -> list[LocalCollection[LocalTrackMock]]:
+        return [
+            BasicLocalCollection[LocalTrackMock](name=random_str(), tracks=random_tracks(cls=LocalTrackMock))
+            for _ in range(randrange(3, 10))
+        ]
+
+    @staticmethod
+    def assert_save_library(model: UpdaterConfig, library: LocalLibraryMock, dry_run: bool):
+        assert library.save_tracks_args["tags"] == model.tags
+        assert library.save_tracks_args["replace"] == model.replace
+        assert library.save_tracks_args["dry_run"] == dry_run
+
+    @classmethod
+    def assert_save_collections(
+            cls, model: UpdaterConfig, collections: Collection[Collection[LocalTrackMock]], dry_run: bool
+    ):
+        for collection in collections:
+            cls.assert_save_tracks(model=model, tracks=collection, dry_run=dry_run)
+
+    @staticmethod
+    def assert_save_tracks(model: UpdaterConfig, tracks: Collection[LocalTrackMock], dry_run: bool):
+        for track in tracks:
+            assert track.save_args["tags"] == model.tags
+            assert track.save_args["replace"] == model.replace
+            assert track.save_args["dry_run"] == dry_run
+
+    @pytest.mark.parametrize("dry_run", [True, False])
+    async def test_save_library(self, model: UpdaterConfig, library: LocalLibraryMock, dry_run: bool):
+        await model.run(collection=library, dry_run=dry_run)
+        self.assert_save_library(model=model, library=library, dry_run=dry_run)
+
+    @pytest.mark.parametrize("dry_run", [True, False])
+    async def test_save_collections(
+            self, model: UpdaterConfig, collections: list[LocalCollection[LocalTrackMock]], dry_run: bool
+    ):
+        await model.run(collection=collections, dry_run=dry_run)
+        self.assert_save_collections(model=model, collections=collections, dry_run=dry_run)
+
+
+class TestTags:
+
+    @pytest.fixture
+    def fields(self) -> list[LocalTrackField]:
+        return LocalTrackField.from_name(*("album", "album_artist", "title", "artist"))
+
+    @pytest.fixture
+    def model(self, fields: list[LocalTrackField]) -> TagsConfig:
+        setters = [Value(field=field, value=random_str()) for field in fields]
+        return TagsConfig(rules=[FilteredSetter(setters=setters)])
+
+    @pytest.fixture
+    def updater(self, fields: list[LocalTrackField]) -> UpdaterConfig:
+        return UpdaterConfig(tags=fields, replace=choice([True, False]))
+
+    @pytest.fixture
+    def library(self, collections: list[LocalCollection[LocalTrackMock]]) -> LocalLibraryMock:
+        library = LocalLibraryMock()
+        # noinspection PyTestUnpassedFixture
+        library._tracks = [track for collection in collections for track in collection]
+        return library
+
+    @pytest.fixture
+    def collections(self) -> list[LocalCollection[LocalTrackMock]]:
+        return [
+            BasicLocalCollection[LocalTrackMock](name=random_str(), tracks=random_tracks(cls=LocalTrackMock))
+            for _ in range(randrange(3, 10))
+        ]
+
+    @staticmethod
+    def assert_tags_set(model: TagsConfig, tracks: Collection[LocalTrackMock]):
+        # noinspection PyTypeChecker
+        setters: list[Value] = [setter for rule in model.rules.setters for setter in rule.setters]
+        for setter in setters:
+            for track in tracks:
+                assert track[setter.field] == setter.value
+
+    async def test_set_no_tags_on_no_rules(self, model: TagsConfig, library: LocalLibraryMock):
+        # noinspection PyTypeChecker
+        setters: list[Value] = [setter for rule in model.rules.setters for setter in rule.setters]
+
+        model.rules.setters = []
+        assert not await model.run(library)
+
+        for setter in setters:
+            for track in library:
+                # noinspection PyTestUnpassedFixture
+                assert track[setter.field] != setter.value
+
+    async def test_set_tags_no_updater(self, model: TagsConfig, library: LocalLibraryMock):
+        assert not await model.run(library)
+        self.assert_tags_set(model, tracks=library)
+
+    @pytest.mark.parametrize("dry_run", [True, False])
+    async def test_set_tags_with_updater(
+            self, model: TagsConfig, updater: UpdaterConfig, library: LocalLibraryMock, dry_run: bool
+    ):
+        await model.run(library, updater=updater, dry_run=dry_run)
+        self.assert_tags_set(model, tracks=library)
+        TestUpdater.assert_save_library(model=updater, library=library, dry_run=dry_run)
+
+
+class TestLocalLibrary:
+
+    @pytest.fixture(params=LOCAL_LIBRARY_CONFIG)
+    def model_type(self, request) -> type[LocalLibraryConfig]:
+        return request.param
+
+    @pytest.fixture
+    def library_paths(self, model_type: type[LocalLibraryConfig], tmp_path: Path) -> dict[str, Any]:
+        paths_map = {
+            LocalLibraryConfig.source: TestLocalLibraryPaths.get_valid_paths(tmp_path),
+            MusicBeeConfig.source: TestMusicBeePaths.get_valid_paths(tmp_path),
+        }
+        return paths_map[model_type.source]
+
+    @pytest.fixture
+    def library_paths_type(self, model_type: type[LocalLibraryConfig]) -> type[LocalLibraryPathsParser]:
+        type_map = {
+            LocalLibraryConfig.source: LocalLibraryPaths,
+            MusicBeeConfig.source: MusicBeePaths,
+        }
+        return type_map[model_type.source]
+
+    @pytest.fixture
+    def library_model(self, model_type: type[LocalLibraryConfig], library_paths: dict[str, Any]) -> LocalLibraryConfig:
+        return model_type(name=random_str(), paths={"library": library_paths})
+
+    @pytest.fixture
     def paths_model(
-            self, kind: str, library_paths: dict[str, Any], library_paths_type: type[LocalLibraryPathsParser]
+            self, library_paths: dict[str, Any], library_paths_type: type[LocalLibraryPathsParser]
     ) -> LocalPaths:
         return LocalPaths[library_paths_type](library=library_paths)
 
     @pytest.fixture
     def library_paths_model(
-            self, kind: str, library_paths: dict[str, Any], library_paths_type: type[LocalLibraryPathsParser]
+            self, library_paths: dict[str, Any], library_paths_type: type[LocalLibraryPathsParser]
     ) -> LocalPaths:
         return library_paths_type(**library_paths)
+
+    def test_assigns_library_paths(
+            self, library_model: LocalLibraryConfig, library_paths_model: LocalLibraryPathsParser
+    ):
+        assert library_model.paths.library == library_paths_model.paths
 
     def test_updates_map_with_other_platform_paths(self, paths_model: LocalPaths, library_paths: dict[str, Any]):
         assert len(paths_model.map) >= len(library_paths) - 1
@@ -175,26 +288,3 @@ class TestLocalLibrary:
         ]
         for path in library_paths:
             assert paths_model.map[path] == expected_path
-
-    def test_assigns_library_paths(
-            self, library_model: LocalLibraryConfig, library_paths_model: LocalLibraryPathsParser
-    ):
-        assert library_model.paths.library == library_paths_model.paths
-
-    def test_assigns_type_from_paths_parser(
-            self, paths_model: LocalPaths, library_paths_model: LocalLibraryPathsParser
-    ):
-        model = LocalLibraryConfig(name="name", paths=paths_model)
-        assert model.type == library_paths_model.source
-
-        with pytest.raises(ValidationError):  # library is not a paths parser, fails to assign type from parser
-            LocalLibraryConfig(name="name", paths=LocalPaths(library=library_paths_model.paths))
-
-    def test_determine_library_type_from_config(
-            self, kind: str, library_paths: dict[str, Any], library_paths_model: LocalLibraryPathsParser
-    ):
-        model: LocalLibraryConfig = LocalLibraryConfig.create_and_determine_library_type(
-            dict(name=kind, type=kind, paths={"library": library_paths})
-        )
-        # just check the paths assigned to LocalLibrary model equal the paths for the expected LocalPaths model
-        assert model.paths.library == library_paths_model.paths

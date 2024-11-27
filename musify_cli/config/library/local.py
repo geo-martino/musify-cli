@@ -1,21 +1,23 @@
 import sys
 from abc import ABCMeta, abstractmethod
 from pathlib import Path, PureWindowsPath, PurePosixPath
-from typing import Self, Annotated, Type, Any, MutableMapping
+from typing import Self, Annotated, Any, MutableMapping, ClassVar
 
-from musify.libraries.local.library import LocalLibrary, MusicBee, LIBRARY_CLASSES
-from musify.libraries.local.track import LocalTrack
+from aiorequestful.types import UnitCollection
+from musify.file.path_mapper import PathMapper, PathStemMapper
+from musify.libraries.local.collection import LocalCollection, BasicLocalCollection
+from musify.libraries.local.library import LocalLibrary, MusicBee
+from musify.libraries.local.track import LocalTrack, SyncResultTrack
 from musify.libraries.local.track.field import LocalTrackField
+from musify.libraries.remote.core.wrangle import RemoteDataWrangler
 from musify.utils import to_collection
-from pydantic import BaseModel, computed_field, model_validator, BeforeValidator, Field, DirectoryPath, PrivateAttr
+from pydantic import BaseModel, computed_field, model_validator, BeforeValidator, Field, DirectoryPath
 
-from musify_cli.exception import ParserError
-from musify_cli.config.library._core import LibraryConfig
+from musify_cli.config.library._core import LibraryConfig, Instantiator, Runner
 from musify_cli.config.operations.signature import get_default_args
 from musify_cli.config.operations.tagger import Tagger
 from musify_cli.config.operations.tags import LocalTrackFields, LOCAL_TRACK_TAG_NAMES
-
-LOCAL_LIBRARY_TYPES = {cls.source.lower() for cls in LIBRARY_CLASSES}
+from musify_cli.exception import ParserError
 
 
 class LocalLibraryPathsParser[T: Path | tuple[Path, ...] | None](BaseModel, metaclass=ABCMeta):
@@ -142,13 +144,13 @@ class MusicBeePaths(LocalLibraryPathsParser[Path]):
 local_library_defaults = get_default_args(LocalLibrary)
 
 
-class LocalPaths[T: LocalLibraryPathsParser](BaseModel):
+class LocalPaths[T: LocalLibraryPathsParser](Instantiator[PathMapper]):
     library: DirectoryPath | list[DirectoryPath] | T = Field(
         description="The path/s for the library folder/s. May be defined as a single path, list of paths, "
                     "or a map with platform specific keys relating to the library path/s for that platform. "
                     f"Recognised platform keys: {tuple(LocalLibraryPaths.__annotations__)}"
     )
-    playlists: DirectoryPath | list[DirectoryPath] | None = Field(
+    playlists: DirectoryPath | None = Field(
         description="The path of the playlist folder",
         default=local_library_defaults.get("playlist_folder")
     )
@@ -172,34 +174,74 @@ class LocalPaths[T: LocalLibraryPathsParser](BaseModel):
 
         return self
 
+    def create(self):
+        return PathStemMapper(stem_map=self.map)
+
 
 updater_defaults = get_default_args(LocalTrack.save)
 
 
-class UpdaterConfig(BaseModel):
+class UpdaterConfig(Runner[dict[LocalTrack, SyncResultTrack]]):
     tags: LocalTrackFields = Field(
         description=f"The tags to be updated. Accepted tags: {LOCAL_TRACK_TAG_NAMES}",
         default=updater_defaults.get("tags", LocalTrackField.ALL)
     )
     replace: bool = Field(default=updater_defaults.get("replace", False))
 
+    async def run(self, collection: UnitCollection[LocalCollection], dry_run: bool = True):
+        """
+        Saves the tags of all tracks in the given ``collection``.
 
-class TagsConfig(BaseModel):
+        :param collection: The collection/s containing the tracks which you wish to save.
+        :param dry_run: Run function, but do not modify the files on the disk.
+        :return: A map of the :py:class:`LocalTrack` saved to its result as a :py:class:`SyncResultTrack` object
+        """
+        if isinstance(collection, LocalCollection):
+            item_log = f"{len(collection)} tracks"
+        else:  # flatten many collections to one
+            item_log = f"{sum(len(coll) for coll in collection)} tracks in {len(collection)} collections"
+            collection = BasicLocalCollection(name="saver", tracks=[track for coll in collection for track in coll])
+
+        self._logger.info(
+            f"\33[1;95m ->\33[1;97m Updating tags for {item_log}:"
+            f"\33[0;90m{', '.join(t.name.lower() for t in to_collection(self.tags))}\33[0m"
+        )
+
+        return await collection.save_tracks(tags=self.tags, replace=self.replace, dry_run=dry_run)
+
+
+class TagsConfig(Runner[dict[LocalTrack, SyncResultTrack]]):
     rules: Tagger = Field(
         description="The auto-tagger rules",
         default=Tagger(),
     )
 
+    async def run(self, library: LocalLibrary, updater: UpdaterConfig = None, dry_run: bool = True):
+        """
+        Set the tags for the tracks in the given library based on set rules.
 
-class LocalLibraryConfig[T: LocalLibraryPathsParser](LibraryConfig, ):
-    # noinspection PyUnboundLocalVariable
-    _type_map: dict[str, Type[LocalLibraryPathsParser]] = PrivateAttr(default={
-        "local": LocalLibraryPaths,
-        "musicbee": MusicBeePaths,
-    })
+        :param library: The library containing tracks to be processed
+        :param updater: If given, update the track files on the disk with the updated tags
+        :param dry_run: Run function, but do not modify the files on the disk. Only used if an ``updater`` is given.
+        :return: A map of the :py:class:`LocalTrack` saved to its result as a :py:class:`SyncResultTrack` object
+        """
+        if not self.rules.setters:
+            return {}
+
+        self.rules.set_tags(library, library.folders)
+        if updater is None:
+            return {}
+
+        # assert dry_run
+        return await updater.run(collection=library, dry_run=dry_run)
+
+
+class LocalLibraryConfig[L: LocalLibrary, P: LocalLibraryPathsParser](LibraryConfig[L]):
+
+    _library_cls: ClassVar[type[LocalLibrary]] = LocalLibrary
 
     # noinspection PyTypeChecker
-    paths: LocalPaths[T] = Field(
+    paths: LocalPaths[P] = Field(
         description="Configuration for the paths of this local library"
     )
     updater: UpdaterConfig = Field(
@@ -233,3 +275,44 @@ class LocalLibraryConfig[T: LocalLibraryPathsParser](LibraryConfig, ):
         if isinstance(self.paths.library, LocalLibraryPathsParser):
             self.paths.library = self.paths.library.paths
         return self
+
+    def create(self, wrangler: RemoteDataWrangler):
+        return self._library_cls(
+            library_folders=self.paths.library,
+            playlist_folder=self.paths.playlists,
+            playlist_filter=self.playlists.filter,
+            path_mapper=self.paths.create(),
+            remote_wrangler=wrangler,
+        )
+
+    # noinspection PyPropertyDefinition
+    @classmethod
+    @property
+    def source(cls) -> str:
+        """The source type of the library"""
+        return str(cls._library_cls.source)
+
+
+class MusicBeeConfig(LocalLibraryConfig[MusicBee, MusicBeePaths]):
+
+    _library_cls: ClassVar[type[MusicBee]] = MusicBee
+
+    # noinspection PyPropertyDefinition
+    @classmethod
+    @property
+    def source(cls) -> str:
+        """The source type of the library"""
+        return str(cls._library_cls.source)
+
+    def create(self, wrangler: RemoteDataWrangler):
+        return self._library_cls(
+            musicbee_folder=self.paths.library,
+            playlist_filter=self.playlists.filter,
+            path_mapper=self.paths.create(),
+            remote_wrangler=wrangler,
+        )
+
+
+LOCAL_LIBRARY_CONFIG: frozenset[type[LocalLibraryConfig]] = frozenset({
+    LocalLibraryConfig[LocalLibrary, LocalLibraryPaths], MusicBeeConfig,
+})

@@ -4,14 +4,15 @@ from random import choice
 
 import pytest
 from musify.field import TagFields
+from musify.libraries.local.library import LocalLibrary
 from musify.libraries.local.track.field import LocalTrackField
 from musify.logger import MusifyLogger
 
 from musify_cli import MODULE_ROOT
 from musify_cli.config.core import Paths, Logging, MUSIFY_ROOT, AIOREQUESTFUL_ROOT, MusifyConfig
 from musify_cli.config.library import LibrariesConfig
-from musify_cli.config.library.local import LocalLibraryConfig, LocalPaths
-from musify_cli.config.library.remote import RemoteLibraryConfig, SpotifyAPIConfig
+from musify_cli.config.library.local import LocalLibraryConfig, LocalPaths, LocalLibraryPaths
+from musify_cli.config.library.remote import SpotifyAPIConfig, SpotifyLibraryConfig
 from musify_cli.config.library.types import LoadTypesLocal, LoadTypesRemote, EnrichTypesRemote
 from tests.utils import path_resources
 
@@ -109,14 +110,12 @@ class TestConfig:
     def model(self, tmp_path: Path):
         return MusifyConfig(
             libraries=LibrariesConfig(
-                local=LocalLibraryConfig(
+                local=LocalLibraryConfig[LocalLibrary, LocalLibraryPaths](
                     name="test",
-                    type="local",
                     paths=LocalPaths(library=tmp_path)
                 ),
-                remote=RemoteLibraryConfig[SpotifyAPIConfig](
+                remote=SpotifyLibraryConfig(
                     name="test",
-                    type="spotify",
                     api=SpotifyAPIConfig(
                         client_id="",
                         client_secret="",
@@ -135,7 +134,7 @@ class TestConfig:
         model = MusifyConfig(
             libraries=LibrariesConfig(
                 local=model.libraries.local,
-                remote=RemoteLibraryConfig[SpotifyAPIConfig](
+                remote=SpotifyLibraryConfig(
                     name=model.libraries.remote.name,
                     api=SpotifyAPIConfig(
                         client_id=model.libraries.remote.api.client_id,
@@ -179,10 +178,10 @@ class TestConfig:
         assert config.pre_post.reload.remote.enrich.types == [EnrichTypesRemote.TRACKS, EnrichTypesRemote.ALBUMS]
 
         assert config.libraries.local.name == "local"
-        assert config.libraries.local.type == "local"
+        assert config.libraries.local.source == "Local"
 
         assert config.libraries.remote.name == "spotify"
-        assert config.libraries.remote.type == "Spotify"
+        assert config.libraries.remote.source == "Spotify"
 
         assert config.libraries.remote.download.urls == [
             "https://www.google.com/search?q={}",

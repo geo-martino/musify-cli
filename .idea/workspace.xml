@@ -9,47 +9,17 @@
   <component name="ChangeListManager">
     <list default="true" id="9b2127b7-24ea-430c-8f59-a341ad0474f1" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/config/library/_combined.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/_combined.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/config/library/_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/_core.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/config/library/local.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/local.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/config/library/remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/remote.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/musify_cli/manager/_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/_core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/manager/library/_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/library/_core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/manager/library/_local.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/library/_local.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/musify_cli/manager/library/_remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/library/_remote.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/library/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/library/_combined.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/_combined.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/library/_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/_core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/library/local.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/local.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/library/remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/remote.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/library/types.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/types.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/loader.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/loader.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/operations/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/operations/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/operations/filters.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/operations/filters.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/operations/signature.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/operations/signature.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/operations/tagger/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/operations/tagger/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/operations/tagger/_getter.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/operations/tagger/_getter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/operations/tagger/_setter.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/operations/tagger/_setter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/operations/tagger/_tagger.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/operations/tagger/_tagger.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/operations/tags.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/operations/tags.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/processor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/manager/library/test_local.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/library/test_local.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/manager/library/test_remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/library/test_remote.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/manager/library/testers.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/library/testers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/config/library/test_combined.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/library/test_combined.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/config/library/test_local.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/library/test_local.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/config/library/test_remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/library/test_remote.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/config/test_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/test_core.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/manager/test_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/test_core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/parser/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/parser/library/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/library/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/parser/library/test_combined.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/library/test_combined.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/parser/library/test_local.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/library/test_local.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/parser/library/test_remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/library/test_remote.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/parser/operations/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/operations/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/parser/operations/tagger/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/operations/tagger/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/parser/operations/tagger/test_getter.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/operations/tagger/test_getter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/parser/operations/tagger/test_setter.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/operations/tagger/test_setter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/parser/operations/tagger/test_tagger.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/operations/tagger/test_tagger.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/parser/operations/test_filters.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/operations/test_filters.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/parser/operations/test_signature.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/operations/test_signature.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/parser/operations/test_tags.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/operations/test_tags.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/parser/test_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/test_core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/parser/test_loader.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/test_loader.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

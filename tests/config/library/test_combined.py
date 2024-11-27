@@ -2,17 +2,24 @@ from pathlib import Path
 from random import choice
 
 import pytest
+from musify.libraries.local.library import LIBRARY_CLASSES
+from musify.libraries.remote import REMOTE_SOURCES
 from pydantic import ValidationError
 
-from musify_cli.config.library import LibrariesConfig, LibraryTarget
-from musify_cli.config.library.local import LOCAL_LIBRARY_TYPES, LocalLibraryConfig, LocalPaths
-from musify_cli.config.library.remote import REMOTE_LIBRARY_TYPES, RemoteLibraryConfig, SpotifyAPIConfig
+from musify_cli.config.library import LIBRARY_TYPES, LibrariesConfig, LibraryTarget
+from musify_cli.config.library.local import LOCAL_LIBRARY_CONFIG, LocalLibraryConfig, LocalPaths
+from musify_cli.config.library.remote import REMOTE_LIBRARY_CONFIG, RemoteLibraryConfig, SpotifyAPIConfig, \
+    SpotifyLibraryConfig
 
 
-# noinspection PyUnresolvedReferences
 def test_all_libraries_supported():
-    assert LOCAL_LIBRARY_TYPES == LocalLibraryConfig._type_map.default.keys()
-    assert REMOTE_LIBRARY_TYPES == RemoteLibraryConfig._type_map.default.keys()
+    expected_local = {str(cls.source) for cls in LIBRARY_CLASSES}
+    assert expected_local == {str(cls.source) for cls in LOCAL_LIBRARY_CONFIG}
+
+    expected_remote = REMOTE_SOURCES
+    assert expected_remote == {str(cls.source) for cls in REMOTE_LIBRARY_CONFIG}
+
+    assert expected_local | expected_remote == LIBRARY_TYPES
 
 
 class TestLibraries:
@@ -43,17 +50,17 @@ class TestLibraries:
             client_secret="",
         )
         return [
-            RemoteLibraryConfig[SpotifyAPIConfig](
+            SpotifyLibraryConfig(
                 name="remote1",
                 type="spotify",
                 api=api
             ),
-            RemoteLibraryConfig[SpotifyAPIConfig](
+            SpotifyLibraryConfig(
                 name="remote2",
                 type="spotify",
                 api=api
             ),
-            RemoteLibraryConfig[SpotifyAPIConfig](
+            SpotifyLibraryConfig(
                 name="remote3",
                 type="spotify",
                 api=api

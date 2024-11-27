@@ -1,28 +1,23 @@
 from collections.abc import Collection
 from functools import cached_property
 
-from musify.file.path_mapper import PathMapper, PathStemMapper
 from musify.libraries.core.collection import MusifyCollection
 from musify.libraries.core.object import Track
-from musify.libraries.local.collection import LocalAlbum
-from musify.libraries.local.library import LocalLibrary, MusicBee
+from musify.libraries.local.collection import BasicLocalCollection
+from musify.libraries.local.library import LocalLibrary
 from musify.libraries.local.track import LocalTrack, SyncResultTrack
-from musify.libraries.local.track.field import LocalTrackField
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
 from musify.logger import STAT
-from musify.types import UnitIterable, UnitCollection
+from musify.types import UnitCollection
 from musify.utils import to_collection
 
-from musify_cli.manager.library._core import LibraryManager
 from musify_cli.config.library.local import LocalLibraryConfig
 from musify_cli.config.library.types import LoadTypesLocal
-from musify_cli.config.operations.tagger import Tagger
+from musify_cli.manager.library._core import LibraryManager
 
 
-class LocalLibraryManager(LibraryManager[LocalLibraryConfig]):
+class LocalLibraryManager[L: LocalLibrary, C: LocalLibraryConfig](LibraryManager[L, C]):
     """Instantiates and manages a generic :py:class:`LocalLibrary` and related objects from a given ``config``."""
-
-    _library_cls: type[LocalLibrary] = LocalLibrary
 
     def __init__(self, config: LocalLibraryConfig, dry_run: bool = True, remote_wrangler: RemoteDataWrangler = None):
         super().__init__(config=config, dry_run=dry_run)
@@ -32,25 +27,9 @@ class LocalLibraryManager(LibraryManager[LocalLibraryConfig]):
         self.types_loaded: set[LoadTypesLocal] = set()
 
     @cached_property
-    def source(self) -> str:
-        return str(LocalLibrary.source)
-
-    @cached_property
-    def path_mapper(self) -> PathMapper:
-        """The configured :py:class:`PathMapper` to use when instantiating a library"""
-        return PathStemMapper(stem_map=self.config.paths.map)
-
-    @cached_property
-    def library(self) -> LocalLibrary:
-        """The initialised local library"""
+    def library(self):
         self.initialised = True
-        return self._library_cls(
-            library_folders=self.config.paths.library,
-            playlist_folder=self.config.paths.playlists,
-            playlist_filter=self.playlist_filter or (),
-            path_mapper=self.path_mapper,
-            remote_wrangler=self._remote_wrangler,
-        )
+        return self.config.create(self._remote_wrangler)
 
     ###########################################################################
     ## Operations
@@ -90,50 +69,19 @@ class LocalLibraryManager(LibraryManager[LocalLibraryConfig]):
             self.library.log_playlists()
         self.logger.print_line()
 
-    async def save_tracks(self) -> dict[LocalTrack, SyncResultTrack]:
-        """
-        Saves the tags of all tracks in this library.
-
-        :return: A map of the :py:class:`LocalTrack` saved to its result as a :py:class:`SyncResultTrack` object
-        """
-        tags = self.config.updater.tags
-        replace = self.config.updater.replace
-
-        self.logger.info(
-            f"\33[1;95m ->\33[1;97m Updating tags for {len(self.library)} tracks: "
-            f"{', '.join(t.name.lower() for t in tags)} \33[0m"
-        )
-        return await self.library.save_tracks(tags=tags, replace=replace, dry_run=self.dry_run)
-
-    async def save_tracks_in_collections(
-            self,
-            collections: UnitIterable[MusifyCollection[LocalTrack]] | None = None,
-            tags: UnitIterable[LocalTrackField] = None,
-            replace: bool = None,
+    async def save_tracks(
+            self, collections: UnitCollection[MusifyCollection[LocalTrack]] | None = None,
     ) -> dict[LocalTrack, SyncResultTrack]:
         """
         Saves the tags of all tracks in the given ``collections``.
 
         :param collections: The collections containing the tracks which you wish to save.
-        :param tags: Tags to be updated.
-        :param replace: Destructively replace tags in each file.
         :return: A map of the :py:class:`LocalTrack` saved to its result as a :py:class:`SyncResultTrack` object
         """
-        tags = to_collection(tags) or self.config.updater.tags
-        replace = replace if replace is not None else self.config.updater.replace
+        if collections is None:
+            collections = self.library
 
-        self.logger.info(
-            f"\33[1;95m ->\33[1;97m Updating tags "
-            f"for {sum(len(coll) for coll in collections)} tracks in {len(collections)} collections\n"
-            f"\33[0;90m    Tags: {', '.join(t.name.lower() for t in tags)} \33[0m"
-        )
-
-        collections = to_collection(collections)
-        collection = LocalAlbum.__new__(LocalAlbum)
-        collection.logger = self.logger
-        collection._tracks = [track for coll in collections for track in coll]
-
-        return await collection.save_tracks(tags=tags, replace=replace, dry_run=self.dry_run)
+        return await self.config.updater.run(collection=collections, dry_run=self.dry_run)
 
     def merge_tracks(self, tracks: Collection[Track]) -> None:
         """
@@ -143,37 +91,3 @@ class LocalLibraryManager(LibraryManager[LocalLibraryConfig]):
         :param tracks: List of items or :py:class:`MusifyCollection` to merge with.
         """
         self.library.merge_tracks(tracks, tags=self.config.updater.tags)
-
-    async def set_tags(self) -> dict[LocalTrack, SyncResultTrack]:
-        """
-        Set the tags for the given tracks based on set rules.
-
-        :return: A map of the :py:class:`LocalTrack` saved to its result as a :py:class:`SyncResultTrack` object
-        """
-        tagger: Tagger = self.config.tags.rules
-        if not tagger.setters:
-            return {}
-
-        tagger.set_tags(self.library, self.library.folders)
-        assert self.dry_run
-        return await self.save_tracks()
-
-
-class MusicBeeManager(LocalLibraryManager):
-    """Instantiates and manages a :py:class:`MusicBee` library and related objects from a given ``config``."""
-
-    _library_cls = MusicBee
-
-    @cached_property
-    def source(self) -> str:
-        return str(MusicBee.source)
-
-    @cached_property
-    def library(self) -> MusicBee:
-        self.initialised = True
-        return self._library_cls(
-            musicbee_folder=self.config.paths.library,
-            playlist_filter=self.config.playlists.filter or (),
-            path_mapper=self.path_mapper,
-            remote_wrangler=self._remote_wrangler,
-        )

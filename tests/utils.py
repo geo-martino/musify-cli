@@ -65,6 +65,7 @@ def random_track[T: LocalTrack](cls: type[T] | None = None) -> T:
 
     track = cls(file=file)
     track._loaded = True
+    track._path = Path(file.filename)
 
     track.title = title
     track.artists = [random_str(30, 50) for _ in range(randrange(1, 3))]
@@ -73,7 +74,7 @@ def random_track[T: LocalTrack](cls: type[T] | None = None) -> T:
     track.track_number = track_number
     track.track_total = randint(track.track_number, 20)
     track.genres = []
-    track.date = random_dt()
+    track.date = random_dt().date()
     track.bpm = randint(6000, 15000) / 100
     track.key = choice(string.ascii_uppercase[:7])
     track.disc_number = randrange(1, 8)

@@ -2,24 +2,40 @@
 Sets up and configures the parser for all arguments relating to :py:class:`Library` objects
 and their related objects/configuration.
 """
-from typing import Self, Annotated
+from collections.abc import Mapping, Iterable
+from functools import partial
+from typing import Self, Annotated, Any
 
 from pydantic import BaseModel, Field, BeforeValidator, model_validator
 
+from musify_cli.config.library._core import LibraryConfig
 from musify_cli.exception import ParserError
-from musify_cli.config.library.local import LocalLibraryConfig, LOCAL_LIBRARY_TYPES
-from musify_cli.config.library.remote import RemoteLibraryConfig, REMOTE_LIBRARY_TYPES
+from musify_cli.config.library.local import LocalLibraryConfig, LOCAL_LIBRARY_CONFIG
+from musify_cli.config.library.remote import RemoteLibraryConfig, REMOTE_LIBRARY_CONFIG
 
-LIBRARY_TYPES = LOCAL_LIBRARY_TYPES | REMOTE_LIBRARY_TYPES
+LIBRARY_TYPES = {str(lib.source) for lib in LOCAL_LIBRARY_CONFIG | REMOTE_LIBRARY_CONFIG}
 
 
-# noinspection PyTypeChecker
-type LocalLibraryAnnotation[T] = Annotated[
-    LocalLibraryConfig[T], BeforeValidator(LocalLibraryConfig.create_and_determine_library_type)
+def create_library_config[T: LibraryConfig](kwargs: Any, config_map: Iterable[type[T]]) -> T:
+    """Configure library config from the given input."""
+    if isinstance(kwargs, LibraryConfig):
+        return kwargs
+    elif not isinstance(kwargs, Mapping):
+        raise ParserError("Unrecognised input type")
+
+    library_key = kwargs.get(type_key := "type", "").strip().casefold()
+    library_cls = next((cls for cls in config_map if str(cls.source).casefold() == library_key), None)
+    if library_cls is None:
+        raise ParserError("Unrecognised library type", key=type_key, value=library_key)
+
+    return library_cls(**kwargs)
+
+
+type LocalLibraryType = Annotated[
+    LocalLibraryConfig, BeforeValidator(partial(create_library_config, config_map=LOCAL_LIBRARY_CONFIG))
 ]
-# noinspection PyTypeChecker
-type RemoteLibraryAnnotation[T] = Annotated[
-    RemoteLibraryConfig[T], BeforeValidator(RemoteLibraryConfig.create_and_determine_library_type)
+type RemoteLibraryType = Annotated[
+    RemoteLibraryConfig, BeforeValidator(partial(create_library_config, config_map=REMOTE_LIBRARY_CONFIG))
 ]
 
 
@@ -39,10 +55,10 @@ class LibrariesConfig(BaseModel):
         description="The library targets to use for this run",
         default=LibraryTarget(),
     )
-    local: LocalLibraryAnnotation | list[LocalLibraryAnnotation] = Field(
+    local: LocalLibraryType | list[LocalLibraryType] = Field(
         description="Configuration for all available local libraries",
     )
-    remote: RemoteLibraryAnnotation | list[RemoteLibraryAnnotation] = Field(
+    remote: RemoteLibraryType | list[RemoteLibraryType] = Field(
         description="Configuration for all available remote libraries",
     )
 
