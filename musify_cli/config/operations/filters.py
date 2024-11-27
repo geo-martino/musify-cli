@@ -8,7 +8,7 @@ from musify.processors.filter import FilterComparers
 from pydantic import GetPydanticSchema
 from pydantic_core import core_schema
 
-from musify_cli.parser.operations.signature import get_default_args
+from musify_cli.config.operations.signature import get_default_args
 
 UT = TypeVar("UT")
 MultiType = UnitSequence[UT] | Mapping[str, UnitSequence[UT]]

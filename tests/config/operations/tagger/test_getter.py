@@ -10,7 +10,7 @@ from musify.processors.filter import FilterComparers
 
 from musify_cli.exception import ParserError
 # noinspection PyProtectedMember
-from musify_cli.parser.operations.tagger._getter import GETTERS, getter_from_config, TagGetter, ConditionalGetter, \
+from musify_cli.config.operations.tagger._getter import GETTERS, getter_from_config, TagGetter, ConditionalGetter, \
     PathGetter
 
 

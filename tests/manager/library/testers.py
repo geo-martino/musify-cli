@@ -6,7 +6,7 @@ from musify.types import MusifyEnum
 
 # noinspection PyProtectedMember
 from musify_cli.manager.library._core import LibraryManager
-from musify_cli.parser.library import LibraryConfig
+from musify_cli.config.library import LibraryConfig
 
 
 class LibraryManagerTester[T: LibraryManager](ABC):

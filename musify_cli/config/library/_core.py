@@ -5,7 +5,13 @@ from musify.processors.filter import FilterComparers
 from pydantic import BaseModel, Field
 
 from musify_cli.exception import ParserError
-from musify_cli.parser.operations.filters import Filter
+from musify_cli.config.operations.filters import Filter
+
+
+class Instantiator[T: Any](BaseModel):
+    def create(self) -> T:
+        """Instantiate a new instance of the associated object based on the current configuration"""
+        raise NotImplementedError
 
 
 class PlaylistsConfig(BaseModel):

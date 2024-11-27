@@ -8,6 +8,7 @@ from pydantic import BeforeValidator
 
 
 def from_names[T: MusifyEnum](names: Collection[str], cls: type[T]) -> list[T]:
+    """Get a list of :py:class:`.MusifyEnum` from the given enum ``names``"""
     return cls.from_name(*names, fail_on_many=False)
 
 

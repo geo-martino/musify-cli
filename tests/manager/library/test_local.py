@@ -13,9 +13,9 @@ from musify.libraries.local.track.field import LocalTrackField, LocalTrackField 
 from musify.types import UnitIterable
 
 from musify_cli.manager.library import LocalLibraryManager, MusicBeeManager
-from musify_cli.parser.library import PlaylistsConfig
-from musify_cli.parser.library.local import LocalLibraryConfig, LocalPaths, UpdaterConfig
-from musify_cli.parser.library.types import LoadTypesLocal
+from musify_cli.config.library import PlaylistsConfig
+from musify_cli.config.library.local import LocalLibraryConfig, LocalPaths, UpdaterConfig
+from musify_cli.config.library.types import LoadTypesLocal
 from tests.manager.library.testers import LibraryManagerTester
 from tests.utils import random_str
 

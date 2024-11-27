@@ -1,6 +1,6 @@
 import inspect
 
-from musify_cli.parser.operations.signature import get_default_args, get_arg_descriptions
+from musify_cli.config.operations.signature import get_default_args, get_arg_descriptions
 
 
 class TestSignature:

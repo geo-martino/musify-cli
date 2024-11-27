@@ -7,8 +7,8 @@ from typing import Self, Annotated
 from pydantic import BaseModel, Field, BeforeValidator, model_validator
 
 from musify_cli.exception import ParserError
-from musify_cli.parser.library.local import LocalLibraryConfig, LOCAL_LIBRARY_TYPES
-from musify_cli.parser.library.remote import RemoteLibraryConfig, REMOTE_LIBRARY_TYPES
+from musify_cli.config.library.local import LocalLibraryConfig, LOCAL_LIBRARY_TYPES
+from musify_cli.config.library.remote import RemoteLibraryConfig, REMOTE_LIBRARY_TYPES
 
 LIBRARY_TYPES = LOCAL_LIBRARY_TYPES | REMOTE_LIBRARY_TYPES
 
@@ -48,6 +48,7 @@ class LibrariesConfig(BaseModel):
 
     @model_validator(mode="after")
     def extract_local_library_from_target(self) -> Self:
+        """When many local libraries are configured, set the local library from the target name"""
         if not isinstance(self.local, list):
             return self
 
@@ -65,6 +66,7 @@ class LibrariesConfig(BaseModel):
 
     @model_validator(mode="after")
     def extract_remote_library_from_target(self) -> Self:
+        """When many remote libraries are configured, set the remote library from the target name"""
         if not isinstance(self.remote, list):
             return self
 

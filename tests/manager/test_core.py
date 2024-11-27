@@ -9,10 +9,10 @@ from musify_cli.exception import ParserError
 from musify_cli.manager import MusifyManager
 # noinspection PyProtectedMember
 from musify_cli.manager._core import ReportsManager
-from musify_cli.parser.core import MusifyConfig, Reports, Paths, Backup, PrePost
-from musify_cli.parser.library import LibrariesConfig
-from musify_cli.parser.library.local import LOCAL_LIBRARY_TYPES, LocalLibraryConfig, LocalPaths
-from musify_cli.parser.library.remote import REMOTE_LIBRARY_TYPES, RemoteLibraryConfig, SpotifyAPIConfig
+from musify_cli.config.core import MusifyConfig, Reports, Paths, Backup, PrePost
+from musify_cli.config.library import LibrariesConfig
+from musify_cli.config.library.local import LOCAL_LIBRARY_TYPES, LocalLibraryConfig, LocalPaths
+from musify_cli.config.library.remote import REMOTE_LIBRARY_TYPES, RemoteLibraryConfig, SpotifyAPIConfig
 from tests.utils import path_txt, path_logging_config
 
 

@@ -5,9 +5,9 @@ import pytest
 from musify.libraries.local.track.field import LocalTrackField
 from musify.processors.filter import FilterDefinedList
 
-from musify_cli.parser.operations.tagger import FilteredSetter, Tagger
+from musify_cli.config.operations.tagger import FilteredSetter, Tagger
 # noinspection PyProtectedMember
-from musify_cli.parser.operations.tagger._setter import Setter, Value
+from musify_cli.config.operations.tagger._setter import Setter, Value
 from tests.utils import random_tracks
 
 

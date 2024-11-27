@@ -14,14 +14,14 @@ from musify.report import report_missing_tags
 from pydantic import BaseModel, Field, DirectoryPath, computed_field, model_validator
 
 from musify_cli import PACKAGE_ROOT, MODULE_ROOT
-from musify_cli.parser.library import LibrariesConfig
-from musify_cli.parser.library.remote import APIConfig
-from musify_cli.parser.library.types import LoadTypesLocal, LoadTypesRemote, EnrichTypesRemote, \
+from musify_cli.config.library import LibrariesConfig
+from musify_cli.config.library.remote import APIConfig
+from musify_cli.config.library.types import LoadTypesLocal, LoadTypesRemote, EnrichTypesRemote, \
     LoadTypesLocalAnno, LoadTypesRemoteAnno, EnrichTypesRemoteAnno
-from musify_cli.parser.loader import MultiFileLoader
-from musify_cli.parser.operations.filters import Filter
-from musify_cli.parser.operations.signature import get_default_args
-from musify_cli.parser.operations.tags import LOCAL_TRACK_TAG_NAMES, LocalTrackFields
+from musify_cli.config.loader import MultiFileLoader
+from musify_cli.config.operations.filters import Filter
+from musify_cli.config.operations.signature import get_default_args
+from musify_cli.config.operations.tags import LOCAL_TRACK_TAG_NAMES, LocalTrackFields
 
 
 ###########################################################################

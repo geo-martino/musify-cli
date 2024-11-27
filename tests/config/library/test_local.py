@@ -8,7 +8,7 @@ from musify.libraries.local.library import MusicBee
 from musify.utils import to_collection
 from pydantic import ValidationError
 
-from musify_cli.parser.library.local import LOCAL_LIBRARY_TYPES, LocalLibraryPathsParser, LocalPaths, \
+from musify_cli.config.library.local import LOCAL_LIBRARY_TYPES, LocalLibraryPathsParser, LocalPaths, \
     LocalLibraryPaths, MusicBeePaths, LocalLibraryConfig
 from utils import random_str
 

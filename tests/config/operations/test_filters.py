@@ -4,8 +4,8 @@ from musify.processors.filter import FilterComparers
 from musify.utils import to_collection
 from pydantic import TypeAdapter
 
-from musify_cli.parser.operations.filters import get_comparers_filter, Filter
-from musify_cli.parser.operations.signature import get_default_args
+from musify_cli.config.operations.filters import get_comparers_filter, Filter
+from musify_cli.config.operations.signature import get_default_args
 
 
 class TestFilter:

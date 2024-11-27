@@ -7,7 +7,7 @@ import pytest
 import yaml
 
 from musify_cli.exception import ParserError
-from musify_cli.parser.loader import MultiFileLoader
+from musify_cli.config.loader import MultiFileLoader
 
 
 class TestMultiFileLoader:

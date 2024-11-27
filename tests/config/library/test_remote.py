@@ -1,6 +1,6 @@
 import pytest
 
-from musify_cli.parser.library.remote import RemoteLibraryConfig, APIConfig, SpotifyAPIConfig
+from musify_cli.config.library.remote import RemoteLibraryConfig, APIConfig, SpotifyAPIConfig
 
 
 class TestRemoteLibrary:

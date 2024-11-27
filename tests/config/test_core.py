@@ -8,11 +8,11 @@ from musify.libraries.local.track.field import LocalTrackField
 from musify.logger import MusifyLogger
 
 from musify_cli import MODULE_ROOT
-from musify_cli.parser.core import Paths, Logging, MUSIFY_ROOT, AIOREQUESTFUL_ROOT, MusifyConfig
-from musify_cli.parser.library import LibrariesConfig
-from musify_cli.parser.library.local import LocalLibraryConfig, LocalPaths
-from musify_cli.parser.library.remote import RemoteLibraryConfig, SpotifyAPIConfig
-from musify_cli.parser.library.types import LoadTypesLocal, LoadTypesRemote, EnrichTypesRemote
+from musify_cli.config.core import Paths, Logging, MUSIFY_ROOT, AIOREQUESTFUL_ROOT, MusifyConfig
+from musify_cli.config.library import LibrariesConfig
+from musify_cli.config.library.local import LocalLibraryConfig, LocalPaths
+from musify_cli.config.library.remote import RemoteLibraryConfig, SpotifyAPIConfig
+from musify_cli.config.library.types import LoadTypesLocal, LoadTypesRemote, EnrichTypesRemote
 from tests.utils import path_resources
 
 path_core_config = path_resources.joinpath("test_config.yml")

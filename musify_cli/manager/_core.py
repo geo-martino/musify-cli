@@ -21,9 +21,9 @@ from musify.utils import to_collection
 from musify_cli.exception import ParserError
 from musify_cli.manager.library import LocalLibraryManager, MusicBeeManager
 from musify_cli.manager.library import RemoteLibraryManager, SpotifyLibraryManager
-from musify_cli.parser.core import Reports, MusifyConfig
-from musify_cli.parser.library.local import LocalLibraryConfig
-from musify_cli.parser.library.types import LoadTypesLocal, LoadTypesRemote
+from musify_cli.config.core import Reports, MusifyConfig
+from musify_cli.config.library.local import LocalLibraryConfig
+from musify_cli.config.library.types import LoadTypesLocal, LoadTypesRemote
 
 
 class ReportsManager:
@@ -221,42 +221,3 @@ class MusifyManager:
         )
         for album in albums:
             album.refresh(skip_checks=False)
-
-    ###########################################################################
-    ## Operations
-    ###########################################################################
-    def run_download_helper(self, collections: UnitIterable[MusifyCollection]) -> None:
-        """Run the :py:class:`ItemDownloadHelper` for the given ``collections``"""
-        config = self.config.libraries.remote.download
-        download_helper = ItemDownloadHelper(
-            urls=config.urls, fields=config.fields, interval=config.interval,
-        )
-        download_helper(collections)
-
-    async def create_new_music_playlist(
-            self, collections: UnitIterable[MusifyCollection]
-    ) -> tuple[str, SyncResultRemotePlaylist]:
-        """
-        Create a new music playlist for followed artists with music released between ``start`` and ``end``.
-
-        :param collections: The collections of items to add to the playlist.
-        :return: The name of the new playlist and results of the sync as a :py:class:`SyncResultRemotePlaylist` object.
-        """
-        config = self.config.libraries.remote.new_music
-
-        collections = to_collection(collections)
-        tracks = [
-            track for collection in sorted(collections, key=lambda x: x.date, reverse=True) for track in collection
-        ]
-
-        self.logger.info(
-            f"\33[1;95m  >\33[1;97m Creating {config.name!r} {self.remote.source} playlist "
-            f"for {len(tracks)} new tracks by followed artists released between {config.start} and {config.end} \33[0m"
-        )
-
-        # add tracks to remote playlist
-        response = await self.remote.api.get_or_create_playlist(config.name)
-        pl = self.remote.factory.playlist(response, skip_checks=True)
-        pl.clear()
-        pl.extend(tracks, allow_duplicates=False)
-        return config.name, await pl.sync(kind="refresh", reload=False, dry_run=self.dry_run)

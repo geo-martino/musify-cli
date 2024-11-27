@@ -10,10 +10,10 @@ from musify.utils import to_collection
 from pydantic import BaseModel, computed_field, model_validator, BeforeValidator, Field, DirectoryPath, PrivateAttr
 
 from musify_cli.exception import ParserError
-from musify_cli.parser.library._core import LibraryConfig
-from musify_cli.parser.operations.signature import get_default_args
-from musify_cli.parser.operations.tagger import Tagger
-from musify_cli.parser.operations.tags import LocalTrackFields, LOCAL_TRACK_TAG_NAMES
+from musify_cli.config.library._core import LibraryConfig
+from musify_cli.config.operations.signature import get_default_args
+from musify_cli.config.operations.tagger import Tagger
+from musify_cli.config.operations.tags import LocalTrackFields, LOCAL_TRACK_TAG_NAMES
 
 LOCAL_LIBRARY_TYPES = {cls.source.lower() for cls in LIBRARY_CLASSES}
 
@@ -46,6 +46,7 @@ class LocalLibraryPathsParser[T: Path | tuple[Path, ...] | None](BaseModel, meta
 
     @model_validator(mode="after")
     def validate_path_exists(self) -> Self:
+        """Ensure paths are configured for the current platform"""
         if not self.paths:
             raise ParserError(
                 f"No valid paths found for the current platform: {self._platform_key}",
@@ -90,6 +91,7 @@ class LocalLibraryPaths(LocalLibraryPathsParser[tuple[Path, ...]]):
 
     @model_validator(mode="after")
     def validate_path_is_dir(self) -> Self:
+        """Ensure the configured paths are directories"""
         if not all(Path(path).is_dir() for path in self.paths):
             raise ParserError(
                 "The paths given for the current platform are not valid directories",
@@ -122,6 +124,7 @@ class MusicBeePaths(LocalLibraryPathsParser[Path]):
 
     @model_validator(mode="after")
     def validate_path_is_musicbee_lib(self) -> Self:
+        """Ensure the configured path points to a valid MusicBee library folder"""
         if not (path := Path(self.paths).joinpath(MusicBee.xml_library_path)).is_file():
             raise ParserError(
                 "No MusicBee library found at the given path",
@@ -156,6 +159,7 @@ class LocalPaths[T: LocalLibraryPathsParser](BaseModel):
 
     @model_validator(mode="after")
     def extend_stem_map_with_other_platforms(self) -> Self:
+        """Extend the map with paths for other platforms"""
         if not isinstance(self.library, LocalLibraryPathsParser):
             return self
 
@@ -187,7 +191,7 @@ class TagsConfig(BaseModel):
     )
 
 
-class LocalLibraryConfig[T: LocalLibraryPathsParser](LibraryConfig):
+class LocalLibraryConfig[T: LocalLibraryPathsParser](LibraryConfig, ):
     # noinspection PyUnboundLocalVariable
     _type_map: dict[str, Type[LocalLibraryPathsParser]] = PrivateAttr(default={
         "local": LocalLibraryPaths,
@@ -225,6 +229,7 @@ class LocalLibraryConfig[T: LocalLibraryPathsParser](LibraryConfig):
 
     @model_validator(mode="after")
     def extract_library_paths(self) -> Self:
+        """Set the current platform's paths as the library paths when multiple platforms are configured."""
         if isinstance(self.paths.library, LocalLibraryPathsParser):
             self.paths.library = self.paths.library.paths
         return self

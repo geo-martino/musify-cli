@@ -4,9 +4,9 @@ from random import choice
 import pytest
 from pydantic import ValidationError
 
-from musify_cli.parser.library import LibrariesConfig, LibraryTarget
-from musify_cli.parser.library.local import LOCAL_LIBRARY_TYPES, LocalLibraryConfig, LocalPaths
-from musify_cli.parser.library.remote import REMOTE_LIBRARY_TYPES, RemoteLibraryConfig, SpotifyAPIConfig
+from musify_cli.config.library import LibrariesConfig, LibraryTarget
+from musify_cli.config.library.local import LOCAL_LIBRARY_TYPES, LocalLibraryConfig, LocalPaths
+from musify_cli.config.library.remote import REMOTE_LIBRARY_TYPES, RemoteLibraryConfig, SpotifyAPIConfig
 
 
 # noinspection PyUnresolvedReferences

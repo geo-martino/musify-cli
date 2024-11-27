@@ -9,8 +9,8 @@ from musify.processors.base import Filter
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema
 
-from musify_cli.parser.operations.filters import get_comparers_filter
-from musify_cli.parser.operations.tagger._setter import Setter, setter_from_config
+from musify_cli.config.operations.filters import get_comparers_filter
+from musify_cli.config.operations.tagger._setter import Setter, setter_from_config
 
 
 @dataclass

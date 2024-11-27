@@ -6,6 +6,7 @@ from typing import AsyncContextManager, Self
 
 from aiorequestful.cache.backend import CACHE_CLASSES, ResponseCache
 from aiorequestful.timer import GeometricCountTimer, StepCeilingTimer
+from musify.libraries.core.collection import MusifyCollection
 from musify.libraries.core.object import Playlist
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.factory import RemoteObjectFactory
@@ -20,13 +21,13 @@ from musify.logger import STAT
 from musify.processors.check import RemoteItemChecker
 from musify.processors.match import ItemMatcher
 from musify.processors.search import RemoteItemSearcher
-from musify.types import UnitCollection
+from musify.types import UnitCollection, UnitIterable
 from musify.utils import get_max_width, align_string, to_collection
 
 from musify_cli.exception import ParserError
 from musify_cli.manager.library._core import LibraryManager
-from musify_cli.parser.library.remote import RemoteLibraryConfig
-from musify_cli.parser.library.types import LoadTypesRemote, EnrichTypesRemote
+from musify_cli.config.library.remote import RemoteLibraryConfig
+from musify_cli.config.library.types import LoadTypesRemote, EnrichTypesRemote
 
 
 class RemoteLibraryManager(LibraryManager[RemoteLibraryConfig], AsyncContextManager, metaclass=ABCMeta):
@@ -219,6 +220,21 @@ class RemoteLibraryManager(LibraryManager[RemoteLibraryConfig], AsyncContextMana
                 types_enriched.add(EnrichTypesRemote.TRACKS)
             self.types_enriched[LoadTypesRemote.SAVED_ARTISTS] = types_enriched
 
+    async def sync(self, playlists: Collection[Playlist]) -> dict[str, SyncResultRemotePlaylist]:
+        """
+        Sync the given ``playlists`` with the instantiated remote library.
+
+        :param playlists: The playlists to be synchronised.
+        :return: Map of playlist name to the results of the sync as a :py:class:`SyncResultRemotePlaylist` object.
+        """
+        playlists = self._filter_playlists(playlists=playlists)
+        return await self.library.sync(
+            playlists=playlists,
+            kind=self.config.playlists.sync.kind,
+            reload=self.config.playlists.sync.reload,
+            dry_run=self.dry_run
+        )
+
     def _filter_playlists[T: Playlist](self, playlists: Collection[T]) -> Collection[T]:
         """
         Returns a filtered set of the given ``playlists`` according to the config for this library.
@@ -261,22 +277,42 @@ class RemoteLibraryManager(LibraryManager[RemoteLibraryConfig], AsyncContextMana
         self.logger.print_line()
         return pl_filtered
 
-    async def sync(self, playlists: Collection[Playlist]) -> dict[str, SyncResultRemotePlaylist]:
-        """
-        Sync the given ``playlists`` with the instantiated remote library.
+    def run_download_helper(self, collections: UnitIterable[MusifyCollection]) -> None:
+        """Run the :py:class:`ItemDownloadHelper` for the given ``collections``"""
+        config = self.config.download
+        download_helper = ItemDownloadHelper(
+            urls=config.urls, fields=config.fields, interval=config.interval,
+        )
+        download_helper(collections)
 
-        :param playlists: The playlists to be synchronised.
-        :return: Map of playlist name to the results of the sync as a :py:class:`SyncResultRemotePlaylist` object.
+
+    async def create_new_music_playlist(self) -> tuple[str, SyncResultRemotePlaylist]:
         """
-        playlists = self._filter_playlists(playlists=playlists)
-        return await self.library.sync(
-            playlists=playlists,
-            kind=self.config.playlists.sync.kind,
-            reload=self.config.playlists.sync.reload,
-            dry_run=self.dry_run
+        Create a new music playlist for followed artists with music released between ``start`` and ``end``.
+
+        :return: The name of the new playlist and results of the sync as a :py:class:`SyncResultRemotePlaylist` object.
+        """
+        config = self.config.new_music
+        collections = self._filter_artist_albums_by_date(config.start, config.end)
+
+        collections = to_collection(collections)
+        tracks = [
+            track for collection in sorted(collections, key=lambda x: x.date, reverse=True) for track in collection
+        ]
+
+        self.logger.info(
+            f"\33[1;95m  >\33[1;97m Creating {config.name!r} {self.source} playlist "
+            f"for {len(tracks)} new tracks by followed artists released between {config.start} and {config.end} \33[0m"
         )
 
-    def filter_artist_albums_by_date(self, start: datetime.date, end: datetime.date) -> list[RemoteAlbum]:
+        # add tracks to remote playlist
+        response = await self.api.get_or_create_playlist(config.name)
+        pl = self.factory.playlist(response, skip_checks=True)
+        pl.clear()
+        pl.extend(tracks, allow_duplicates=False)
+        return config.name, await pl.sync(kind="refresh", reload=False, dry_run=self.dry_run)
+
+    def _filter_artist_albums_by_date(self, start: datetime.date, end: datetime.date) -> list[RemoteAlbum]:
         """Returns all loaded artist albums that are within the given ``start`` and ``end`` dates inclusive"""
         def match_date(alb: RemoteAlbum) -> bool:
             """Match start and end dates to the release date of the given ``alb``"""
