@@ -7,8 +7,8 @@ from musify.logger import MusifyLogger
 from musify_cli import MODULE_ROOT
 from musify_cli.config.core import MusifyConfig, Reports, Paths, Backup, PrePost
 from musify_cli.config.library import LibrariesConfig
-from musify_cli.config.library.local import LOCAL_LIBRARY_CONFIG, LocalLibraryConfig, LocalPaths
-from musify_cli.config.library.remote import REMOTE_LIBRARY_CONFIG, RemoteLibraryConfig, SpotifyAPIConfig, \
+from musify_cli.config.library.local import LocalLibraryConfig, LocalPaths
+from musify_cli.config.library.remote import RemoteLibraryConfig, SpotifyAPIConfig, \
     SpotifyLibraryConfig
 from musify_cli.exception import ParserError
 from musify_cli.manager import MusifyManager

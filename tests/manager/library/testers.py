@@ -4,9 +4,9 @@ from random import shuffle, sample
 
 from musify.types import MusifyEnum
 
+from musify_cli.config.library import LibraryConfig
 # noinspection PyProtectedMember
 from musify_cli.manager.library._core import LibraryManager
-from musify_cli.config.library import LibraryConfig
 
 
 class LibraryManagerTester[T: LibraryManager](ABC):

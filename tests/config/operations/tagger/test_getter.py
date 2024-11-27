@@ -8,10 +8,10 @@ from musify.libraries.local.track.field import LocalTrackField
 from musify.processors.compare import Comparer
 from musify.processors.filter import FilterComparers
 
-from musify_cli.exception import ParserError
 # noinspection PyProtectedMember
 from musify_cli.config.operations.tagger._getter import GETTERS, getter_from_config, TagGetter, ConditionalGetter, \
     PathGetter
+from musify_cli.exception import ParserError
 
 
 def test_value_as_config():

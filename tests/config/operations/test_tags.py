@@ -4,8 +4,8 @@ from musify.libraries.local.track.field import LocalTrackField
 from musify.utils import to_collection
 from pydantic import TypeAdapter
 
-from musify_cli.exception import ParserError
 from musify_cli.config.operations.tags import get_tags, TagFilter, LocalTrackFields, get_tag_filter
+from musify_cli.exception import ParserError
 
 
 class TestTags:

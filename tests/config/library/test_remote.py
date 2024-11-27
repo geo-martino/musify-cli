@@ -3,9 +3,7 @@ from datetime import datetime, timedelta
 from random import choice
 
 import pytest
-from musify.base import MusifyObject
 from musify.libraries.remote.core.object import PLAYLIST_SYNC_KINDS
-from musify.processors.filter import FilterDefinedList, FilterIncludeExclude
 
 from mocks.remote import RemoteLibraryMock, RemotePlaylistMock, RemoteTrackMock, RemoteAlbumMock, RemoteArtistMock
 from mocks.remote import SpotifyLibraryMock, SpotifyPlaylistMock, SpotifyTrackMock, SpotifyArtistMock, SpotifyAlbumMock

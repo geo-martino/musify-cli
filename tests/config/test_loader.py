@@ -6,8 +6,8 @@ from typing import Any
 import pytest
 import yaml
 
-from musify_cli.exception import ParserError
 from musify_cli.config.loader import MultiFileLoader
+from musify_cli.exception import ParserError
 
 
 class TestMultiFileLoader:

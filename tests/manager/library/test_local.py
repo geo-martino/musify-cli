@@ -2,7 +2,6 @@ from pathlib import Path
 from random import randrange
 
 import pytest
-from musify.libraries.collection import BasicCollection
 from musify.libraries.local.library import LocalLibrary, MusicBee
 
 from mocks.local import LocalLibraryMock, LocalTrackMock, MusicBeeMock

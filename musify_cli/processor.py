@@ -24,11 +24,11 @@ from musify.logger import MusifyLogger, STAT
 from musify.processors.base import DynamicProcessor, dynamicprocessormethod
 from musify.utils import get_user_input
 
+from musify_cli.config.core import MusifyConfig, Paths
+from musify_cli.config.library.types import LoadTypesRemote, EnrichTypesRemote, LoadTypesLocal
 from musify_cli.log.handlers import CurrentTimeRotatingFileHandler
 from musify_cli.manager import MusifyManager
 from musify_cli.manager.library import LocalLibraryManager, RemoteLibraryManager
-from musify_cli.config.core import MusifyConfig, Paths
-from musify_cli.config.library.types import LoadTypesRemote, EnrichTypesRemote, LoadTypesLocal
 
 
 class MusifyProcessor(DynamicProcessor, AsyncContextManager):

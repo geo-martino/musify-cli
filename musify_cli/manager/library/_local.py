@@ -3,7 +3,6 @@ from functools import cached_property
 
 from musify.libraries.core.collection import MusifyCollection
 from musify.libraries.core.object import Track
-from musify.libraries.local.collection import BasicLocalCollection
 from musify.libraries.local.library import LocalLibrary
 from musify.libraries.local.track import LocalTrack, SyncResultTrack
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler

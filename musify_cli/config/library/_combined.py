@@ -9,9 +9,9 @@ from typing import Self, Annotated, Any
 from pydantic import BaseModel, Field, BeforeValidator, model_validator
 
 from musify_cli.config.library._core import LibraryConfig
-from musify_cli.exception import ParserError
 from musify_cli.config.library.local import LocalLibraryConfig, LOCAL_LIBRARY_CONFIG
 from musify_cli.config.library.remote import RemoteLibraryConfig, REMOTE_LIBRARY_CONFIG
+from musify_cli.exception import ParserError
 
 LIBRARY_TYPES = {str(lib.source) for lib in LOCAL_LIBRARY_CONFIG | REMOTE_LIBRARY_CONFIG}
 

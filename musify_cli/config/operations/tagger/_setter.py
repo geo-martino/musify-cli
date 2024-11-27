@@ -9,8 +9,8 @@ from musify.processors.sort import ItemSorter
 from musify.types import UnitCollection
 from musify.utils import to_collection
 
-from musify_cli.exception import ParserError
 from musify_cli.config.operations.tagger._getter import Getter, getter_from_config
+from musify_cli.exception import ParserError
 
 
 class Setter(metaclass=ABCMeta):

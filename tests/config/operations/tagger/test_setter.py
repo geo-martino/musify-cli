@@ -5,12 +5,12 @@ import pytest
 from musify.libraries.local.track import LocalTrack
 from musify.libraries.local.track.field import LocalTrackField
 
-from musify_cli.exception import ParserError
 # noinspection PyProtectedMember
 from musify_cli.config.operations.tagger._getter import TagGetter
 # noinspection PyProtectedMember
 from musify_cli.config.operations.tagger._setter import SETTERS, setter_from_config, \
     Value, Clear, GroupedValueSetter, Min, Max, Join, Incremental, GroupedSetter, Template, Field
+from musify_cli.exception import ParserError
 
 
 def test_value_as_config():

@@ -10,7 +10,6 @@ from musify.types import UnitIterable
 
 from mocks.core import LibraryMock
 from musify_cli.config.library.types import LoadTypesLocal
-from tests.utils import random_str
 
 
 class LocalTrackMock(FLAC):

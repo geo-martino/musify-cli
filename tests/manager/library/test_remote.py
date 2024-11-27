@@ -3,12 +3,10 @@ from datetime import timedelta
 from pathlib import Path
 
 import pytest
-from musify.base import MusifyObject
 from musify.field import TagFields
 from musify.libraries.remote.core.library import RemoteLibrary
 from musify.libraries.remote.spotify import SOURCE_NAME as SPOTIFY_SOURCE
 from musify.libraries.remote.spotify.library import SpotifyLibrary
-from musify.processors.filter import FilterDefinedList, FilterIncludeExclude
 
 from mocks.remote import RemotePlaylistMock, RemoteTrackMock, RemoteLibraryMock, RemoteAlbumMock, RemoteArtistMock, \
     SpotifyLibraryMock, SpotifyPlaylistMock, SpotifyAlbumMock, SpotifyTrackMock, SpotifyArtistMock

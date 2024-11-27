@@ -11,7 +11,7 @@ from aiorequestful.types import UnitSequence
 from musify.libraries.core.object import Playlist
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.factory import RemoteObjectFactory
-from musify.libraries.remote.core.library import RemoteLibrary, SyncPlaylistsType
+from musify.libraries.remote.core.library import RemoteLibrary
 from musify.libraries.remote.core.object import PLAYLIST_SYNC_KINDS, RemotePlaylist, RemoteAlbum, \
     SyncResultRemotePlaylist
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler

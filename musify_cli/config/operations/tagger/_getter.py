@@ -7,8 +7,8 @@ from musify.field import TagField, TagFields
 from musify.libraries.local.base import LocalItem
 from musify.processors.filter import FilterComparers
 
-from musify_cli.exception import ParserError
 from musify_cli.config.operations.filters import get_comparers_filter
+from musify_cli.exception import ParserError
 
 
 class Getter(metaclass=ABCMeta):
