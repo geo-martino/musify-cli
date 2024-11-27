@@ -44,6 +44,8 @@ def get_comparers_filter[T](
 Filter = Annotated[
     FilterComparers,
     GetPydanticSchema(
-        lambda tp, handler: core_schema.no_info_before_validator_function(get_comparers_filter, handler(MultiType[str] | object))
+        lambda tp, handler: core_schema.no_info_before_validator_function(
+            get_comparers_filter, handler(MultiType[str] | object)
+        )
     ),
 ]

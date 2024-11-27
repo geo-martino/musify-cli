@@ -210,5 +210,3 @@ class TestConfig:
             LocalTrackField.TRACK_TOTAL,
         )
         assert config.reports.missing_tags.match_all
-
-

@@ -16,7 +16,9 @@ class LoadTypesLocal(MusifyEnum):
     PLAYLISTS = 1
 
 
-LoadTypesLocalAnno = Annotated[UnitSequence[LoadTypesLocal], BeforeValidator(partial(from_names, cls=LoadTypesLocal))]
+LoadTypesLocalAnno = Annotated[
+    UnitSequence[LoadTypesLocal], BeforeValidator(partial(from_names, cls=LoadTypesLocal))
+]
 
 
 class LoadTypesRemote(MusifyEnum):
@@ -26,7 +28,9 @@ class LoadTypesRemote(MusifyEnum):
     SAVED_ARTISTS = 12
 
 
-LoadTypesRemoteAnno = Annotated[UnitSequence[LoadTypesRemote], BeforeValidator(partial(from_names, cls=LoadTypesRemote))]
+LoadTypesRemoteAnno = Annotated[
+    UnitSequence[LoadTypesRemote], BeforeValidator(partial(from_names, cls=LoadTypesRemote))
+]
 
 
 class EnrichTypesRemote(MusifyEnum):
@@ -35,4 +39,6 @@ class EnrichTypesRemote(MusifyEnum):
     ARTISTS = 2
 
 
-EnrichTypesRemoteAnno = Annotated[UnitSequence[EnrichTypesRemote], BeforeValidator(partial(from_names, cls=EnrichTypesRemote))]
+EnrichTypesRemoteAnno = Annotated[
+    UnitSequence[EnrichTypesRemote], BeforeValidator(partial(from_names, cls=EnrichTypesRemote))
+]

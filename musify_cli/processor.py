@@ -23,11 +23,12 @@ from musify.libraries.remote.core.types import RemoteObjectType
 from musify.logger import MusifyLogger, STAT
 from musify.processors.base import DynamicProcessor, dynamicprocessormethod
 from musify.utils import get_user_input
-from musify_cli.parser_old import LoadTypesRemote, EnrichTypesRemote, LoadTypesLocal
 
 from musify_cli.log.handlers import CurrentTimeRotatingFileHandler
 from musify_cli.manager import MusifyManager
 from musify_cli.manager.library import LocalLibraryManager, RemoteLibraryManager
+from musify_cli.parser.core import MusifyConfig, Paths
+from musify_cli.parser.library.types import LoadTypesRemote, EnrichTypesRemote, LoadTypesLocal
 
 
 class MusifyProcessor(DynamicProcessor, AsyncContextManager):
@@ -48,6 +49,11 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         """The configuration for the :py:class:`RemoteLibrary`"""
         return self.manager.remote
 
+    @property
+    def paths(self) -> Paths:
+        """The configuration for this execution's paths"""
+        return self.manager.config.paths
+
     def __init__(self, manager: MusifyManager):
         self._start_time = perf_counter()  # for measuring total runtime
         super().__init__()
@@ -64,7 +70,8 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             handler = logging.getHandlerByName(name)
             if isinstance(handler, CurrentTimeRotatingFileHandler):
                 self.manager.dt = handler.dt
-                handler.rotator(str(self.manager.paths.backup.joinpath("{}")), self.manager.paths.backup)
+                backup_path = self.paths.backup
+                handler.rotator(str(backup_path.joinpath("{}")), backup_path)
 
         self.logger.debug(f"{self.__class__.__name__} initialised. Time taken: {self.time_taken:.3f}")
 
@@ -155,11 +162,11 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             self.logger.print_line()
 
         await self.local.load()
-        await self.remote.load(types=[LoadTypesRemote.playlists, LoadTypesRemote.saved_tracks])
+        await self.remote.load(types=[LoadTypesRemote.PLAYLISTS, LoadTypesRemote.SAVED_TRACKS])
 
-        local_backup_path = Path(self.manager.paths.backup, self._library_backup_name(self.local.library, key))
+        local_backup_path = Path(self.paths.backup, self._library_backup_name(self.local.library, key))
         self._save_json(local_backup_path, self.local.library.json())
-        remote_backup_path = Path(self.manager.paths.backup, self._library_backup_name(self.remote.library, key))
+        remote_backup_path = Path(self.paths.backup, self._library_backup_name(self.remote.library, key))
         self._save_json(remote_backup_path, self.remote.library.json())
 
         self.logger.debug("Backup libraries: DONE")
@@ -167,7 +174,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
     @dynamicprocessormethod
     async def restore(self) -> None:
         """Restore library data from a backup, getting user input for the settings"""
-        backup_folder = self.manager.paths.backup.parent
+        backup_folder = self.paths.backup.parent
         available_groups = self._get_available_backup_groups(backup_folder)
 
         if len(available_groups) == 0:
@@ -249,13 +256,13 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         tags, tag_names = self._get_tags_to_restore_from_user()
 
         self.logger.print_line()
-        await self.local.load(types=LoadTypesLocal.tracks)
+        await self.local.load(types=LoadTypesLocal.TRACKS)
 
         self.logger.info(
             f"\33[1;95m ->\33[1;97m Restoring local track tags from backup: "
             f"{path.name} | Tags: {', '.join(tag_names)}\33[0m"
         )
-        backup_path = Path(self.manager.paths.backup, self._library_backup_name(self.local.library, key))
+        backup_path = Path(self.paths.backup, self._library_backup_name(self.local.library, key))
         backup = self._load_json(backup_path)
 
         # restore and save
@@ -287,12 +294,12 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         self.logger.debug(f"Restore {self.remote.source}: START")
         self.logger.print_line()
 
-        await self.remote.load(types=[LoadTypesRemote.saved_tracks, LoadTypesRemote.playlists])
+        await self.remote.load(types=[LoadTypesRemote.SAVED_TRACKS, LoadTypesRemote.PLAYLISTS])
 
         self.logger.info(
             f"\33[1;95m ->\33[1;97m Restoring {self.remote.source} playlists from backup: {path.name} \33[0m"
         )
-        backup_path = Path(self.manager.paths.backup, self._library_backup_name(self.remote.library, key))
+        backup_path = Path(self.paths.backup, self._library_backup_name(self.remote.library, key))
         backup = self._load_json(backup_path)
 
         # restore and sync
@@ -317,7 +324,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         """Run check on entire library by album and update URI tags on file"""
         self.logger.debug("Check and update URIs: START")
 
-        await self.local.load(types=LoadTypesLocal.tracks)
+        await self.local.load(types=LoadTypesLocal.TRACKS)
 
         folders = self.manager.filter(self.local.library.folders)
         if not await self.remote.check(folders):
@@ -341,7 +348,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         """Run all methods for searching, checking, and saving URI associations for local files."""
         self.logger.debug("Search and match: START")
 
-        await self.local.load(types=LoadTypesLocal.tracks)
+        await self.local.load(types=LoadTypesLocal.TRACKS)
 
         albums = self.local.library.albums
         [album.items.remove(track) for album in albums for track in album.items.copy() if track.has_uri is not None]
@@ -379,7 +386,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         """Run all methods for pulling tag data from remote and updating local track tags"""
         self.logger.debug("Update tags: START")
 
-        await self.local.load(types=LoadTypesLocal.tracks)
+        await self.local.load(types=LoadTypesLocal.TRACKS)
         await self.remote.library.extend(self.local.library, allow_duplicates=False)
         await self.remote.library.enrich_tracks(features=True, albums=True, artists=True)
 
@@ -399,7 +406,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         """Run all methods for setting and saving tags according to user-defined rules."""
         self.logger.debug("Auto-tagging: START")
 
-        await self.local.load(types=LoadTypesLocal.tracks)
+        await self.local.load(types=LoadTypesLocal.TRACKS)
 
         self.logger.info(f"\33[1;95m ->\33[1;97m Setting tags for {len(self.local.library)} tracks\n")
         results = await self.local.set_tags()
@@ -422,7 +429,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             self.logger.debug("Merge playlists: DONE")
             return
 
-        await self.local.load(types=[LoadTypesLocal.tracks, LoadTypesLocal.playlists])
+        await self.local.load(types=[LoadTypesLocal.TRACKS, LoadTypesLocal.PLAYLISTS])
 
         merge_folder = Path(merge_folder_env)
         reference_folder = None
@@ -474,9 +481,11 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
             for name in deleted_playlists:
                 if (pl := self.local.library.playlists.get(name)) is not None:
+                    # noinspection PyAsyncCall
                     self.local.library.playlists.pop(pl.name)
                     os.remove(pl.path)
                 if (pl := merge_library.playlists.get(name)) is not None:
+                    # noinspection PyAsyncCall
                     merge_library.playlists.pop(pl.name)
                     os.remove(pl.path)
 
@@ -494,13 +503,13 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         """Export a static copy of all local library playlists as M3U files."""
         self.logger.debug("Export playlists: START")
 
-        await self.local.load(types=[LoadTypesLocal.tracks, LoadTypesLocal.playlists])
+        await self.local.load(types=[LoadTypesLocal.TRACKS, LoadTypesLocal.PLAYLISTS])
 
         if staging_folder_env := os.getenv("MUSIFY__LOCAL__PLAYLIST_EXPORT"):
             staging_folder = Path(staging_folder_env)
             staging_folder.mkdir(parents=True, exist_ok=True)
         else:
-            staging_folder = self.manager.paths.local_library.joinpath("playlists")
+            staging_folder = self.paths.local_library.joinpath("playlists")
 
         playlists = self.manager.filter(self.local.library.playlists.values())
         self.logger.info(
@@ -532,7 +541,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         self.logger.debug(f"Sync {self.remote.source}: START")
 
         await self.local.load()
-        await self.remote.load(types=LoadTypesRemote.playlists)
+        await self.remote.load(types=LoadTypesRemote.PLAYLISTS)
 
         playlists = [copy(pl) for pl in self.local.library.playlists.values()]
         for pl in playlists:  # so filter_playlists doesn't clear the list of tracks on the original playlist objects
@@ -565,11 +574,11 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
         # load saved artists and their albums with fresh data
         load_albums = any([
-            LoadTypesRemote.saved_artists not in self.remote.types_loaded,
-            EnrichTypesRemote.albums not in self.remote.types_enriched.get(LoadTypesRemote.saved_artists, [])
+            LoadTypesRemote.SAVED_ARTISTS not in self.remote.types_loaded,
+            EnrichTypesRemote.ALBUMS not in self.remote.types_enriched.get(LoadTypesRemote.SAVED_ARTISTS, [])
         ])
         if load_albums:
-            await self.remote.load(types=[LoadTypesRemote.saved_artists])
+            await self.remote.load(types=[LoadTypesRemote.SAVED_ARTISTS])
             await self.remote.library.enrich_saved_artists(types=("album", "single"))
 
         albums_to_extend = [

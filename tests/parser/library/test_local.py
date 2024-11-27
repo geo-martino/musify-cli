@@ -176,10 +176,14 @@ class TestLocalLibrary:
         for path in library_paths:
             assert paths_model.map[path] == expected_path
 
-    def test_assigns_library_paths(self, library_model: LocalLibraryConfig, library_paths_model: LocalLibraryPathsParser):
+    def test_assigns_library_paths(
+            self, library_model: LocalLibraryConfig, library_paths_model: LocalLibraryPathsParser
+    ):
         assert library_model.paths.library == library_paths_model.paths
 
-    def test_assigns_type_from_paths_parser(self, paths_model: LocalPaths, library_paths_model: LocalLibraryPathsParser):
+    def test_assigns_type_from_paths_parser(
+            self, paths_model: LocalPaths, library_paths_model: LocalLibraryPathsParser
+    ):
         model = LocalLibraryConfig(name="name", paths=paths_model)
         assert model.type == library_paths_model.source
 

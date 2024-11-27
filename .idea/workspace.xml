@@ -9,23 +9,9 @@
   <component name="ChangeListManager">
     <list default="true" id="9b2127b7-24ea-430c-8f59-a341ad0474f1" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/__main__.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/__main__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/manager/library/_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/library/_core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/manager/library/_local.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/library/_local.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/manager/library/_remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/library/_remote.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/parser/core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/library.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/parser/library.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/operations/filters.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/parser/operations/filters.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/parser/operations/tags.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/parser/operations/tags.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/manager/_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/_core.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/parser/library/_combined.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/parser/library/_combined.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/musify_cli/processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/processor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/__resources/test_config.yml" beforeDir="false" afterPath="$PROJECT_DIR$/tests/__resources/test_config.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/__resources/test_libraries.yml" beforeDir="false" afterPath="$PROJECT_DIR$/tests/__resources/test_libraries.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/manager/library/test_local.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/library/test_local.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/manager/library/test_remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/library/test_remote.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/manager/library/testers.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/library/testers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/manager/test_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/test_core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/parser/test_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/parser/test_core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/parser/test_library.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/parser/test_library.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,61 +48,39 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python tests.Run all tests.executor": "Run",
-    "Python tests.pytest for manager.library.test_remote.TestSpotifyLibraryManager.test_context_manager.executor": "Run",
-    "Python tests.pytest for manager.test_core.TestMusifyManager.executor": "Run",
-    "Python tests.pytest for parser.test_core.test_core.executor": "Run",
-    "Python tests.pytest for tests.manager.library.test_local.TestLocalLibraryManager.executor": "Run",
-    "Python tests.pytest for tests.manager.library.test_remote.TestSpotifyLibraryManager.executor": "Run",
-    "Python tests.pytest for tests.parser.executor": "Run",
-    "Python tests.pytest in library.executor": "Run",
-    "Python tests.pytest in parser.executor": "Run",
-    "Python tests.pytest in test_core.py.executor": "Run",
-    "Python tests.pytest in test_local.py.executor": "Run",
-    "Python tests.pytest in test_remote.py.executor": "Run",
-    "Python._core.executor": "Run",
-    "Python._library.executor": "Run",
-    "Python._loader.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "add-tagger",
-    "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python tests.Run all tests.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for manager.library.test_remote.TestSpotifyLibraryManager.test_context_manager.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for manager.test_core.TestMusifyManager.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for parser.test_core.test_core.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for tests.manager.library.test_local.TestLocalLibraryManager.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for tests.manager.library.test_remote.TestSpotifyLibraryManager.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for tests.parser.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest in library.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest in parser.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest in test_core.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest in test_local.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest in test_remote.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python._core.executor&quot;: &quot;Run&quot;,
+    &quot;Python._library.executor&quot;: &quot;Run&quot;,
+    &quot;Python._loader.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;add-tagger&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/tests/parser/library" />
+      <recent name="$PROJECT_DIR$/musify_cli/parser/library" />
       <recent name="$PROJECT_DIR$/tests/parser" />
-      <recent name="$PROJECT_DIR$/musify_cli/parser" />
-      <recent name="$PROJECT_DIR$/tests/operations" />
-      <recent name="$PROJECT_DIR$/musify_cli/operations" />
-      <recent name="D:\Projects\musify-cli\tests\log" />
+      <recent name="$PROJECT_DIR$/musify_cli/parser/library/" />
+      <recent name="$PROJECT_DIR$/musify_cli/parser/library/_combined.py" />
     </key>
   </component>
-  <component name="RunManager" selected="Python tests.pytest in library">
-    <configuration name="core" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="musify-cli" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/musify_cli/parser" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/musify_cli/parser/core.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
+  <component name="RunManager">
     <configuration name="Run all tests" type="tests" factoryName="py.test">
       <module name="musify-cli" />
       <option name="ENV_FILES" value="" />
@@ -135,83 +99,6 @@
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="pytest in library" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
-      <module name="musify-cli" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests/manager/library" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="_new_keywords" value="&quot;&quot;" />
-      <option name="_new_parameters" value="&quot;&quot;" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;$PROJECT_DIR$/tests/manager/library&quot;" />
-      <option name="_new_targetType" value="&quot;PATH&quot;" />
-      <method v="2" />
-    </configuration>
-    <configuration name="pytest in parser" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
-      <module name="musify-cli" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests/parser" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="_new_keywords" value="&quot;&quot;" />
-      <option name="_new_parameters" value="&quot;&quot;" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;$PROJECT_DIR$/tests/parser&quot;" />
-      <option name="_new_targetType" value="&quot;PATH&quot;" />
-      <method v="2" />
-    </configuration>
-    <configuration name="pytest in test_local.py" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
-      <module name="musify-cli" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="_new_keywords" value="&quot;&quot;" />
-      <option name="_new_parameters" value="&quot;&quot;" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;$PROJECT_DIR$/tests/manager/library/test_local.py&quot;" />
-      <option name="_new_targetType" value="&quot;PATH&quot;" />
-      <method v="2" />
-    </configuration>
-    <configuration name="pytest in test_remote.py" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
-      <module name="musify-cli" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="_new_keywords" value="&quot;&quot;" />
-      <option name="_new_parameters" value="&quot;&quot;" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;$PROJECT_DIR$/tests/manager/library/test_remote.py&quot;" />
-      <option name="_new_targetType" value="&quot;PATH&quot;" />
-      <method v="2" />
-    </configuration>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Python tests.pytest in library" />
-        <item itemvalue="Python tests.pytest in test_remote.py" />
-        <item itemvalue="Python tests.pytest in test_local.py" />
-        <item itemvalue="Python tests.pytest in parser" />
-        <item itemvalue="Python._core" />
-      </list>
-    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>

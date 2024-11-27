@@ -15,7 +15,6 @@ from typing import Any
 
 import yaml
 from musify.utils import merge_maps
-from musify_cli.parser_old import CORE_PARSER, LIBRARY_PARSER, load_library_config
 
 from musify_cli import PROGRAM_NAME, MODULE_ROOT
 from musify_cli.exception import ParserError
@@ -24,9 +23,6 @@ from musify_cli.printers import print_logo, print_line, print_time, get_func_log
 from musify_cli.processor import MusifyProcessor
 
 LOGGER = logging.getLogger(MODULE_ROOT)
-
-# noinspection PyProtectedMember
-CORE_PARSER._positionals.title = "Functions"
 
 PROCESSOR_METHOD_NAMES = [
     name.replace("_", "-") for name in MusifyProcessor.__new__(MusifyProcessor).__processormethods__
@@ -65,7 +61,7 @@ def print_folders(processor: MusifyProcessor):
     """Print the key folder locations to the terminal"""
     if processor.logger.file_paths:
         processor.logger.info(f"\33[90mLogs: {", ".join(map(str, set(processor.logger.file_paths)))} \33[0m")
-    processor.logger.info(f"\33[90mApp data: {processor.manager.paths.base} \33[0m")
+    processor.logger.info(f"\33[90mApp data: {processor.paths.base} \33[0m")
     print()
 
 
@@ -103,10 +99,8 @@ def setup() -> tuple[Namespace, dict[str, Namespace]]:
         cfg_base = CORE_PARSER.parse_args()
         cfg_functions = {func: cfg_base for func in cfg_base.functions}
 
-    if cfg_base.logging.config_path:
-        path = Path(cfg_base.logging.config_path)
-        if path.is_file():
-            MusifyManager.configure_logging(path, cfg_base.logging.name, __name__)
+    cfg_base.logging.add_key_loggers(__name__)
+    cfg_base.logging.configure_logging()
 
     check_config_is_valid(cfg_functions)
     return cfg_base, cfg_functions

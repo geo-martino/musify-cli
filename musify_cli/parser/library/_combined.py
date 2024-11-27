@@ -54,7 +54,6 @@ class LibrariesConfig(BaseModel):
         if not self.target.local:
             raise ParserError("Many local libraries given but no target specified", key="local")
 
-        self.local: list[LocalLibraryConfig]
         try:
             self.local = next(iter(lib for lib in self.local if lib.name == self.target.local))
         except StopIteration:
@@ -72,7 +71,6 @@ class LibrariesConfig(BaseModel):
         if not self.target.remote:
             raise ParserError("Many remote libraries given but no target specified", key="local")
 
-        self.remote: list[RemoteLibraryConfig]
         try:
             self.remote = next(iter(lib for lib in self.remote if lib.name == self.target.remote))
         except StopIteration:

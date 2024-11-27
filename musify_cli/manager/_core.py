@@ -1,18 +1,13 @@
 from __future__ import annotations
 
-import json
 import logging
 import logging.config
 from collections.abc import Collection, Iterable
 from datetime import datetime
 from functools import cached_property
-from pathlib import Path
 from time import perf_counter
 from typing import Self
 
-import yaml
-from aiorequestful import MODULE_ROOT as AIOREQUESTFUL_ROOT
-from musify import MODULE_ROOT as MUSIFY_ROOT
 from musify.base import MusifyItem
 from musify.libraries.core.collection import MusifyCollection
 from musify.libraries.remote.core.object import RemoteAlbum, SyncResultRemotePlaylist
@@ -23,11 +18,11 @@ from musify.report import report_playlist_differences, report_missing_tags
 from musify.types import UnitIterable
 from musify.utils import to_collection
 
-from musify_cli import MODULE_ROOT
 from musify_cli.exception import ParserError
 from musify_cli.manager.library import LocalLibraryManager, MusicBeeManager
 from musify_cli.manager.library import RemoteLibraryManager, SpotifyLibraryManager
 from musify_cli.parser.core import Reports, MusifyConfig
+from musify_cli.parser.library.local import LocalLibraryConfig
 from musify_cli.parser.library.types import LoadTypesLocal, LoadTypesRemote
 
 
@@ -83,10 +78,6 @@ class MusifyManager:
         "spotify": SpotifyLibraryManager,
     }
 
-    @property
-    def dt(self) -> datetime:
-        return self.config.paths.dt
-
     def __init__(self, config: MusifyConfig):
         start_time = perf_counter()
 
@@ -95,16 +86,8 @@ class MusifyManager:
 
         self.config = config
 
-        remote_library_config: MusifyConfig = self.config.libraries.remote
-        self.remote: RemoteLibraryManager = self._remote_library_map[remote_library_config.type.casefold()](
-            config=remote_library_config, dry_run=self.dry_run,
-        )
-
-        local_library_config: MusifyConfig = self.config.libraries.local
-        self.local: LocalLibraryManager = self._local_library_map[local_library_config.type.casefold()](
-            config=local_library_config, dry_run=self.dry_run, remote_wrangler=self.remote.wrangler
-        )
-
+        self.remote = self._create_remote_library_manager(self.config.libraries.remote)
+        self.local = self._create_local_library_manager(self.config.libraries.local)
         self.reports: ReportsManager = ReportsManager(config=self.config.reports, parent=self)
 
         setup_time = perf_counter() - start_time
@@ -122,34 +105,42 @@ class MusifyManager:
         """Set a new config for this manager and all composite managers"""
         self.config = config
 
-        remote_library_config = self.config.libraries.remote
-        if remote_library_config.name != self.remote.name:
+        if (remote_library_config := self.config.libraries.remote).name != self.remote.name:
             if self.remote.initialised:
                 raise ParserError(
                     "New remote library given but the library manager has already been initialised | "
                     f"Current: {self.remote.name!r} | New: {remote_library_config.name!r}"
                 )
-            self.remote = self._remote_library_map[remote_library_config.type](
-                config=remote_library_config, dry_run=self.dry_run,
-            )
+            self.remote = self._create_remote_library_manager(remote_library_config)
         else:
             self.remote.config = remote_library_config.get(remote_library_config.type)
 
-        local_library_config = self.config.libraries.local
-        if local_library_config.name != self.local.name:
+        if (local_library_config := self.config.libraries.local).name != self.local.name:
             if self.local.initialised:
                 raise ParserError(
                     "New local library given but the library manager has already been initialised | "
                     f"Current: {self.local.name!r} | New: {local_library_config.name!r}"
                 )
-            self.local = self._local_library_map[local_library_config.type](
-                config=local_library_config, dry_run=self.dry_run,
-            )
-            self.local._remote_wrangler = self.remote.wrangler
+            self.local = self._create_local_library_manager(local_library_config)
         else:
             self.local.config = local_library_config.get(local_library_config.type)
 
         self.reports.config = self.config.reports
+
+    def _create_local_library_manager(self, config: LocalLibraryConfig) -> LocalLibraryManager:
+        return self._local_library_map[config.type.casefold()](
+            config=config, dry_run=self.dry_run, remote_wrangler=self.remote.wrangler
+        )
+
+    def _create_remote_library_manager(self, config: LocalLibraryConfig) -> RemoteLibraryManager:
+        return self._remote_library_map[config.type.casefold()](
+            config=config, dry_run=self.dry_run,
+        )
+
+    @property
+    def execution_dt(self) -> datetime:
+        """The timestamp of when the program was executed."""
+        return self.config.paths.dt
 
     @cached_property
     def dry_run(self) -> bool:
@@ -160,49 +151,6 @@ class MusifyManager:
     def backup_key(self) -> str | None:
         """The key to give to backups + the key to restore from"""
         return self.config.backup.key
-
-    ###########################################################################
-    ## Setup
-    ###########################################################################
-    @classmethod
-    def configure_logging(cls, path: Path, name: str | None = None, *names: str) -> None:
-        """
-        Load logging config from a configured JSON or YAML file using logging.config.dictConfig.
-
-        :param path: The path to the logger config
-        :param name: If the given name is a valid logger name in the config,
-            assign this logger's config to the module root logger.
-        :param names: When given, also apply the config from ``name`` to loggers with these ``names``.
-        """
-        allowed = {".yml", ".yaml", ".json"}
-        if path.suffix not in allowed:
-            raise ParserError(
-                "Unrecognised log config file type: {key}. Valid: {value}", key=path.suffix, value=allowed
-            )
-
-        with open(path, "r", encoding="utf-8") as file:
-            if path.suffix in {".yml", ".yaml"}:
-                log_config = yaml.full_load(file)
-            elif path.suffix in {".json"}:
-                log_config = json.load(file)
-
-        MusifyLogger.compact = log_config.pop("compact", False)
-        MusifyLogger.disable_bars = log_config.pop("disable_bars", False)
-
-        for formatter in log_config["formatters"].values():  # ensure ANSI colour codes in format are recognised
-            formatter["format"] = formatter["format"].replace(r"\33", "\33")
-
-        if name and name in log_config.get("loggers", {}):
-            log_config["loggers"][MODULE_ROOT] = log_config["loggers"][name]
-            log_config["loggers"][MUSIFY_ROOT] = log_config["loggers"][name]
-            log_config["loggers"][AIOREQUESTFUL_ROOT] = log_config["loggers"][name]
-            for n in names:
-                log_config["loggers"][n] = log_config["loggers"][name]
-
-        logging.config.dictConfig(log_config)
-
-        if name and name in log_config.get("loggers", {}):
-            logging.getLogger(MODULE_ROOT).debug(f"Logging config set to: {name}")
 
     ###########################################################################
     ## Pre-/Post- operations
