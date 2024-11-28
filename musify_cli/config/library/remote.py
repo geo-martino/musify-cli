@@ -192,12 +192,12 @@ class APIHandlerConfig(BaseModel):
     retry: APIHandlerRetry = Field(
         description="Configuration for the timer that controls how long to wait "
                     "in between each successive failed request",
-        default=APIHandlerRetry(),
+        default_factory=APIHandlerRetry,
     )
     wait: APIHandlerWait = Field(
         description="Configuration for the timer that controls how long to wait after every request,"
                     " regardless of whether it was successful.",
-        default=APIHandlerWait(),
+        default_factory=APIHandlerWait,
     )
 
 
@@ -239,11 +239,11 @@ class APICacheConfig(Instantiator[ResponseCache]):
 class APIConfig[T: RemoteAPI](Instantiator[T], metaclass=ABCMeta):
     cache: APICacheConfig = Field(
         description="Configuration for the API cache",
-        default=APICacheConfig(),
+        default_factory=APICacheConfig,
     )
     handler: APIHandlerConfig = Field(
         description="Configuration for the API handler",
-        default=APIHandlerConfig(),
+        default_factory=APIHandlerConfig,
     )
     token_file_path: Path | None = Field(
         description="A path to save/load a response token to",
@@ -365,7 +365,7 @@ class RemotePlaylistsSync(Runner[dict[str, SyncResultRemotePlaylist]]):
 class RemotePlaylistsConfig(PlaylistsConfig):
     sync: RemotePlaylistsSync = Field(
         description="Options for playlist sync operations",
-        default=RemotePlaylistsSync(),
+        default_factory=RemotePlaylistsSync,
     )
 
 
@@ -379,23 +379,23 @@ class RemoteLibraryConfig[L: RemoteLibrary, A: APIConfig](LibraryConfig[RemoteLi
     # noinspection PyUnresolvedReferences
     playlists: RemotePlaylistsConfig = Field(
         description=LibraryConfig.model_fields.get("playlists").description,
-        default=RemotePlaylistsConfig(),
+        default_factory=RemotePlaylistsConfig,
     )
     check: RemoteCheckerConfig = Field(
         description="Configuration for the item checker for this library",
-        default=RemoteCheckerConfig(),
+        default_factory=RemoteCheckerConfig,
     )
     search: RemoteItemSearcherConfig = Field(
         description="Configuration for the item searcher for this library",
-        default=RemoteItemSearcherConfig(),
+        default_factory=RemoteItemSearcherConfig,
     )
     download: RemoteItemDownloadConfig = Field(
         description="Configuration for item downloader operations",
-        default=RemoteItemDownloadConfig(),
+        default_factory=RemoteItemDownloadConfig,
     )
     new_music: RemoteNewMusicConfig = Field(
         description="Configuration for new music operations",
-        default=RemoteNewMusicConfig(),
+        default_factory=RemoteNewMusicConfig,
     )
 
     @property

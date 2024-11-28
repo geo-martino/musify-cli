@@ -53,7 +53,7 @@ class LibraryTarget(BaseModel):
 class LibrariesConfig(BaseModel):
     target: LibraryTarget = Field(
         description="The library targets to use for this run",
-        default=LibraryTarget(),
+        default_factory=LibraryTarget,
     )
     local: LocalLibraryType | list[LocalLibraryType] = Field(
         description="Configuration for all available local libraries",

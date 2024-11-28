@@ -39,6 +39,7 @@ def setup() -> tuple[MusifyConfig, dict[str, MusifyConfig]]:
     check_config_is_valid(functions.values())
 
     base.logging.configure_additional_loggers(__name__)
+    base.logging.configure_rotating_file_handler_dt(dt=base.paths.dt)
     base.logging.configure_logging()
 
     return base, functions

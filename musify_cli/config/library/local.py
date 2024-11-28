@@ -219,7 +219,7 @@ class UpdaterConfig(Runner[dict[LocalTrack, SyncResultTrack]]):
 class TagsConfig(Runner[dict[LocalTrack, SyncResultTrack]]):
     rules: Tagger = Field(
         description="The auto-tagger rules",
-        default=Tagger(),
+        default_factory=Tagger,
     )
 
     async def run(self, library: LocalLibrary, updater: UpdaterConfig = None, dry_run: bool = True):
@@ -253,11 +253,11 @@ class LocalLibraryConfig[L: LocalLibrary, P: LocalLibraryPathsParser](LibraryCon
     )
     updater: UpdaterConfig = Field(
         description="Options for tag update operations",
-        default=UpdaterConfig()
+        default_factory=UpdaterConfig,
     )
     tags: TagsConfig = Field(
         description="Options for automatically tagging tracks based on a set of user-defined rules",
-        default=TagsConfig()
+        default_factory=TagsConfig,
     )
 
     # noinspection PyNestedDecorators

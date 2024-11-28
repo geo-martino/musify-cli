@@ -37,7 +37,7 @@ class Runner[T: Any](BaseModel, ABC):
 class PlaylistsConfig(BaseModel):
     filter: Filter = Field(
         description="The filter to apply to available playlists. Filters on playlist names",
-        default=FilterComparers(),
+        default_factory=FilterComparers,
     )
 
 
@@ -50,7 +50,7 @@ class LibraryConfig[T: Library](Instantiator[T], metaclass=ABCMeta):
     )
     playlists: PlaylistsConfig = Field(
         description="Configures handling for this library's playlists",
-        default=PlaylistsConfig()
+        default_factory=PlaylistsConfig,
     )
 
     @computed_field(description="The source type of the library")

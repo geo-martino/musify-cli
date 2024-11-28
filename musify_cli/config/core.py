@@ -23,7 +23,7 @@ from pydantic import BaseModel, Field, DirectoryPath, computed_field, model_vali
 
 from musify_cli import PACKAGE_ROOT, MODULE_ROOT
 from musify_cli.config.library import LibrariesConfig
-from musify_cli.config.library._core import Runner
+from musify_cli.config.library import Runner
 from musify_cli.config.library.remote import APIConfig
 from musify_cli.config.library.types import LoadTypesLocal, LoadTypesRemote, EnrichTypesRemote, \
     LoadTypesLocalAnno, LoadTypesRemoteAnno, EnrichTypesRemoteAnno
@@ -31,6 +31,7 @@ from musify_cli.config.loader import MultiFileLoader
 from musify_cli.config.operations.filters import Filter
 from musify_cli.config.operations.signature import get_default_args
 from musify_cli.config.operations.tags import LOCAL_TRACK_TAG_NAMES, LocalTrackFields
+from musify_cli.log.handlers import CurrentTimeRotatingFileHandler
 
 
 ###########################################################################
@@ -114,6 +115,16 @@ class Logging(BaseModel):
         for name in names:
             self.loggers[name] = self.logger
 
+    def configure_rotating_file_handler_dt(self, dt: datetime = None) -> None:
+        """
+        Set the datetime within the config to apply to all :py:class:`.CurrentTimeRotatingFileHandler` configurations.
+
+        :param dt: The datetime to use.
+        """
+        for handler in self.handlers.values():
+            if CurrentTimeRotatingFileHandler.__name__ in handler["class"]:
+                handler["dt"] = dt
+
     def configure_logging(self) -> None:
         """Configures logging using the currently stored config."""
         MusifyLogger.compact = self.compact
@@ -137,7 +148,7 @@ class Paths(BaseModel):
     )
     dt: datetime = Field(
         description="The datetime of the current execution. Used to form execution-specific paths.",
-        default=datetime.now()
+        default_factory=datetime.now
     )
 
     backup: Path = Field(
@@ -237,29 +248,29 @@ class ReloadRemote(BaseModel):
     )
     enrich: ReloadRemoteEnrich | None = Field(
         description="Configuration for enriching various items/collections in the loaded remote library",
-        default=ReloadRemoteEnrich(),
+        default_factory=ReloadRemoteEnrich,
     )
 
 
 class Reload(BaseModel):
     local: ReloadLocal = Field(
         description="Configuration for reloading various items/collections in the loaded local library",
-        default=ReloadLocal(),
+        default_factory=ReloadLocal,
     )
     remote: ReloadRemote = Field(
         description="Configuration for reloading various items/collections in the loaded remote library",
-        default=ReloadRemote(),
+        default_factory=ReloadRemote,
     )
 
 
 class PrePost(BaseModel):
     filter: Filter = Field(
         description="A generic filter to apply for the current operation. Only used during specific operations.",
-        default=FilterComparers(),
+        default_factory=FilterComparers,
     )
     reload: Reload = Field(
         description="Configuration for reloading various items/collections in the loaded libraries",
-        default=Reload(),
+        default_factory=Reload,
     )
     pause: str | None = Field(
         description="When provided, pause the operation after this function is complete "
@@ -285,7 +296,7 @@ class ReportBase[T](Runner[T], metaclass=ABCMeta):
     )
     filter: Filter = Field(
         description="A filter to apply for this report",
-        default=FilterComparers(),
+        default_factory=FilterComparers,
     )
 
 
@@ -321,11 +332,11 @@ class ReportMissingTags(ReportBase[dict[str, dict[MusifyItem, tuple[str, ...]]]]
 class Reports(BaseModel):
     playlist_differences: ReportPlaylistDifferences = Field(
         description="Configuration for the playlist differences report",
-        default=ReportPlaylistDifferences(),
+        default_factory=ReportPlaylistDifferences,
     )
     missing_tags: ReportMissingTags = Field(
         description="Configuration for the missing tags report",
-        default=ReportMissingTags(),
+        default_factory=ReportMissingTags,
     )
 
 
@@ -342,26 +353,26 @@ class MusifyConfig(BaseModel):
     )
     logging: Logging = Field(
         description="Configuration for the runtime logger",
-        default=Logging(),
+        default_factory=Logging,
     )
     paths: Paths = Field(
         description="Configuration for the hierarchy of files needed and/or exported by the program "
                     "e.g. backups, API tokens, caches etc.",
-        default=Paths(),
+        default_factory=Paths,
     )
     pre_post: PrePost = Field(
         description="Configuration for pre-/post- operations e.g. reload, pauses, filtering etc.",
-        default=PrePost(),
+        default_factory=PrePost,
     )
 
     # operations
     backup: Backup = Field(
         description="Configuration for backup operations",
-        default=Backup(),
+        default_factory=Backup,
     )
     reports: Reports = Field(
         description="Configuration for reports operations",
-        default=Reports(),
+        default_factory=Reports,
     )
 
     @model_validator(mode="after")

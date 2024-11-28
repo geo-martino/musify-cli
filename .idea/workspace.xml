@@ -8,24 +8,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9b2127b7-24ea-430c-8f59-a341ad0474f1" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/musify_cli/cli.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/__main__.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/__main__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/musify_cli/config/core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/config/library/_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/_core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/config/library/local.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/local.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/config/library/types.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/types.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/config/operations/filters.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/operations/filters.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/config/operations/tagger/_getter.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/operations/tagger/_getter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/config/operations/tagger/_setter.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/operations/tagger/_setter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/config/operations/tagger/_tagger.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/operations/tagger/_tagger.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/config/operations/tags.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/operations/tags.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/log/handlers.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/log/handlers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/manager/_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/_processor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/printers.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/printers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/config/library/test_local.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/library/test_local.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/config/operations/tagger/test_tagger.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/operations/tagger/test_tagger.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/manager/test_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/test_processor.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
