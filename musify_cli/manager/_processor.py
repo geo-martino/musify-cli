@@ -68,6 +68,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
                 handler.rotator(str(backup_path.joinpath("{}")), backup_path)
 
         self.config = config
+        self._dump_config("Base")
 
         self.remote = self._create_remote_library_manager(self.config.libraries.remote)
         self.local = self._create_local_library_manager(self.config.libraries.local)
@@ -87,6 +88,8 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
     async def run(self) -> Any:
         """Run the processor and any pre-/post-operations around it."""
+        self._dump_config()
+
         self.logger.debug(f"Called processor '{self._processor_name}': START")
         await super().__call__()
         self.logger.debug(f"Called processor '{self._processor_name}': DONE\n")
@@ -98,6 +101,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
         if config is not None:
             self.set_config(config)
+            self._dump_config(name)
 
         return self._processor_method
 
@@ -131,6 +135,9 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
     def _create_local_library_manager(self, config: LocalLibraryConfig) -> LocalLibraryManager:
         return LocalLibraryManager(config=config, dry_run=self.dry_run, remote_wrangler=self.remote.wrangler)
 
+    def _dump_config(self, name: str = None) -> None:
+        self.logger.debug(f"{self.get_func_log_name(name)} config:\n" + self.config.model_dump_yaml())
+
     def _handle_exception(self, exc_type, exc_value, exc_traceback) -> None:
         """Custom exception handler. Handles exceptions through logger."""
         if issubclass(exc_type, KeyboardInterrupt):
@@ -140,6 +147,13 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         self.logger.critical(
             "CRITICAL ERROR: Uncaught Exception", exc_info=(exc_type, exc_value, exc_traceback)
         )
+
+    def get_func_log_name(self, name: str = None) -> str:
+        """Formats the given ``name`` to be appropriate for logging"""
+        if not name:
+            name = self._processor_name
+
+        return name.replace("_", " ").replace("-", " ").title()
 
     def as_dict(self) -> dict[str, Any]:
         return {}

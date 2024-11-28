@@ -5,6 +5,7 @@ from typing import Any
 
 from musify.libraries.local.track import LocalTrack
 from musify.libraries.local.track.field import LocalTrackField as Tag
+from musify.printer import PrettyPrinter
 from musify.processors.sort import ItemSorter
 from musify.types import UnitCollection
 from musify.utils import to_collection
@@ -13,7 +14,7 @@ from musify_cli.config.operations.tagger._getter import Getter, getter_from_conf
 from musify_cli.exception import ParserError
 
 
-class Setter(metaclass=ABCMeta):
+class Setter(PrettyPrinter, metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def from_dict(cls, field: Tag, config: Mapping[str, Any]):
@@ -25,6 +26,9 @@ class Setter(metaclass=ABCMeta):
     @abstractmethod
     def set[T: LocalTrack](self, item: T, collection: Iterable[T]) -> None:
         raise NotImplementedError
+
+    def as_dict(self):
+        return {"field": self.field}
 
 
 class Value(Setter):
@@ -41,6 +45,9 @@ class Value(Setter):
     def set[T: LocalTrack](self, item: T, collection: Iterable[T]):
         item[self.field] = self.value
 
+    def as_dict(self):
+        return super().as_dict() | {"value": self.value}
+
 
 class Field(Setter):
     @classmethod
@@ -56,6 +63,9 @@ class Field(Setter):
 
     def set[T: LocalTrack](self, item: T, collection: Iterable[T]):
         item[self.field] = item[self.value_of]
+
+    def as_dict(self):
+        return super().as_dict() | {"value_of": self.value_of}
 
 
 class Clear(Setter):
@@ -84,6 +94,9 @@ class Join(Setter):
         values = [getter.get(item) for getter in self.fields]
         item[self.field] = self.separator.join(values)
 
+    def as_dict(self):
+        return super().as_dict() | {"fields": self.fields, "separator": self.separator}
+
 
 class GroupedSetter(Setter, metaclass=ABCMeta):
 
@@ -101,6 +114,9 @@ class GroupedSetter(Setter, metaclass=ABCMeta):
             it for it in collection
             if all(it[field] == item[field] for field in self.group_by) and it[self.field] is not None
         ]
+
+    def as_dict(self):
+        return super().as_dict() | {"group_by": self.group_by}
 
 
 class Incremental(GroupedSetter):
@@ -135,6 +151,9 @@ class Incremental(GroupedSetter):
         value = self.start + (group.index(item) * self.increment)
         item[self.field] = value
 
+    def as_dict(self):
+        return super().as_dict() | {"sort_by": self.sort_by, "start": self.start, "increment": self.increment}
+
 
 class GroupedValueSetter(GroupedSetter, metaclass=ABCMeta):
 
@@ -147,6 +166,9 @@ class GroupedValueSetter(GroupedSetter, metaclass=ABCMeta):
     def __init__(self, field: Tag, value_of: Tag = None, group_by: UnitCollection[Tag] = ()):
         super().__init__(field=field, group_by=group_by)
         self.value_of = value_of or field
+
+    def as_dict(self):
+        return super().as_dict() | {"value_of": self.value_of}
 
 
 class Min(GroupedValueSetter):
@@ -205,6 +227,9 @@ class Template(Setter):
                 values_map[key] = ""
 
         item[self.field] = self.template.format_map(values_map)
+
+    def as_dict(self):
+        return super().as_dict() | {"fields": self.fields, "template": self.template}
 
 
 SETTERS: list[type[Setter]] = [Clear, Min, Max, Join, Incremental, Template]

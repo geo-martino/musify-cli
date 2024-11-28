@@ -205,16 +205,16 @@ class TestTags:
     @staticmethod
     def assert_tags_set(model: TagsConfig, tracks: Collection[LocalTrackMock]):
         # noinspection PyTypeChecker
-        setters: list[Value] = [setter for rule in model.rules.setters for setter in rule.setters]
+        setters: list[Value] = [setter for rule in model.rules.rules for setter in rule.setters]
         for setter in setters:
             for track in tracks:
                 assert track[setter.field] == setter.value
 
     async def test_set_no_tags_on_no_rules(self, model: TagsConfig, library: LocalLibraryMock):
         # noinspection PyTypeChecker
-        setters: list[Value] = [setter for rule in model.rules.setters for setter in rule.setters]
+        setters: list[Value] = [setter for rule in model.rules.rules for setter in rule.setters]
 
-        model.rules.setters = []
+        model.rules.rules = []
         assert not await model.run(library)
 
         for setter in setters:

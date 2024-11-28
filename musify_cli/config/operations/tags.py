@@ -5,7 +5,7 @@ from aiorequestful.types import UnitCollection
 from musify.field import TagField, Field, Fields, TagFields
 from musify.libraries.local.track.field import LocalTrackField
 from musify.utils import to_collection
-from pydantic import BeforeValidator
+from pydantic import BeforeValidator, PlainValidator, PlainSerializer
 
 from musify_cli.exception import ParserError
 
@@ -35,13 +35,20 @@ def get_tags[T: TagField](
     return tuple(sorted(cls.from_name(*tags), key=lambda x: order.index(x)))
 
 
+def serialise_tags(fields: UnitCollection[TagField]) -> list[str]:
+    """Get the field names from a collection of :py:class:`Field` enums"""
+    return [field.name.lower() for field in to_collection(fields)]
+
+
 Tags = Annotated[
     LocalTrackField | tuple[LocalTrackField, ...],
-    BeforeValidator(partial(get_tags, cls=TagFields))
+    BeforeValidator(partial(get_tags, cls=TagFields)),
+    PlainSerializer(serialise_tags, when_used="json-unless-none"),
 ]
 LocalTrackFields = Annotated[
     LocalTrackField | tuple[LocalTrackField, ...],
-    BeforeValidator(partial(get_tags, cls=LocalTrackField))
+    BeforeValidator(partial(get_tags, cls=LocalTrackField)),
+    PlainSerializer(serialise_tags, when_used="json-unless-none"),
 ]
 
 

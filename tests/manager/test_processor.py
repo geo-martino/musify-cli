@@ -14,7 +14,7 @@ from musify_cli.manager import MusifyProcessor
 from tests.utils import path_txt, path_logging_config
 
 
-class TestMusifyManager:
+class TestMusifyProcessor:
     @pytest.fixture
     def config(self, tmp_path: Path) -> MusifyConfig:
         """
@@ -50,7 +50,7 @@ class TestMusifyManager:
 
     @pytest.fixture
     def manager(self, config: MusifyConfig) -> MusifyProcessor:
-        """Yields a valid :py:class:`MusifyManager` for the current remote source as a pytest.fixture."""
+        """Yields a valid :py:class:`MusifyProcessor` for the current remote source as a pytest.fixture."""
         return MusifyProcessor(config=config)
 
     @pytest.mark.skip(reason="Test not yet implemented")

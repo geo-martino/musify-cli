@@ -36,7 +36,7 @@ class TestTagger:
         filter_.transform = lambda tr: tr.album
         filtered_setter = FilteredSetter(filter=filter_, setters=value_setters)
 
-        tagger = Tagger(setters=[filtered_setter])
+        tagger = Tagger(rules=[filtered_setter])
         tagger.set_tags(tracks, ())
 
         for track in tracks:

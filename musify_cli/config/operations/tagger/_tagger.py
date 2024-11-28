@@ -5,6 +5,7 @@ from typing import Any, Self
 from musify.base import MusifyItemSettable
 from musify.libraries.local.track import LocalTrack
 from musify.libraries.local.track.field import LocalTrackField
+from musify.printer import PrettyPrinter
 from musify.processors.base import Filter
 from musify.processors.filter import FilterDefinedList
 from pydantic import GetCoreSchemaHandler
@@ -15,7 +16,7 @@ from musify_cli.config.operations.tagger._setter import Setter, setter_from_conf
 
 
 @dataclass
-class FilteredSetter[T: MusifyItemSettable]:
+class FilteredSetter[T: MusifyItemSettable](PrettyPrinter):
     """Stores the settings to apply setters to a limited set of filtered items based on a configured filter."""
     filter: Filter[T] = field(default_factory=FilterDefinedList)
     setters: Collection[Setter] = ()
@@ -30,8 +31,11 @@ class FilteredSetter[T: MusifyItemSettable]:
         for setter in self.setters:
             setter.set(item, collection)
 
+    def as_dict(self):
+        return {"filter": self.filter, "setters": self.setters}
 
-class Tagger[T: MusifyItemSettable]:
+
+class Tagger[T: MusifyItemSettable](PrettyPrinter):
     """Apply tags to a set of items based on a set of tagging rules."""
 
     # noinspection PyUnusedLocal
@@ -39,9 +43,18 @@ class Tagger[T: MusifyItemSettable]:
     def __get_pydantic_core_schema__(
         cls, source_type: Any, handler: GetCoreSchemaHandler
     ) -> CoreSchema:
-        return core_schema.no_info_before_validator_function(
-            function=cls.from_config, schema=handler(object)
+        schema = core_schema.no_info_before_validator_function(
+            function=cls.from_config,
+            schema=handler(object),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                lambda tagger: tagger.json()["rules"],
+                info_arg=False,
+                return_schema=core_schema.json_schema(),
+                when_used="json-unless-none"
+            )
         )
+
+        return schema
 
     @classmethod
     def from_config(cls, config: list[Mapping[str, Any]] | Self) -> Self:
@@ -65,8 +78,8 @@ class Tagger[T: MusifyItemSettable]:
 
         return cls(tag_setters)
 
-    def __init__(self, setters: Collection[FilteredSetter[T]] = ()):
-        self.setters = setters
+    def __init__(self, rules: Collection[FilteredSetter[T]] = ()):
+        self.rules = rules
 
     def set_tags(self, items: Collection[T], collections: Collection[Collection[T]]) -> None:
         """
@@ -76,9 +89,12 @@ class Tagger[T: MusifyItemSettable]:
         :param collections: The collections the given items belong to.
             Each item must to exactly one collection for this function to work as expected.
         """
-        for setter in self.setters:
-            filtered_items = setter.filter(items)
+        for rule in self.rules:
+            filtered_items = rule.filter(items)
 
             for item in filtered_items:
                 collection = next(iter(coll for coll in collections if item in coll), ())
-                setter.set_tags(item, collection)
+                rule.set_tags(item, collection)
+
+    def as_dict(self):
+        return {"rules": self.rules}

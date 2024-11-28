@@ -5,13 +5,14 @@ from typing import Any, Self
 from musify.base import MusifyItem
 from musify.field import TagField, TagFields
 from musify.libraries.local.base import LocalItem
+from musify.printer import PrettyPrinter
 from musify.processors.filter import FilterComparers
 
 from musify_cli.config.operations.filters import get_comparers_filter
 from musify_cli.exception import ParserError
 
 
-class Getter(metaclass=ABCMeta):
+class Getter(PrettyPrinter, metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def from_dict(cls, config: Mapping[str, Any]):
@@ -23,6 +24,9 @@ class Getter(metaclass=ABCMeta):
     @abstractmethod
     def get[T: MusifyItem](self, item: T) -> Any:
         raise NotImplementedError
+
+    def as_dict(self):
+        return {"field": self.field}
 
 
 class TagGetter(Getter):
@@ -63,6 +67,9 @@ class TagGetter(Getter):
             value = self._add_leading_zeros(item, str(value))
         return value
 
+    def as_dict(self):
+        return super().as_dict() | {"leading_zeros": self.leading_zeros}
+
 
 class ConditionalGetter(TagGetter):
     @classmethod
@@ -98,6 +105,9 @@ class ConditionalGetter(TagGetter):
             return None
         return super().get(item) if self.field is not None else self.value
 
+    def as_dict(self):
+        return super().as_dict() | {"condition": self.condition.as_dict(), "value": self.value}
+
 
 class PathGetter(Getter):
 
@@ -115,6 +125,9 @@ class PathGetter(Getter):
 
     def get[T: LocalItem](self, item: T) -> Any:
         return item.path.parts[-self.parent - 1]
+
+    def as_dict(self):
+        return super().as_dict() | {"parent": self.parent}
 
 
 GETTERS: list[type[Getter]] = [PathGetter]

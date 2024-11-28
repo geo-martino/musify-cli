@@ -5,7 +5,7 @@ from musify.base import MusifyObject
 from musify.field import Fields
 from musify.processors.compare import Comparer
 from musify.processors.filter import FilterComparers
-from pydantic import GetPydanticSchema
+from pydantic import GetPydanticSchema, PlainSerializer
 from pydantic_core import core_schema
 
 from musify_cli.config.operations.signature import get_default_args
@@ -45,7 +45,14 @@ Filter = Annotated[
     FilterComparers,
     GetPydanticSchema(
         lambda tp, handler: core_schema.no_info_before_validator_function(
-            get_comparers_filter, handler(MultiType[str] | object)
+            function=get_comparers_filter,
+            schema=handler(MultiType[str] | object),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                lambda fltr: fltr.json(),
+                info_arg=False,
+                return_schema=core_schema.json_schema(),
+                when_used="json-unless-none"
+            )
         )
     ),
 ]

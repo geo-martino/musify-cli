@@ -1,6 +1,6 @@
 import sys
 from abc import ABCMeta, abstractmethod
-from pathlib import Path, PureWindowsPath, PurePosixPath
+from pathlib import Path, PureWindowsPath, PurePosixPath, PurePath
 from typing import Self, Annotated, Any, MutableMapping, ClassVar
 
 from aiorequestful.types import UnitCollection
@@ -44,7 +44,13 @@ class LocalLibraryPathsParser[T: Path | tuple[Path, ...] | None](BaseModel, meta
     @property
     def paths(self) -> T:
         """The path/s configured for the current platform"""
-        return self.__getattribute__(self._platform_key)
+        paths = self.__getattribute__(self._platform_key)
+        if not paths:
+            return paths
+
+        if isinstance(paths, PurePath):
+            return Path(paths)
+        return tuple(map(Path, paths))
 
     @model_validator(mode="after")
     def validate_path_exists(self) -> Self:
@@ -225,7 +231,7 @@ class TagsConfig(Runner[dict[LocalTrack, SyncResultTrack]]):
         :param dry_run: Run function, but do not modify the files on the disk. Only used if an ``updater`` is given.
         :return: A map of the :py:class:`LocalTrack` saved to its result as a :py:class:`SyncResultTrack` object
         """
-        if not self.rules.setters:
+        if not self.rules.rules:
             return {}
 
         self._logger.info(f"\33[1;95m ->\33[1;97m Setting tags for {len(library)} tracks\n")

@@ -1,11 +1,14 @@
+import json
 import logging.config
 import os
 import shutil
+from abc import ABCMeta
 from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Self
+from typing import Any, Self, ClassVar
 
+import yaml
 from aiorequestful import MODULE_ROOT as AIOREQUESTFUL_ROOT
 from musify import MODULE_ROOT as MUSIFY_ROOT
 from musify.base import MusifyItem
@@ -15,6 +18,7 @@ from musify.libraries.local.track.field import LocalTrackField
 from musify.logger import MusifyLogger
 from musify.processors.filter import FilterComparers
 from musify.report import report_missing_tags, report_playlist_differences
+from musify.utils import merge_maps
 from pydantic import BaseModel, Field, DirectoryPath, computed_field, model_validator
 
 from musify_cli import PACKAGE_ROOT, MODULE_ROOT
@@ -154,9 +158,6 @@ class Paths(BaseModel):
         default=Path("library", "local")
     )
 
-    @computed_field(
-        description="A map of all concrete paths i.e. all paths not including the base path"
-    )
     @property
     def _paths(self) -> dict[str, Path]:
         return {
@@ -164,9 +165,6 @@ class Paths(BaseModel):
             if isinstance(path, Path) and path != self.base
         }
 
-    @computed_field(
-        description="The execution time formatted as a string for use in paths"
-    )
     @property
     def _dt_as_str(self) -> str:
         return self.dt.strftime("%Y-%m-%d_%H.%M.%S")
@@ -280,7 +278,7 @@ class Backup(BaseModel):
     )
 
 
-class ReportBase[T](Runner[T]):
+class ReportBase[T](Runner[T], metaclass=ABCMeta):
     enabled: bool = Field(
         description="When true, trigger this report",
         default=False,
@@ -332,6 +330,7 @@ class Reports(BaseModel):
 
 
 class MusifyConfig(BaseModel):
+
     libraries: LibrariesConfig = Field(
         description="Configuration for all available libraries",
     )
@@ -376,11 +375,38 @@ class MusifyConfig(BaseModel):
 
         return self
 
+    #: Keys to drop from base config before merging with functions config when loading config file
+    _drop_keys: ClassVar[set[tuple[str]]] = {
+        ("filter",),
+        ("backup",),
+        ("pause",),
+    }
+
     @classmethod
-    def from_file(cls, config_file_path: str | Path) -> tuple[Self, list[Self]]:
-        raw_config = MultiFileLoader.load(config_file_path)
+    def from_file(cls, config_file_path: str | Path) -> tuple[Self, dict[str, Self]]:
+        config_map = MultiFileLoader.load(config_file_path)
 
-        raw_functions_config = raw_config.pop("functions") if "functions" in raw_config else []
-        base_config = MusifyConfig(**raw_config)
+        functions_map: dict[str, dict[str, Any]] = config_map.pop("functions") if "functions" in config_map else {}
+        base = MusifyConfig(**config_map)
 
-        return base_config, []
+        functions: dict[str, Self] = {}
+        for name, func_map in functions_map.items():
+            base_map = base.model_dump()
+            cls._drop_config_keys(base_map)
+            conf_map = merge_maps(base_map, func_map, extend=False, overwrite=True)
+            functions[name] = MusifyConfig(**conf_map)
+
+        return base, functions
+
+    @classmethod
+    def _drop_config_keys(cls, config: dict[str, Any]) -> None:
+        for keys in cls._drop_keys:
+            conf = config
+            for key in keys[:-1]:
+                conf = conf.get(key, {})
+            conf.pop(keys[-1], None)
+
+    def model_dump_yaml(self) -> str:
+        """Generates a JSON representation of the model using ``yaml.safe_dump``."""
+        data = json.loads(self.model_dump_json(exclude={"logging"}))
+        return yaml.safe_dump(data, indent=2, default_flow_style=False, allow_unicode=True, sort_keys=False)
