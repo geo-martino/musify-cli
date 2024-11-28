@@ -8,54 +8,10 @@ from musify_cli import MODULE_ROOT
 from musify_cli.config.core import MusifyConfig, Reports, Paths, Backup, PrePost
 from musify_cli.config.library import LibrariesConfig
 from musify_cli.config.library.local import LocalLibraryConfig, LocalPaths
-from musify_cli.config.library.remote import RemoteLibraryConfig, SpotifyAPIConfig, \
-    SpotifyLibraryConfig
+from musify_cli.config.library.remote import SpotifyLibraryConfig, SpotifyAPIConfig
 from musify_cli.exception import ParserError
-from musify_cli.manager import MusifyManager
-# noinspection PyProtectedMember
-from musify_cli.manager._core import ReportsManager
+from musify_cli.manager import MusifyProcessor
 from tests.utils import path_txt, path_logging_config
-
-
-@pytest.mark.skip(reason="Tests not yet implemented")
-class TestReportsManager:
-    @pytest.fixture
-    def config(self, tmp_path: Path) -> MusifyConfig:
-        """
-        Yields a valid :py:class:`Namespace` representing the config
-        for the current manager as a pytest.fixture.
-        """
-        return MusifyConfig(
-            execute=False,
-            libraries=LibrariesConfig(
-                local=LocalLibraryConfig(
-                    name="local",
-                    type="local",
-                    paths=LocalPaths(library=tmp_path),
-                ),
-                remote=RemoteLibraryConfig(
-                    name="spotify",
-                    type="spotify",
-                    api=SpotifyAPIConfig(client_id="", client_secret="")
-                ),
-            ),
-            reports=Reports(
-
-            )
-        )
-
-    @pytest.fixture
-    def manager(self, config: MusifyConfig) -> ReportsManager:
-        """Yields a valid :py:class:`MusifyManager` for the current remote source as a pytest.fixture."""
-        return ReportsManager(config.reports, parent=MusifyManager(config))
-
-    @pytest.mark.skip(reason="Test not yet implemented")
-    def test_playlist_differences(self, manager: ReportsManager):
-        pass  # TODO
-
-    @pytest.mark.skip(reason="Test not yet implemented")
-    def test_missing_tags(self, manager: ReportsManager):
-        pass  # TODO
 
 
 class TestMusifyManager:
@@ -93,26 +49,26 @@ class TestMusifyManager:
         )
 
     @pytest.fixture
-    def manager(self, config: MusifyConfig) -> MusifyManager:
+    def manager(self, config: MusifyConfig) -> MusifyProcessor:
         """Yields a valid :py:class:`MusifyManager` for the current remote source as a pytest.fixture."""
-        return MusifyManager(config=config)
+        return MusifyProcessor(config=config)
 
     @pytest.mark.skip(reason="Test not yet implemented")
-    def test_set_config(self, manager: MusifyManager):
+    def test_set_config(self, manager: MusifyProcessor):
         pass  # TODO
 
     @pytest.mark.skip(reason="This removes all handlers hence removing ability to see logs for tests that follow this")
     def test_configure_logging(self):
         with pytest.raises(ParserError):
-            MusifyManager.configure_logging(path_txt)
+            MusifyProcessor.configure_logging(path_txt)
 
-        MusifyManager.configure_logging(path_logging_config)
+        MusifyProcessor.configure_logging(path_logging_config)
         assert MusifyLogger.compact
 
         loggers = [logger.name for logger in logging.getLogger().getChildren()]
         assert "__main__" not in loggers
 
-        MusifyManager.configure_logging(path_logging_config, "test", "__main__")
+        MusifyProcessor.configure_logging(path_logging_config, "test", "__main__")
 
         loggers = [logger.name for logger in logging.getLogger().getChildren()]
         assert "test" in loggers
@@ -123,13 +79,13 @@ class TestMusifyManager:
     ## Pre-/Post- operations
     ###########################################################################
     @pytest.mark.skip(reason="Test not yet implemented")
-    def test_load(self, manager: MusifyManager):
+    def test_load(self, manager: MusifyProcessor):
         pass  # TODO
 
     ###########################################################################
     ## Utilities
     ###########################################################################
-    def test_filter(self, manager: MusifyManager, config: MusifyConfig):
+    def test_filter(self, manager: MusifyProcessor, config: MusifyConfig):
         playlists = [f"playlist {i}" for i in range(1, 5)]
         assert manager.filter(playlists) == config.pre_post.filter(playlists) == playlists[:2]
 
@@ -142,9 +98,17 @@ class TestMusifyManager:
     ## Operations
     ###########################################################################
     @pytest.mark.skip(reason="Test not yet implemented")
-    def test_run_download_helper(self, manager: MusifyManager):
+    def test_run_download_helper(self, manager: MusifyProcessor):
         pass  # TODO
 
     @pytest.mark.skip(reason="Test not yet implemented")
-    def test_create_new_music_playlist(self, manager: MusifyManager):
+    def test_create_new_music_playlist(self, manager: MusifyProcessor):
+        pass  # TODO
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_playlist_differences(self, manager: MusifyProcessor):
+        pass  # TODO
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_missing_tags(self, manager: MusifyProcessor):
         pass  # TODO

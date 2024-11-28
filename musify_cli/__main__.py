@@ -18,9 +18,8 @@ from musify.utils import merge_maps
 
 from musify_cli import PROGRAM_NAME, MODULE_ROOT
 from musify_cli.exception import ParserError
-from musify_cli.manager import MusifyManager
+from musify_cli.manager import MusifyProcessor
 from musify_cli.printers import print_logo, print_line, print_time, get_func_log_name
-from musify_cli.processor import MusifyProcessor
 
 LOGGER = logging.getLogger(MODULE_ROOT)
 
@@ -68,14 +67,14 @@ def print_folders(processor: MusifyProcessor):
 def print_sub_header(processor: MusifyProcessor) -> None:
     """Print sub-header text to the terminal."""
     print_folders(processor)
-    if processor.manager.dry_run:
+    if processor.dry_run:
         print_line("DRY RUN ENABLED", " ")
 
 
 def print_function_header(name: str, processor: MusifyProcessor) -> str:
     """Set the terminal title and print the function header to the terminal."""
     title = f"{PROGRAM_NAME}: {name}"
-    if processor.manager.dry_run:
+    if processor.dry_run:
         title += " (DRYRUN)"
 
     name = get_func_log_name(name)
@@ -156,7 +155,7 @@ def load_config(config_path: str | Path, *function_names: str) -> tuple[Namespac
 
 def dump_config(name: str, processor: MusifyProcessor) -> None:
     """Dump/log the current config."""
-    config = processor.manager.config
+    config = processor.config
 
     processor.logger.debug(f"{name} core config:\n" + CORE_PARSER.dump(config))
 
@@ -198,10 +197,10 @@ async def main(processor: MusifyProcessor, config: dict[str, Namespace]) -> None
             processor.set_processor(name, cfg)
             dump_config(log_name, processor)
 
-            await processor.manager.run_pre()
+            await processor.run_pre()
             await processor
             if name != next(reversed(config)):  # only run post up to penultimate function
-                await processor.manager.run_post()
+                await processor.run_post()
 
             processor.logger.print_line()
 
@@ -227,7 +226,7 @@ if __name__ == "__main__":
     print_header()
     config_base, config_functions = setup()
 
-    main_processor = MusifyProcessor(manager=MusifyManager(config=config_base))
+    main_processor = MusifyProcessor(config=config_base)
     print_sub_header(main_processor)
 
     loop = asyncio.new_event_loop()

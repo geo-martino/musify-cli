@@ -1,9 +1,13 @@
+from collections.abc import Iterable
 from functools import cached_property
+from pathlib import Path
 from typing import AsyncContextManager, Self
 
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.factory import RemoteObjectFactory
 from musify.libraries.remote.core.library import RemoteLibrary
+from musify.libraries.remote.core.object import RemoteAlbum, RemotePlaylist
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
 from musify.logger import STAT
 from musify.processors.check import RemoteItemChecker
@@ -15,13 +19,14 @@ from musify.utils import to_collection
 
 from musify_cli.config.library.remote import RemoteLibraryConfig
 from musify_cli.config.library.types import LoadTypesRemote, EnrichTypesRemote
+from musify_cli.config.operations.filters import Filter
 from musify_cli.manager.library._core import LibraryManager
 
 
 class RemoteLibraryManager[L: RemoteLibrary, C: RemoteLibraryConfig](LibraryManager[L, C], AsyncContextManager):
     """Instantiates and manages a :py:class:`RemoteLibrary` and related objects from a given ``config``."""
 
-    def __init__(self, config: RemoteLibraryConfig, dry_run: bool = True):
+    def __init__(self, config: C, dry_run: bool = True):
         super().__init__(config=config, dry_run=dry_run)
 
         self.types_loaded: set[LoadTypesRemote] = set()
@@ -75,6 +80,26 @@ class RemoteLibraryManager[L: RemoteLibrary, C: RemoteLibraryConfig](LibraryMana
     def download(self) -> ItemDownloadHelper:
         """The initialised remote download helper for this remote library type"""
         return self.config.download.create()
+
+    ###########################################################################
+    ## Backup/Restore
+    ###########################################################################
+    async def _load_library_for_backup(self) -> None:
+        await self.load(types=[LoadTypesRemote.PLAYLISTS, LoadTypesRemote.SAVED_TRACKS])
+
+    async def _restore_library(self, path: Path) -> None:
+        await self.load(types=[LoadTypesRemote.SAVED_TRACKS, LoadTypesRemote.PLAYLISTS])
+
+        self.logger.info(
+            f"\33[1;95m ->\33[1;97m Restoring {self.source} playlists from backup: {path.name} \33[0m"
+        )
+
+        backup = self._load_json(path)
+        await self.library.restore_playlists(backup["playlists"])
+        results = await self.library.sync(kind="refresh", reload=False, dry_run=self.dry_run)
+
+        self.library.log_sync(results)
+        self.logger.debug(f"Restore {self.source}: DONE")
 
     ###########################################################################
     ## Operations
@@ -177,3 +202,76 @@ class RemoteLibraryManager[L: RemoteLibrary, C: RemoteLibraryConfig](LibraryMana
             if tracks:
                 types_enriched.add(EnrichTypesRemote.TRACKS)
             self.types_enriched[LoadTypesRemote.SAVED_ARTISTS] = types_enriched
+
+    ###########################################################################
+    ## Operations
+    ###########################################################################
+    async def print(self) -> None:
+        """Pretty print data from API getting input from user"""
+        await self.api.print_collection()
+
+    async def run_download_helper(self, playlist_filter: Filter = None) -> None:
+        """Run the :py:class:`ItemDownloadHelper`"""
+        self.logger.debug("Download helper: START")
+
+        responses = self.api.user_playlist_data
+        playlists: list[RemotePlaylist] = list(map(
+            lambda response: self.factory.playlist(response, skip_checks=True), responses.values()
+        ))
+        if playlist_filter:
+            playlists = playlist_filter(playlists)
+
+        await self.api.get_items(playlists, kind=RemoteObjectType.PLAYLIST)
+
+        self.download(playlists)
+
+        self.logger.debug("Download helper: DONE")
+
+    async def create_new_music_playlist(self) -> None:
+        """Create a playlist of new music released by user's followed artists"""
+        self.logger.debug("New music playlist: START")
+
+        await self._load_followed_artist_albums()
+        name, results = await self.config.new_music.run(self.library.albums, dry_run=self.dry_run)
+
+        self.logger.print_line(STAT)
+        self.library.log_sync({name: results})
+        log_prefix = "Would have added" if self.dry_run else "Added"
+        self.logger.info(f"\33[92m{log_prefix} {results.added} new tracks to playlist: '{name}' \33[0m")
+
+        self.logger.debug("New music playlist: DONE")
+
+    async def _load_followed_artist_albums(self) -> None:
+        """Load all followed artists and all their albums to the library, refreshing if necessary."""
+        load_albums = any([
+            LoadTypesRemote.SAVED_ARTISTS not in self.types_loaded,
+            EnrichTypesRemote.ALBUMS not in self.types_enriched.get(LoadTypesRemote.SAVED_ARTISTS, [])
+        ])
+        if load_albums:
+            await self.load(types=[LoadTypesRemote.SAVED_ARTISTS])
+            await self.library.enrich_saved_artists(types=("album", "single"))
+
+        albums_to_extend = [
+            album for artist in self.library.artists for album in artist.albums
+            if len(album.tracks) < album.track_total
+        ]
+        await self._extend_albums(albums_to_extend)
+
+        # log load results
+        if load_albums or albums_to_extend:
+            self.logger.print_line(STAT)
+            self.library.log_artists()
+            self.logger.print_line()
+
+    async def _extend_albums(self, albums: Iterable[RemoteAlbum]) -> None:
+        """Extend responses of given ``albums`` to include all available tracks for each album."""
+        kind = RemoteObjectType.ALBUM
+        key = self.api.collection_item_map[kind]
+
+        await self.logger.get_asynchronous_iterator(
+            (self.api.extend_items(album.response, kind=kind, key=key, leave_bar=False) for album in albums),
+            desc="Getting album tracks",
+            unit="albums"
+        )
+        for album in albums:
+            album.refresh(skip_checks=False)

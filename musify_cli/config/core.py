@@ -1,20 +1,25 @@
 import logging.config
 import os
 import shutil
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Self
 
 from aiorequestful import MODULE_ROOT as AIOREQUESTFUL_ROOT
 from musify import MODULE_ROOT as MUSIFY_ROOT
+from musify.base import MusifyItem
+from musify.libraries.core.collection import MusifyCollection
+from musify.libraries.core.object import Playlist
 from musify.libraries.local.track.field import LocalTrackField
 from musify.logger import MusifyLogger
 from musify.processors.filter import FilterComparers
-from musify.report import report_missing_tags
+from musify.report import report_missing_tags, report_playlist_differences
 from pydantic import BaseModel, Field, DirectoryPath, computed_field, model_validator
 
 from musify_cli import PACKAGE_ROOT, MODULE_ROOT
 from musify_cli.config.library import LibrariesConfig
+from musify_cli.config.library._core import Runner
 from musify_cli.config.library.remote import APIConfig
 from musify_cli.config.library.types import LoadTypesLocal, LoadTypesRemote, EnrichTypesRemote, \
     LoadTypesLocalAnno, LoadTypesRemoteAnno, EnrichTypesRemoteAnno
@@ -275,7 +280,7 @@ class Backup(BaseModel):
     )
 
 
-class ReportBase(BaseModel):
+class ReportBase[T](Runner[T]):
     enabled: bool = Field(
         description="When true, trigger this report",
         default=False,
@@ -286,14 +291,18 @@ class ReportBase(BaseModel):
     )
 
 
-class ReportPlaylistDifferences(ReportBase):
-    pass
+class ReportPlaylistDifferences(ReportBase[dict[str, dict[str, tuple[MusifyItem, ...]]]]):
+    async def run(self, source: Iterable[Playlist], reference: Iterable[Playlist]):
+        if not self.enabled:
+            return {}
+
+        return report_playlist_differences(source=self.filter(source), reference=self.filter(reference))
 
 
 reports_missing_tags_default_args = get_default_args(report_missing_tags)
 
 
-class ReportMissingTags(ReportBase):
+class ReportMissingTags(ReportBase[dict[str, dict[MusifyItem, tuple[str, ...]]]]):
     tags: LocalTrackFields = Field(
         description=f"The tags to check. Accepted tags: {LOCAL_TRACK_TAG_NAMES}",
         default=reports_missing_tags_default_args.get("tags", LocalTrackField.ALL),
@@ -302,6 +311,13 @@ class ReportMissingTags(ReportBase):
         description="When True, consider a track as having missing tags only if it is missing all the given tags",
         default=reports_missing_tags_default_args.get("match_all"),
     )
+
+    async def run(self, collections: Iterable[MusifyCollection]):
+        if not self.enabled:
+            return {}
+
+        source = self.filter(collections)
+        return report_missing_tags(collections=source, tags=self.tags, match_all=self.match_all)
 
 
 class Reports(BaseModel):

@@ -228,6 +228,7 @@ class TagsConfig(Runner[dict[LocalTrack, SyncResultTrack]]):
         if not self.rules.setters:
             return {}
 
+        self._logger.info(f"\33[1;95m ->\33[1;97m Setting tags for {len(library)} tracks\n")
         self.rules.set_tags(library, library.folders)
         if updater is None:
             return {}
