@@ -149,8 +149,8 @@ class TestConfig:
                 remote=SpotifyLibraryConfig(
                     name="test",
                     api=SpotifyAPIConfig(
-                        client_id="",
-                        client_secret="",
+                        client_id="<CLIENT ID>",
+                        client_secret="<CLIENT SECRET>",
                         token_file_path="token.json",
                         cache=APICacheConfig(
                             type=choice([cache.type for cache in local_caches]),
@@ -258,4 +258,4 @@ class TestConfig:
 
     @pytest.mark.skip(reason="Test not yet implemented")
     def test_load_functions_config_from_file(self):
-        pass
+        pass  # TODO

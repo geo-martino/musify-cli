@@ -150,15 +150,6 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibrary, Spoti
     ):
         assert manager.source == SPOTIFY_SOURCE
 
-    def test_init_api_fails(self, config: SpotifyLibraryConfig):
-        manager = RemoteLibraryManager[SpotifyLibrary, SpotifyLibraryConfig](config=config)
-        config.api.client_id = None
-        config.api.client_secret = None
-
-        with pytest.raises(ParserError):
-            # noinspection PyStatementEffect
-            manager.api
-
     async def test_enrich_all(self, manager_mock: RemoteLibraryManager[SpotifyLibrary, SpotifyLibraryConfig]):
         # noinspection PyTypeChecker
         library: SpotifyLibraryMock = manager_mock.library
@@ -177,8 +168,8 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibrary, Spoti
 
         # just check each method was called
         assert library.enrich_tracks_args
-        assert not library.enrich_SAVED_ALBUMS_args  # currently has no args
-        assert library.enrich_SAVED_ARTISTS_args
+        assert not library.enrich_saved_albums_args  # currently has no args
+        assert library.enrich_saved_artists_args
 
         # should enrich all those that have been loaded only and skip those that have been enriched
         library.reset()
@@ -190,8 +181,8 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibrary, Spoti
 
         # just check each method was called again
         assert library.enrich_tracks_args
-        assert not library.enrich_SAVED_ALBUMS_args  # currently has no args
-        assert library.enrich_SAVED_ARTISTS_args
+        assert not library.enrich_saved_albums_args  # currently has no args
+        assert library.enrich_saved_artists_args
 
     async def test_enrich_limited_on_load_types(
             self, manager_mock: RemoteLibraryManager[SpotifyLibrary, SpotifyLibraryConfig]
@@ -226,7 +217,7 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibrary, Spoti
         assert LoadTypesRemote.SAVED_ALBUMS in manager_mock.types_enriched
         enriched_types_album = manager_mock.types_enriched[LoadTypesRemote.SAVED_ALBUMS]
         assert not enriched_types_album
-        assert not library.enrich_SAVED_ALBUMS_args  # currently has no args
+        assert not library.enrich_saved_albums_args  # currently has no args
 
         assert LoadTypesRemote.SAVED_ARTISTS not in manager_mock.types_enriched
 
@@ -266,14 +257,14 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibrary, Spoti
         assert LoadTypesRemote.SAVED_ARTISTS in manager_mock.types_enriched
         enriched_types_artist = manager_mock.types_enriched[LoadTypesRemote.SAVED_ARTISTS]
         assert not enriched_types_artist
-        assert not library.enrich_SAVED_ARTISTS_args["tracks"]
+        assert not library.enrich_saved_artists_args["tracks"]
 
         # should skip those that have been enriched
         library.reset()
         await manager_mock.enrich(enrich=EnrichTypesRemote.ARTISTS)
 
         assert not library.enrich_tracks_args
-        assert not library.enrich_SAVED_ARTISTS_args
+        assert not library.enrich_saved_artists_args
 
         # on force, re-enriches loaded types but still doesn't try to enrich unloaded types
         library.reset()
@@ -286,4 +277,4 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibrary, Spoti
 
         enriched_types_artist = manager_mock.types_enriched[LoadTypesRemote.SAVED_ARTISTS]
         assert not enriched_types_artist
-        assert not library.enrich_SAVED_ARTISTS_args["tracks"]
+        assert not library.enrich_saved_artists_args["tracks"]

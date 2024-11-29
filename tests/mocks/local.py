@@ -57,17 +57,14 @@ class LocalLibraryMock(LibraryMock, LocalLibrary):
     async def load_playlists(self):
         self.load_calls.append(LoadTypesLocal.PLAYLISTS.name)
 
-    async def save_tracks(
-            self,
-            tags: UnitIterable[LocalTrackField] = LocalTrackField.ALL,
-            replace: bool = False,
-            dry_run: bool = True
-    ) -> dict[LocalTrack, SyncResultTrack]:
-        self.save_tracks_args = {"tags": tags, "replace": replace, "dry_run": dry_run}
+    async def save_tracks(self, *args, **kwargs) -> dict[LocalTrack, SyncResultTrack]:
+        self.save_tracks_args["_args"] = args
+        self.save_tracks_args |= kwargs
         return {}
 
-    def merge_tracks(self, tracks: Collection[Track], tags: UnitIterable[TagField] = Fields.ALL) -> None:
-        self.merge_tracks_args = {"tracks": tracks, "tags": tags}
+    def merge_tracks(self, *args, **kwargs) -> None:
+        self.merge_tracks_args["_args"] = args
+        self.merge_tracks_args |= kwargs
 
 
 class MusicBeeMock(LocalLibraryMock, MusicBee):

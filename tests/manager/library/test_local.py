@@ -93,7 +93,10 @@ class TestLocalLibraryManager[L: LocalLibrary, C: LocalLibraryConfig](LibraryMan
         manager_mock.merge_tracks(tracks)
 
         library_mock: LocalLibraryMock = manager_mock.library
-        assert library_mock.merge_tracks_args["tracks"] == tracks
+        if "tracks" in library_mock.merge_tracks_args:
+            assert library_mock.merge_tracks_args["tracks"] == tracks
+        else:
+            assert any(val == tracks for val in library_mock.merge_tracks_args["_args"])
         assert library_mock.merge_tracks_args["tags"] == config.updater.tags
 
     @pytest.mark.skip(reason="Test not yet implemented")
@@ -107,6 +110,7 @@ class TestLocalLibraryManager[L: LocalLibrary, C: LocalLibraryConfig](LibraryMan
     @pytest.mark.skip(reason="Test not yet implemented")
     def test_export_playlists(self, manager_mock: LocalLibraryManager[L, C]):
         pass  # TODO
+
 
 class TestMusicBeeManager(TestLocalLibraryManager[MusicBee, MusicBeeConfig]):
 

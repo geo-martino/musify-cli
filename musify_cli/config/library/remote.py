@@ -24,7 +24,8 @@ from musify.processors.download import ItemDownloadHelper
 from musify.processors.match import ItemMatcher
 from musify.processors.search import RemoteItemSearcher
 from musify.utils import get_max_width, align_string, to_collection
-from pydantic import BaseModel, NonNegativeFloat, Field, PositiveInt, confloat, computed_field, SecretStr, conint
+from pydantic import BaseModel, NonNegativeFloat, Field, PositiveInt, confloat, computed_field, SecretStr, conint, \
+    field_validator
 
 from musify_cli.config.library._core import LibraryConfig, PlaylistsConfig, Instantiator, Runner
 from musify_cli.config.operations.signature import get_default_args, get_arg_descriptions
@@ -85,7 +86,7 @@ class RemoteItemDownloadConfig(Instantiator[ItemDownloadHelper]):
         return ItemDownloadHelper(urls=self.urls, fields=self.fields, interval=self.interval)
 
 
-class RemoteNewMusicConfig(Runner[tuple[str, SyncResultRemotePlaylist]]):
+class RemoteNewMusicConfig(Runner[tuple[RemotePlaylist, SyncResultRemotePlaylist]]):
     name: str = Field(
         description="The name to give to the new music playlist. When the given playlist name already exists, "
                     "update the tracks in the playlist instead of generating a new one.",
@@ -100,7 +101,7 @@ class RemoteNewMusicConfig(Runner[tuple[str, SyncResultRemotePlaylist]]):
         default=datetime.now().date(),
     )
 
-    async def run(self, library: RemoteLibrary, dry_run: bool = True):
+    async def run(self, library: RemoteLibrary, dry_run: bool = True) -> tuple[RemotePlaylist, SyncResultRemotePlaylist]:
         """
         Create a new music playlist for followed artists with music released between ``start`` and ``end``.
 
@@ -108,16 +109,16 @@ class RemoteNewMusicConfig(Runner[tuple[str, SyncResultRemotePlaylist]]):
         :param dry_run: Run function, but do not modify the library's playlists at all.
         :return: The name of the new playlist and results of the sync as a :py:class:`SyncResultRemotePlaylist` object.
         """
-        collections = self._filter_artist_albums_by_date(library)
-
-        collections = to_collection(collections)
+        albums = self._filter_artist_albums_by_date(library)
         tracks = [
-            track for collection in sorted(collections, key=lambda x: x.date, reverse=True) for track in collection
+            track for album in sorted(albums, key=lambda x: (x.year, x.month or 1, x.day or 1), reverse=True)
+            for track in album
         ]
 
         self._logger.info(
             f"\33[1;95m  >\33[1;97m Creating {self.name!r} {library.source} playlist "
-            f"for {len(tracks)} new tracks by followed artists released between {self.start} and {self.end}\33[0m"
+            f"for {len(tracks)} new tracks from {len(albums)} albums "
+            f"by followed artists released between {self.start} and {self.end}\33[0m"
         )
 
         # add tracks to remote playlist
@@ -125,7 +126,7 @@ class RemoteNewMusicConfig(Runner[tuple[str, SyncResultRemotePlaylist]]):
         pl: RemotePlaylist = library.factory.playlist(response, skip_checks=True)
         pl.clear()
         pl.extend(tracks, allow_duplicates=False)
-        return self.name, await pl.sync(kind="refresh", reload=False, dry_run=dry_run)
+        return pl, await pl.sync(kind="refresh", reload=False, dry_run=dry_run)
 
     def _filter_artist_albums_by_date(self, library: RemoteLibrary) -> list[RemoteAlbum]:
         """Returns all loaded artist albums that are within the given ``start`` and ``end`` dates inclusive"""
@@ -148,7 +149,7 @@ class RemoteNewMusicConfig(Runner[tuple[str, SyncResultRemotePlaylist]]):
 api_handler_retry_defaults = get_default_args(GeometricCountTimer)
 
 
-class APIHandlerRetry(Instantiator[Timer]):
+class APIHandlerRetry(Instantiator[GeometricCountTimer]):
     initial: NonNegativeFloat = Field(
         description="The initial retry time in seconds for failed requests",
         default=api_handler_retry_defaults.get("initial")
@@ -169,7 +170,7 @@ class APIHandlerRetry(Instantiator[Timer]):
 api_handler_wait_defaults = get_default_args(StepCeilingTimer)
 
 
-class APIHandlerWait(Instantiator[Timer]):
+class APIHandlerWait(Instantiator[StepCeilingTimer]):
     initial: NonNegativeFloat = Field(
         description="The initial time in seconds to wait after receiving a response from a request",
         default=api_handler_wait_defaults.get("initial")
@@ -231,7 +232,7 @@ class APICacheConfig(Instantiator[ResponseCache]):
         cls = next((cls for cls in local_caches if cls.type == self.type), None)
         return cls is not None
 
-    def create(self, name: str):
+    def create(self):
         cls = next((cls for cls in CACHE_CLASSES if cls.type == self.type), None)
         return cls.connect(value=self.db, expire=self.expire_after)
 
@@ -263,17 +264,26 @@ class SpotifyAPIConfig(APIConfig[SpotifyAPI]):
         default=()
     )
 
-    def create(self):
-        if not self.client_id or not self.client_secret:
-            raise ParserError("Cannot create API object without client ID and client secret")
+    # noinspection PyNestedDecorators
+    @field_validator("client_id", "client_secret", mode="after")
+    @classmethod
+    def validate_secrets(cls, value: SecretStr) -> SecretStr:
+        if not value:
+            raise ParserError("Cannot create API object without both client ID and client secret set")
+        return value
 
-        return SpotifyAPI(
+    def create(self):
+        api = SpotifyAPI(
             client_id=self.client_id.get_secret_value(),
             client_secret=self.client_secret.get_secret_value(),
             scope=self.scope,
-            cache=self.cache.create(str(SpotifyAPI.source)),
+            cache=self.cache.create(),
             token_file_path=self.token_file_path,
         )
+        api.handler.retry_timer = self.handler.retry.create()
+        api.handler.wait_timer = self.handler.wait.create()
+
+        return api
 
 
 ###########################################################################

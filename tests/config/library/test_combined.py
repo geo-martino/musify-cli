@@ -56,8 +56,8 @@ class TestLibraries:
     @pytest.fixture
     def remote_libraries(self) -> list[RemoteLibraryConfig]:
         api = SpotifyAPIConfig(
-            client_id="",
-            client_secret="",
+            client_id="<CLIENT ID>",
+            client_secret="<CLIENT SECRET>",
         )
         return [
             SpotifyLibraryConfig(

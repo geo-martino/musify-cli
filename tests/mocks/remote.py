@@ -1,12 +1,15 @@
 from abc import ABCMeta
 from datetime import datetime
 from random import choice, randrange
-from typing import Any, Collection
+from typing import Any, Collection, Iterable
 
+from musify.base import MusifyItem
+from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.library import RemoteLibrary, SyncPlaylistsType
 from musify.libraries.remote.core.object import PLAYLIST_SYNC_KINDS, SyncResultRemotePlaylist, RemoteTrack, \
     RemotePlaylist, RemoteAlbum, RemoteArtist
 from musify.libraries.remote.spotify.api import SpotifyAPI
+from musify.libraries.remote.spotify.factory import SpotifyObjectFactory
 from musify.libraries.remote.spotify.library import SpotifyLibrary
 from musify.libraries.remote.spotify.object import SpotifyTrack, SpotifyPlaylist, SpotifyAlbum, SpotifyArtist
 
@@ -41,16 +44,39 @@ class RemotePlaylistMock(RemotePlaylist, metaclass=ABCMeta):
 
         self._name = random_str()
 
+        self.sync_args: dict[str, Any] = {}
+
     def _check_type(self) -> None:
         pass
 
     @property
     def name(self):
-        return self._name
+        # noinspection PyBroadException
+        try:
+            return super().name
+        except Exception:
+            return self._name
 
     @property
     def uri(self):
-        return self._name
+        # noinspection PyBroadException
+        try:
+            return super().uri
+        except Exception:
+            return self._name
+
+    async def sync(self, *args, **kwargs) -> SyncResultRemotePlaylist:
+        self.sync_args["_args"] = args
+        self.sync_args |= kwargs
+
+        return SyncResultRemotePlaylist(
+            start=randrange(0, 10),
+            added=randrange(0, 10),
+            removed=randrange(0, 10),
+            unchanged=randrange(0, 10),
+            difference=randrange(0, 10),
+            final=randrange(0, 10),
+        )
 
 
 class RemoteAlbumMock(RemoteAlbum, metaclass=ABCMeta):
@@ -95,23 +121,29 @@ class RemoteArtistMock(RemoteArtist, metaclass=ABCMeta):
         pass
 
 
-class RemoteLibraryMock(LibraryMock, RemoteLibrary, metaclass=ABCMeta):
+class RemoteAPIMock(RemoteAPI, metaclass=ABCMeta):
+    pass
+
+
+class RemoteLibraryMock(LibraryMock, RemoteLibrary[
+    RemoteAPIMock, RemotePlaylistMock, RemoteTrackMock, RemoteAlbumMock, RemoteArtistMock
+], metaclass=ABCMeta):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.load_calls: list[str] = []
         self.enrich_tracks_args: dict[str, Any] = {}
-        self.enrich_SAVED_ALBUMS_args: dict[str, Any] = {}
-        self.enrich_SAVED_ARTISTS_args: dict[str, Any] = {}
+        self.enrich_saved_albums_args: dict[str, Any] = {}
+        self.enrich_saved_artists_args: dict[str, Any] = {}
         self.sync_args: dict[str, Any] = {}
 
     def reset(self):
         """Reset all mock attributes"""
         self.load_calls.clear()
         self.enrich_tracks_args.clear()
-        self.enrich_SAVED_ALBUMS_args.clear()
-        self.enrich_SAVED_ARTISTS_args.clear()
+        self.enrich_saved_albums_args.clear()
+        self.enrich_saved_artists_args.clear()
         self.sync_args.clear()
 
     async def load(self):
@@ -129,14 +161,9 @@ class RemoteLibraryMock(LibraryMock, RemoteLibrary, metaclass=ABCMeta):
     async def load_saved_artists(self):
         self.load_calls.append(LoadTypesRemote.SAVED_ARTISTS.name)
 
-    async def sync(
-            self,
-            playlists: SyncPlaylistsType = None,
-            kind: PLAYLIST_SYNC_KINDS = "new",
-            reload: bool = True,
-            dry_run: bool = True
-    ) -> dict[str, SyncResultRemotePlaylist]:
-        self.sync_args = {"playlists": playlists, "kind": kind, "reload": reload, "dry_run": dry_run}
+    async def sync(self, *args, **kwargs) -> dict[str, SyncResultRemotePlaylist]:
+        self.sync_args["_args"] = args
+        self.sync_args |= kwargs
         return {}
 
 
@@ -159,21 +186,36 @@ class SpotifyArtistMock(RemoteArtistMock, SpotifyArtist):
     pass
 
 
+class SpotifyAPIMock(RemoteAPIMock, SpotifyAPI):
+    async def create_playlist(
+            self, name: str, public: bool = True, collaborative: bool = False, *_, **__
+    ) -> dict[str, Any]:
+        return {
+            "name": name
+        }
+
+
 class SpotifyLibraryMock(RemoteLibraryMock, SpotifyLibrary):
     def __init__(self, *args, **kwargs):
         if "api" not in kwargs:
-            kwargs["api"] = SpotifyAPI()
+            kwargs["api"] = SpotifyAPIMock()
         super().__init__(*args, **kwargs)
 
-    async def enrich_tracks(
-            self, features: bool = False, analysis: bool = False, albums: bool = False, artists: bool = False
-    ) -> None:
-        self.enrich_tracks_args = {
-            "features": features, "analysis": analysis, "albums": albums, "artists": artists
-        }
+        self._factory = SpotifyObjectFactory(
+            api=self.api,
+            playlist=SpotifyPlaylistMock,
+            track=SpotifyTrackMock,
+            album=SpotifyAlbumMock,
+            artist=SpotifyArtistMock,
+        )
+
+    async def enrich_tracks(self, *args, **kwargs) -> None:
+        self.enrich_tracks_args["_args"] = args
+        self.enrich_tracks_args |= kwargs
 
     async def enrich_saved_albums(self) -> None:
-        self.enrich_SAVED_ALBUMS_args = {}
+        self.enrich_saved_albums_args = {}
 
-    async def enrich_saved_artists(self, tracks: bool = False, types: Collection[str] = ()) -> None:
-        self.enrich_SAVED_ARTISTS_args = {"tracks": tracks, "types": types}
+    async def enrich_saved_artists(self, *args, **kwargs) -> None:
+        self.enrich_saved_artists_args["_args"] = args
+        self.enrich_saved_artists_args |= kwargs
