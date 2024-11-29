@@ -16,10 +16,10 @@ LOCAL_TRACK_TAG_NAMES: list[str] = list(sorted(
     set(LocalTrackField.__tags__), key=lambda x: FIELD_NAMES.index(x)
 ))
 
+type TagConfigType[T: TagField] = UnitCollection[str] | UnitCollection[T] | None
 
-def get_tags[T: TagField](
-        tags: UnitCollection[str] | UnitCollection[T] | None, cls: type[T] = LocalTrackField
-) -> tuple[T, ...]:
+
+def get_tags[T: TagField](tags: TagConfigType[T], cls: type[T] = LocalTrackField) -> tuple[T, ...]:
     """Get the :py:class:`Field` enums of the given ``cls`` for a given list of ``tags``"""
     if isinstance(tags, Collection) and all(v.__class__ == cls for v in tags):
         return to_collection(tags)

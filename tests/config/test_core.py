@@ -1,4 +1,5 @@
-from datetime import datetime
+import logging
+from datetime import datetime, timedelta
 from pathlib import Path
 from random import choice
 
@@ -9,11 +10,13 @@ from musify.libraries.local.track.field import LocalTrackField
 from musify.logger import MusifyLogger
 
 from musify_cli import MODULE_ROOT
-from musify_cli.config.core import Paths, Logging, MUSIFY_ROOT, AIOREQUESTFUL_ROOT, MusifyConfig
+from musify_cli.config.core import Paths, Logging, MUSIFY_ROOT, AIOREQUESTFUL_ROOT, MusifyConfig, \
+    ReportPlaylistDifferences, ReportMissingTags
 from musify_cli.config.library import LibrariesConfig
 from musify_cli.config.library.local import LocalLibraryConfig, LocalPaths, LocalLibraryPaths
-from musify_cli.config.library.remote import SpotifyAPIConfig, SpotifyLibraryConfig
+from musify_cli.config.library.remote import SpotifyAPIConfig, SpotifyLibraryConfig, APICacheConfig, local_caches
 from musify_cli.config.library.types import LoadTypesLocal, LoadTypesRemote, EnrichTypesRemote
+from musify_cli.log.handlers import CurrentTimeRotatingFileHandler
 from tests.utils import path_resources
 
 path_core_config = path_resources.joinpath("test_config.yml")
@@ -42,24 +45,40 @@ class TestLogging:
         model.name = "I am not a valid logger name"
         assert not model.logger
 
+    def test_ansi_codes_fixed(self, model: Logging):
+        for formatter in model.formatters.values():
+            assert "\\33" not in formatter["format"]
+
     def test_configures_additional_loggers(self, model: Logging):
+        additional_logger_names = {MODULE_ROOT, MUSIFY_ROOT, AIOREQUESTFUL_ROOT}
+        assert all(name in model.loggers and model.loggers[name] == model.logger for name in additional_logger_names)
+
         name = "i am an additional logger name"
         model.configure_additional_loggers(name)
         assert name in model.loggers
         assert model.loggers[name] == model.logger
-
-        additional_logger_names = {MODULE_ROOT, MUSIFY_ROOT, AIOREQUESTFUL_ROOT}
-        assert all(name in model.loggers and model.loggers[name] == model.logger for name in additional_logger_names)
-
-    def test_ansi_codes_fixed(self, model: Logging):
-        for formatter in model.formatters.values():
-            assert "\\33" not in formatter["format"]
 
     def test_configure_logging(self, model: Logging):
         model.configure_logging()
 
         assert MusifyLogger.compact is model.compact
         assert MusifyLogger.disable_bars is not model.bars
+
+    def test_configures_dt_on_rotating_file_handler(self, model: Logging):
+        model.handlers["rotating_file_handler"] = {
+            "class": f"{CurrentTimeRotatingFileHandler.__module__}.{CurrentTimeRotatingFileHandler.__qualname__}"
+        }
+        dt = datetime.now() - timedelta(days=2)
+        model.configure_rotating_file_handler_dt(dt)
+        model.configure_logging()
+
+        # noinspection PyTypeChecker
+        rotating_file_handlers: list[CurrentTimeRotatingFileHandler] = [
+            handler for name in logging.getHandlerNames()
+            if isinstance((handler := logging.getHandlerByName(name)), CurrentTimeRotatingFileHandler)
+        ]
+        assert rotating_file_handlers
+        assert all(handler.dt == dt for handler in rotating_file_handlers)
 
 
 class TestPaths:
@@ -105,9 +124,22 @@ class TestPaths:
             assert not path.exists()
 
 
+class TestReportPlaylistDifferences:
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_playlist_differences(self, model: ReportPlaylistDifferences):
+        pass  # TODO
+
+
+class TestReportMissingTags:
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_missing_tags(self, model: ReportMissingTags):
+        pass  # TODO
+
+
 class TestConfig:
     @pytest.fixture
     def model(self, tmp_path: Path):
+        # noinspection PyTestUnpassedFixture
         return MusifyConfig(
             libraries=LibrariesConfig(
                 local=LocalLibraryConfig[LocalLibrary, LocalLibraryPaths](
@@ -119,7 +151,11 @@ class TestConfig:
                     api=SpotifyAPIConfig(
                         client_id="",
                         client_secret="",
-                        token_file_path="token.json"
+                        token_file_path="token.json",
+                        cache=APICacheConfig(
+                            type=choice([cache.type for cache in local_caches]),
+                            db="cache_file",
+                        )
                     )
                 )
             )
@@ -130,7 +166,13 @@ class TestConfig:
         assert path.is_absolute()
         assert path.is_relative_to(model.paths.base)
 
+        assert model.libraries.remote.api.cache.is_local
+        path: Path = model.libraries.remote.api.cache.db
+        assert path.is_absolute()
+        assert path.is_relative_to(model.paths.base)
+
     def test_keeps_path_on_absolute(self, model: MusifyConfig, tmp_path: Path):
+        # noinspection PyTestUnpassedFixture
         model = MusifyConfig(
             libraries=LibrariesConfig(
                 local=model.libraries.local,
@@ -139,7 +181,11 @@ class TestConfig:
                     api=SpotifyAPIConfig(
                         client_id=model.libraries.remote.api.client_id,
                         client_secret=model.libraries.remote.api.client_secret,
-                        token_file_path=tmp_path.joinpath("token.json")
+                        token_file_path=tmp_path.joinpath("token.json"),
+                        cache = APICacheConfig(
+                            type=choice([cache.type for cache in local_caches]),
+                            db=tmp_path.joinpath("cache_file"),
+                        )
                     )
                 )
             )
@@ -151,7 +197,7 @@ class TestConfig:
         assert path == tmp_path.joinpath("token.json")
 
     # noinspection PyTestUnpassedFixture
-    def test_load_from_file(self, tmp_path: Path):
+    def test_load_base_config_from_file(self):
         config, functions = MusifyConfig.from_file(path_core_config)
 
         assert config.execute
@@ -209,3 +255,7 @@ class TestConfig:
             LocalTrackField.TRACK_TOTAL,
         )
         assert config.reports.missing_tags.match_all
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_load_functions_config_from_file(self):
+        pass

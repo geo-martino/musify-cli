@@ -14,7 +14,7 @@ from musify_cli.config.operations.tagger._getter import GETTERS, getter_from_con
 from musify_cli.exception import ParserError
 
 
-def test_value_as_config():
+def test_get_value_as_default_config():
     config = "track_number"
     getter = getter_from_config(config=config)
     assert isinstance(getter, TagGetter)

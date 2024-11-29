@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from random import shuffle, sample
 
+import pytest
 from musify.types import MusifyEnum
 
 from musify_cli.config.library import LibraryConfig
@@ -37,6 +38,46 @@ class LibraryManagerTester[T: LibraryManager](ABC):
         Yields the modified ``manager`` as a pytest.fixture.
         """
         raise NotImplementedError
+
+    @staticmethod
+    @pytest.mark.skip(reason="Test not yet implemented")
+    async def test_save_json(manager_mock: T):
+        pass  # TODO
+
+    @staticmethod
+    @pytest.mark.skip(reason="Test not yet implemented")
+    async def test_load_json(manager_mock: T):
+        pass  # TODO
+
+    @staticmethod
+    @pytest.mark.skip(reason="Test not yet implemented")
+    async def test_get_library_backup_name(manager_mock: T):
+        pass  # TODO
+
+    @staticmethod
+    @pytest.mark.skip(reason="Test not yet implemented")
+    async def test_backup(manager_mock: T):
+        pass  # TODO
+
+    @staticmethod
+    @pytest.mark.skip(reason="Test not yet implemented")
+    async def test_restore(manager_mock: T):
+        pass  # TODO
+
+    @staticmethod
+    @pytest.mark.skip(reason="Test not yet implemented")
+    async def test_get_available_backup_groups(manager_mock: T):
+        pass  # TODO
+
+    @staticmethod
+    @pytest.mark.skip(reason="Test not yet implemented")
+    async def test_get_restore_dir_from_user(manager_mock: T):
+        pass  # TODO
+
+    @staticmethod
+    @pytest.mark.skip(reason="Test not yet implemented")
+    async def test_get_restore_key_from_user(manager_mock: T):
+        pass  # TODO
 
     @staticmethod
     async def test_load_with_types(manager_mock: T, load_types: type[MusifyEnum]):

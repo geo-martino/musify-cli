@@ -1,10 +1,12 @@
+from typing import Any
+
 import pytest
 from musify.libraries.collection import BasicCollection
 from musify.processors.filter import FilterComparers
 from musify.utils import to_collection
 from pydantic import TypeAdapter
 
-from musify_cli.config.operations.filters import get_comparers_filter, Filter
+from musify_cli.config.operations.filters import get_comparers_filter, Filter, MultiType
 from musify_cli.config.operations.signature import get_default_args
 
 
@@ -20,6 +22,9 @@ class TestFilter:
         obj = BasicCollection(name="collection name", items=[])
         assert filter_.transform(obj) == obj.name
         assert filter_.transform(obj.name) == obj.name
+
+    def assert_annotation_dump(self, annotation: TypeAdapter, config: MultiType[str]):
+        assert annotation.dump_json(annotation.validate_python(config))
 
     def test_get_comparers_filter_string(self, annotation: TypeAdapter):
         config = "test_value"
@@ -37,6 +42,7 @@ class TestFilter:
         assert not sub_filter.ready
 
         assert filter_ == annotation.validate_python(config)
+        self.assert_annotation_dump(annotation=annotation, config=config)
 
     def test_get_comparers_filter_collection(self, annotation: TypeAdapter):
         config = ["test_value_1", "test_value_2"]
@@ -54,6 +60,7 @@ class TestFilter:
         assert not sub_filter.ready
 
         assert filter_ == annotation.validate_python(config)
+        self.assert_annotation_dump(annotation=annotation, config=config)
 
     def test_get_comparers_filter_mapping(self, annotation: TypeAdapter):
         match_all = not get_default_args(FilterComparers)["match_all"]
@@ -77,3 +84,4 @@ class TestFilter:
             assert not sub_filter.ready
 
         assert filter_ == annotation.validate_python(config | {"match_all": match_all})
+        self.assert_annotation_dump(annotation=annotation, config=config | {"match_all": match_all})

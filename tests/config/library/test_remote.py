@@ -10,6 +10,102 @@ from mocks.remote import SpotifyLibraryMock, SpotifyPlaylistMock, SpotifyTrackMo
 from musify_cli.config.library.remote import APIConfig, SpotifyAPIConfig, RemoteNewMusicConfig, RemotePlaylistsSync
 
 
+class TestRemoteItemCheckerConfig:
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_create(self):
+        pass  # TODO
+
+
+class TestRemoteItemSearcherConfig:
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_create(self):
+        pass  # TODO
+
+
+class TestRemoteItemDownloaderConfig:
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_create(self):
+        pass  # TODO
+
+
+class TestRemoteNewMusicConfig:
+
+    library_mock: type[RemoteLibraryMock] = SpotifyLibraryMock
+    playlist_mock: type[RemotePlaylistMock] = SpotifyPlaylistMock
+    album_mock: type[RemoteAlbumMock] = SpotifyAlbumMock
+    artist_mock: type[RemoteArtistMock] = SpotifyArtistMock
+
+    @pytest.fixture
+    def model(self) -> RemoteNewMusicConfig:
+        return RemoteNewMusicConfig(
+            name="Super Cool New Music Playlist",
+            start=(datetime.now() - timedelta(days=90)).date(),
+            end=(datetime.now() - timedelta(days=20)).date(),
+        )
+
+    def test_filter_artist_albums_by_date(self, model: RemoteNewMusicConfig):
+        library = self.library_mock()
+
+        library.artists.extend(self.artist_mock({}) for _ in range(10))
+        for _ in range(100):
+            artist = choice(library.artists)
+            # noinspection PyTypeChecker
+            artist.append(self.album_mock({}))
+
+        albums = [album for artist in library.artists for album in artist.albums]
+
+        expected_counts = sum(
+            1 for alb in albums if alb.date is not None and model.start <= alb.date <= model.end
+        )
+        expected_counts += sum(
+            1 for alb in albums
+            if alb.month is not None and alb.day is None
+            and model.start.month <= alb.month <= model.end.month
+        )
+        expected_counts += sum(
+            1 for alb in albums if alb.month is None and model.start.year <= alb.year <= model.end.year
+        )
+
+        assert 0 < expected_counts < len(albums)
+        assert len(model._filter_artist_albums_by_date(library)) == expected_counts
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_create_playlist(self, model: RemoteNewMusicConfig):
+        pass
+
+
+class TestAPIHandlerRetry:
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_create(self):
+        pass  # TODO
+
+
+class TestAPIHandlerWait:
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_create(self):
+        pass  # TODO
+
+
+class TestAPICacheConfig:
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_create(self):
+        pass  # TODO
+
+
+class TestAPIConfig:
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_create(self):
+        pass  # TODO
+
+
+
 class TestRemotePlaylistsSync:
 
     library_mock: type[RemoteLibraryMock] = SpotifyLibraryMock
@@ -76,52 +172,6 @@ class TestRemotePlaylistsSync:
         assert library.sync_args["dry_run"] == dry_run
 
 
-class TestNewMusic:
-
-    library_mock: type[RemoteLibraryMock] = SpotifyLibraryMock
-    playlist_mock: type[RemotePlaylistMock] = SpotifyPlaylistMock
-    album_mock: type[RemoteAlbumMock] = SpotifyAlbumMock
-    artist_mock: type[RemoteArtistMock] = SpotifyArtistMock
-
-    @pytest.fixture
-    def model(self) -> RemoteNewMusicConfig:
-        return RemoteNewMusicConfig(
-            name="Super Cool New Music Playlist",
-            start=(datetime.now() - timedelta(days=90)).date(),
-            end=(datetime.now() - timedelta(days=20)).date(),
-        )
-
-    def test_filter_artist_albums_by_date(self, model: RemoteNewMusicConfig):
-        library = self.library_mock()
-
-        library.artists.extend(self.artist_mock({}) for _ in range(10))
-        for _ in range(100):
-            artist = choice(library.artists)
-            # noinspection PyTypeChecker
-            artist.append(self.album_mock({}))
-
-        albums = [album for artist in library.artists for album in artist.albums]
-
-        expected_counts = sum(
-            1 for alb in albums if alb.date is not None and model.start <= alb.date <= model.end
-        )
-        expected_counts += sum(
-            1 for alb in albums
-            if alb.month is not None and alb.day is None
-            and model.start.month <= alb.month <= model.end.month
-        )
-        expected_counts += sum(
-            1 for alb in albums if alb.month is None and model.start.year <= alb.year <= model.end.year
-        )
-
-        assert 0 < expected_counts < len(albums)
-        assert len(model._filter_artist_albums_by_date(library)) == expected_counts
-
-    @pytest.mark.skip(reason="Test not yet implemented")
-    def test_create_playlist(self, model: RemoteNewMusicConfig):
-        pass
-
-
 class TestRemoteLibrary:
     @pytest.fixture
     def api_model(self) -> APIConfig:
@@ -129,3 +179,7 @@ class TestRemoteLibrary:
             client_id="",
             client_secret="",
         )
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_create(self):
+        pass  # TODO

@@ -260,22 +260,6 @@ class LocalLibraryConfig[L: LocalLibrary, P: LocalLibraryPathsParser](LibraryCon
         default_factory=TagsConfig,
     )
 
-    # noinspection PyNestedDecorators
-    @model_validator(mode="before")
-    @classmethod
-    def extract_type_from_input(cls, data: Any) -> Any:
-        """Attempt to infer and set the ``type`` field from the other input fields"""
-        if not isinstance(data, MutableMapping):
-            return data
-
-        if (
-                isinstance((paths := data.get("paths")), LocalPaths)
-                and isinstance((library := paths.library), LocalLibraryPathsParser)
-        ):
-            data["type"] = library.source
-
-        return data
-
     @model_validator(mode="after")
     def extract_library_paths(self) -> Self:
         """Set the current platform's paths as the library paths when multiple platforms are configured."""
@@ -283,7 +267,7 @@ class LocalLibraryConfig[L: LocalLibrary, P: LocalLibraryPathsParser](LibraryCon
             self.paths.library = self.paths.library.paths
         return self
 
-    def create(self, wrangler: RemoteDataWrangler):
+    def create(self, wrangler: RemoteDataWrangler = None):
         return self._library_cls(
             library_folders=self.paths.library,
             playlist_folder=self.paths.playlists,

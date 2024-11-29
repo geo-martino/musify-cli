@@ -11,7 +11,7 @@ from musify.libraries.remote.spotify.library import SpotifyLibrary
 from mocks.remote import RemotePlaylistMock, RemoteTrackMock, RemoteLibraryMock, RemoteAlbumMock, RemoteArtistMock, \
     SpotifyLibraryMock, SpotifyPlaylistMock, SpotifyAlbumMock, SpotifyTrackMock, SpotifyArtistMock
 from musify_cli.config.library.remote import RemoteLibraryConfig, SpotifyAPIConfig, APICacheConfig, \
-    APIHandlerConfig, APIHandlerRetry, APIHandlerWait, RemoteCheckerConfig, RemoteItemDownloadConfig, \
+    APIHandlerConfig, APIHandlerRetry, APIHandlerWait, RemoteItemCheckerConfig, RemoteItemDownloadConfig, \
     RemotePlaylistsConfig, RemotePlaylistsSync, SpotifyLibraryConfig
 from musify_cli.config.library.types import LoadTypesRemote, EnrichTypesRemote
 from musify_cli.exception import ParserError
@@ -44,6 +44,26 @@ class RemoteLibraryManagerTester[L: RemoteLibrary, C: RemoteLibraryConfig](
         manager.factory.album = self.album_mock
 
         return manager
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_run_download_helper(self, manager_mock: RemoteLibraryManager[L, C]):
+        pass  # TODO
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_restore_library(self, manager_mock: RemoteLibraryManager[L, C]):
+        pass  # TODO
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_create_new_music_playlist(self, manager_mock: RemoteLibraryManager[L, C]):
+        pass  # TODO
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_load_followed_artist_albums(self, manager_mock: RemoteLibraryManager[L, C]):
+        pass  # TODO
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_extend_albums(self, manager_mock: RemoteLibraryManager[L, C]):
+        pass  # TODO
 
 
 class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibrary, SpotifyLibraryConfig]):
@@ -84,7 +104,7 @@ class TestSpotifyLibraryManager(RemoteLibraryManagerTester[SpotifyLibrary, Spoti
                 ),
                 token_file_path=tmp_path.joinpath("token.json"),
             ),
-            check=RemoteCheckerConfig(
+            check=RemoteItemCheckerConfig(
                 interval=200,
                 allow_karaoke=True,
             ),

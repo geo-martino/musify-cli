@@ -8,7 +8,26 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9b2127b7-24ea-430c-8f59-a341ad0474f1" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/tests/config/library/conftest.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/config/library/test_types.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/musify_cli/config/core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/core.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/config/library/local.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/local.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/config/library/remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/remote.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/config/operations/tags.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/operations/tags.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/musify_cli/log/handlers.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/log/handlers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/config/library/test_combined.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/library/test_combined.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/config/library/test_local.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/library/test_local.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/config/library/test_remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/library/test_remote.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/config/operations/tagger/test_getter.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/operations/tagger/test_getter.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/config/operations/tagger/test_setter.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/operations/tagger/test_setter.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/config/operations/test_filters.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/operations/test_filters.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/config/operations/test_tags.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/operations/test_tags.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/config/test_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/test_core.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/conftest.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/conftest.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/manager/library/test_local.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/library/test_local.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/manager/library/test_remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/library/test_remote.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/manager/test_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/test_processor.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -82,7 +101,7 @@
       <recent name="$PROJECT_DIR$/musify_cli/parser/library/" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.__main__">
+  <component name="RunManager" selected="Python tests.Run all tests">
     <configuration name="__main__" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="musify-cli" />
       <option name="ENV_FILES" value="" />

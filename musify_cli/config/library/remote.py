@@ -38,7 +38,7 @@ remote_item_checker_defaults = get_default_args(RemoteItemChecker)
 remote_item_checker_descriptions = get_arg_descriptions(RemoteItemChecker)
 
 
-class RemoteCheckerConfig(Instantiator[RemoteItemChecker]):
+class RemoteItemCheckerConfig(Instantiator[RemoteItemChecker]):
     interval: int = Field(
         description=remote_item_checker_descriptions.get("interval"),
         default=remote_item_checker_defaults.get("interval")
@@ -381,9 +381,9 @@ class RemoteLibraryConfig[L: RemoteLibrary, A: APIConfig](LibraryConfig[RemoteLi
         description=LibraryConfig.model_fields.get("playlists").description,
         default_factory=RemotePlaylistsConfig,
     )
-    check: RemoteCheckerConfig = Field(
+    check: RemoteItemCheckerConfig = Field(
         description="Configuration for the item checker for this library",
-        default_factory=RemoteCheckerConfig,
+        default_factory=RemoteItemCheckerConfig,
     )
     search: RemoteItemSearcherConfig = Field(
         description="Configuration for the item searcher for this library",

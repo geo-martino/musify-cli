@@ -54,26 +54,16 @@ class TestMusifyProcessor:
         return MusifyProcessor(config=config)
 
     @pytest.mark.skip(reason="Test not yet implemented")
+    def test_set_processor(self, manager: MusifyProcessor):
+        pass  # TODO
+
+    @pytest.mark.skip(reason="Test not yet implemented")
     def test_set_config(self, manager: MusifyProcessor):
         pass  # TODO
 
-    @pytest.mark.skip(reason="This removes all handlers hence removing ability to see logs for tests that follow this")
-    def test_configure_logging(self):
-        with pytest.raises(ParserError):
-            MusifyProcessor.configure_logging(path_txt)
-
-        MusifyProcessor.configure_logging(path_logging_config)
-        assert MusifyLogger.compact
-
-        loggers = [logger.name for logger in logging.getLogger().getChildren()]
-        assert "__main__" not in loggers
-
-        MusifyProcessor.configure_logging(path_logging_config, "test", "__main__")
-
-        loggers = [logger.name for logger in logging.getLogger().getChildren()]
-        assert "test" in loggers
-        assert "__main__" in loggers
-        assert MODULE_ROOT in loggers
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_dump_config(self, manager: MusifyProcessor):
+        pass  # TODO
 
     ###########################################################################
     ## Pre-/Post- operations
@@ -95,20 +85,35 @@ class TestMusifyProcessor:
         assert len(manager.filter([f"new {pl}" for pl in playlists])) == 3
 
     ###########################################################################
-    ## Operations
+    ## Cross-library operations
     ###########################################################################
     @pytest.mark.skip(reason="Test not yet implemented")
-    def test_run_download_helper(self, manager: MusifyProcessor):
+    def test_search(self, manager: MusifyProcessor):
         pass  # TODO
 
     @pytest.mark.skip(reason="Test not yet implemented")
-    def test_create_new_music_playlist(self, manager: MusifyProcessor):
+    def test_check(self, manager: MusifyProcessor):
         pass  # TODO
 
     @pytest.mark.skip(reason="Test not yet implemented")
-    def test_playlist_differences(self, manager: MusifyProcessor):
+    def test_pull_tags(self, manager: MusifyProcessor):
         pass  # TODO
 
     @pytest.mark.skip(reason="Test not yet implemented")
-    def test_missing_tags(self, manager: MusifyProcessor):
+    def test_sync_remote(self, manager: MusifyProcessor):
+        pass  # TODO
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_sync_remote(self, manager: MusifyProcessor):
+        pass  # TODO
+
+    ###########################################################################
+    ## Reports
+    ###########################################################################
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_report_playlist_differences(self, manager: MusifyProcessor):
+        pass  # TODO
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_report_missing_tags(self, manager: MusifyProcessor):
         pass  # TODO

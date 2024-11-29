@@ -65,8 +65,27 @@ class TestLocalLibraryManager[L: LocalLibrary, C: LocalLibraryConfig](LibraryMan
         assert manager.source == LocalLibrary.source
 
     ###########################################################################
+    ## Backup/Restore
+    ###########################################################################
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_restore_library(self, manager_mock: LocalLibraryManager[L, C]):
+        pass  # TODO
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_get_tags_to_restore_from_user(self, manager_mock: LocalLibraryManager[L, C]):
+        pass  # TODO
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_get_tags_to_restore_from_user(self, manager_mock: LocalLibraryManager[L, C]):
+        pass  # TODO
+
+    ###########################################################################
     ## Operations
     ###########################################################################
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_save_tracks(self, manager_mock: LocalLibraryManager[L, C], config: C):
+        pass  # TODO
+
     def test_merge_tracks(self, manager_mock: LocalLibraryManager[L, C], config: C):
         manager_mock.dry_run = False
 
@@ -77,63 +96,25 @@ class TestLocalLibraryManager[L: LocalLibrary, C: LocalLibraryConfig](LibraryMan
         assert library_mock.merge_tracks_args["tracks"] == tracks
         assert library_mock.merge_tracks_args["tags"] == config.updater.tags
 
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_set_tags(self, manager_mock: LocalLibraryManager[L, C]):
+        pass  # TODO
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_merge_playlists(self, manager_mock: LocalLibraryManager[L, C]):
+        pass  # TODO
+
+    @pytest.mark.skip(reason="Test not yet implemented")
+    def test_export_playlists(self, manager_mock: LocalLibraryManager[L, C]):
+        pass  # TODO
 
 class TestMusicBeeManager(TestLocalLibraryManager[MusicBee, MusicBeeConfig]):
 
     library_mock: type[MusicBeeMock] = MusicBeeMock
 
-    @pytest.fixture
-    def library_folders(self, tmp_path: Path) -> list[Path]:
-        """The library folders to use when generating the MusicBee settings file."""
-        library_folders = [tmp_path.joinpath("library_1"), tmp_path.joinpath("library_2")]
-        for path in library_folders:
-            path.mkdir(parents=True, exist_ok=True)
-        return library_folders
-
     # noinspection PyMethodOverriding
     @pytest.fixture
-    def config(self, tmp_path: Path, library_folders: list[Path]) -> MusicBeeConfig:
-        musicbee_folder = tmp_path.joinpath("library")
-        musicbee_folder.mkdir(parents=True, exist_ok=True)
-
-        playlists_folder = musicbee_folder.joinpath(MusicBee.playlists_path)
-        playlists_folder.mkdir(parents=True, exist_ok=True)
-
-        xml_library = (
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-            "<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" "
-            "\"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">",
-            "<plist version=\"1.0\">",
-            "<dict>",
-            "<key>Major Version</key><integer>3</integer>",
-            "<key>Minor Version</key><integer>5</integer>",
-            "<key>Application Version</key><string>3.5.8447.35892</string>",
-            f"<key>Music Folder</key><string>file://localhost/{musicbee_folder}</string>",
-            "<key>Library Persistent ID</key><string>3D76B2A6FD362901</string>",
-            "<key>Tracks</key>",
-            "<dict/>",
-            "<key>Playlists</key>",
-            "<array/>",
-            "</dict>",
-            "</plist>",
-        )
-        with open(musicbee_folder.joinpath(MusicBee.xml_library_path), "w") as f:
-            f.write("\n".join(xml_library))
-
-        xml_settings = (
-            "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
-            "<ApplicationSettings xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
-            "xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">",
-            f"<Path>{musicbee_folder}</Path>",
-            "<OrganisationMonitoredFolders>",
-            f" <string>{library_folders[0]}</string>",
-            f" <string>{library_folders[1]}</string>",
-            "</OrganisationMonitoredFolders>",
-            "</ApplicationSettings>",
-        )
-        with open(musicbee_folder.joinpath(MusicBee.xml_settings_path), "w") as f:
-            f.write("\n".join(xml_settings))
-
+    def config(self, musicbee_folder: Path) -> MusicBeeConfig:
         return MusicBeeConfig(
             name="name",
             paths=LocalPaths(

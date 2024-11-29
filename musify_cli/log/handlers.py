@@ -4,6 +4,7 @@ All logging handlers specific to this package.
 import logging.handlers
 import os
 import shutil
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -61,7 +62,12 @@ class CurrentTimeRotatingFileHandler(logging.handlers.BaseRotatingHandler):
         self.removed: list[datetime] = []  # datetime on the files that were removed
         self.rotator(unformatted=str(filename), formatted=self.filename)
 
-        super().__init__(filename=self.filename, mode="w", encoding=encoding, delay=delay, errors=errors)
+        if "PYTEST_VERSION" in os.environ:  # don't create log file when executing tests
+            filename = Path(tempfile.gettempdir(), self.filename)
+        else:
+            filename = self.filename
+
+        super().__init__(filename=filename, mode="w", encoding=encoding, delay=delay, errors=errors)
 
     # noinspection PyPep8Naming
     @staticmethod

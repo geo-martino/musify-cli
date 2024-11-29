@@ -58,15 +58,6 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         self.logger: MusifyLogger = logging.getLogger(__name__)
         sys.excepthook = self._handle_exception
 
-        # ensure the config and file handler are using the same timestamp
-        # clean up app data backup folder using the same logic for all file handlers
-        for name in logging.getHandlerNames():
-            handler = logging.getHandlerByName(name)
-            if isinstance(handler, CurrentTimeRotatingFileHandler):
-                self.config.paths.dt = handler.dt  # TODO: competing dt systems, resolve this
-                backup_path = self.paths.backup
-                handler.rotator(str(backup_path.joinpath("{}")), backup_path)
-
         self.config = config
         self._dump_config("Base")
 

@@ -12,6 +12,7 @@ from collections.abc import Collection
 from musify_cli import MODULE_ROOT
 from musify_cli.cli import PARSER
 from musify_cli.config.core import MusifyConfig
+from musify_cli.log.handlers import CurrentTimeRotatingFileHandler
 from musify_cli.manager import MusifyProcessor
 from musify_cli.printers import print_line, print_time, print_header, print_folders, print_function_header, \
     print_sub_header
@@ -41,6 +42,13 @@ def setup() -> tuple[MusifyConfig, dict[str, MusifyConfig]]:
     base.logging.configure_additional_loggers(__name__)
     base.logging.configure_rotating_file_handler_dt(dt=base.paths.dt)
     base.logging.configure_logging()
+
+    # clean up app data backup folder using the same logic for all file handlers
+    for name in logging.getHandlerNames():
+        handler = logging.getHandlerByName(name)
+        if isinstance(handler, CurrentTimeRotatingFileHandler):
+            backup_path = base.paths.backup
+            handler.rotator(str(backup_path.joinpath("{}")), backup_path)
 
     return base, functions
 

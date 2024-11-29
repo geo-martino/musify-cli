@@ -13,7 +13,7 @@ from musify_cli.config.operations.tagger._setter import SETTERS, setter_from_con
 from musify_cli.exception import ParserError
 
 
-def test_value_as_config():
+def test_set_value_as_default_config():
     config = True
     setter = setter_from_config(field=LocalTrackField.TITLE, config=config)
     assert isinstance(setter, Value)

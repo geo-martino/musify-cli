@@ -341,7 +341,6 @@ class Reports(BaseModel):
 
 
 class MusifyConfig(BaseModel):
-
     libraries: LibrariesConfig = Field(
         description="Configuration for all available libraries",
     )

@@ -4,7 +4,7 @@ from musify.libraries.local.track.field import LocalTrackField
 from musify.utils import to_collection
 from pydantic import TypeAdapter
 
-from musify_cli.config.operations.tags import get_tags, TagFilter, LocalTrackFields, get_tag_filter
+from musify_cli.config.operations.tags import get_tags, TagFilter, LocalTrackFields, get_tag_filter, TagConfigType
 from musify_cli.exception import ParserError
 
 
@@ -26,6 +26,9 @@ class TestTags:
             LocalTrackField.COMPILATION,
         ]
 
+    def assert_annotation_dump(self, annotation: TypeAdapter, tag_fields: TagConfigType):
+        assert annotation.dump_json(annotation.validate_python(tag_fields))
+
     def test_fails_on_incorrect_field_types(self, tag_fields: list[LocalTrackField]):
         with pytest.raises(ParserError):
             get_tags(tag_fields, cls=TagFields)
@@ -38,6 +41,8 @@ class TestTags:
         assert results == expected
         assert annotation.validate_python(tag_fields) == expected
 
+        self.assert_annotation_dump(annotation=annotation, tag_fields=tag_fields)
+
     def test_input_is_string(self, tag_fields: list[LocalTrackField], annotation: TypeAdapter):
         expected = tuple(TagFields.from_name(tag.name)[0] for tag in tag_fields)
 
@@ -48,6 +53,8 @@ class TestTags:
         assert results == expected
         assert annotation.validate_python(tags) == expected
 
+        self.assert_annotation_dump(annotation=annotation, tag_fields=tag_fields)
+
     def test_input_is_all_fields(self, tag_fields: list[LocalTrackField], annotation: TypeAdapter):
         # gets all valid tags when given the ALL enum
         tags = [tag.name.lower() for tag in LocalTrackField.all()]
@@ -57,6 +64,8 @@ class TestTags:
         assert all(tag.__class__ == TagFields for tag in results)
         assert results == expected
         assert annotation.validate_python(LocalTrackField.ALL) == expected
+
+        self.assert_annotation_dump(annotation=annotation, tag_fields=tag_fields)
 
 
 class TestTagFilter:

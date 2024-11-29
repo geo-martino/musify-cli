@@ -22,6 +22,16 @@ def test_all_libraries_supported():
     assert expected_local | expected_remote == LIBRARY_TYPES
 
 
+@pytest.mark.skip(reason="Test not yet implemented")
+def test_create_library_config():
+    pass  # TODO
+
+
+@pytest.mark.skip(reason="Test not yet implemented")
+def test_create_library_annotations():
+    pass  # TODO
+
+
 class TestLibraries:
     @pytest.fixture
     def local_libraries(self, tmp_path: Path) -> list[LocalLibraryConfig]:
@@ -114,5 +124,9 @@ class TestLibraries:
 
         target = LibraryTarget(remote=expected_remote.name)
         libraries = LibrariesConfig(target=target, local=expected_local, remote=remote_libraries)
+        assert libraries.local == expected_local
+        assert libraries.remote == expected_remote
+
+        libraries = LibrariesConfig(local=expected_local, remote=expected_remote)
         assert libraries.local == expected_local
         assert libraries.remote == expected_remote
