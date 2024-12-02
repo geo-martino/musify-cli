@@ -78,8 +78,6 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
     async def run(self) -> Any:
         """Run the processor and any pre-/post-operations around it."""
-        self._dump_config()
-
         self.logger.debug(f"Called processor '{self._processor_name}': START")
         await super().__call__()
         self.logger.debug(f"Called processor '{self._processor_name}': DONE\n")
@@ -163,12 +161,12 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
     @dynamicprocessormethod
     async def backup_local(self) -> None:
         """Backup data for the local library"""
-        await self.local.backup(self.paths.backup.parent, key=self.config.backup.key)
+        await self.local.backup(self.paths.backup, key=self.config.backup.key)
 
     @dynamicprocessormethod
     async def backup_remote(self) -> None:
         """Backup data for the local library"""
-        await self.remote.backup(self.paths.backup.parent, key=self.config.backup.key)
+        await self.remote.backup(self.paths.backup, key=self.config.backup.key)
 
     @dynamicprocessormethod
     async def restore_local(self) -> None:
