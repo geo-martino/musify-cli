@@ -19,7 +19,6 @@ from musify_cli.config.core import MusifyConfig, Paths
 from musify_cli.config.library.local import LocalLibraryConfig
 from musify_cli.config.library.types import LoadTypesLocal, LoadTypesRemote
 from musify_cli.exception import ParserError
-from musify_cli.log.handlers import CurrentTimeRotatingFileHandler
 from musify_cli.manager.library import LocalLibraryManager
 from musify_cli.manager.library import RemoteLibraryManager
 

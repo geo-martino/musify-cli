@@ -3,6 +3,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import AsyncContextManager, Self
 
+from aiorequestful.types import UnitCollection
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.factory import RemoteObjectFactory
 from musify.libraries.remote.core.library import RemoteLibrary
@@ -14,7 +15,6 @@ from musify.processors.check import RemoteItemChecker
 from musify.processors.download import ItemDownloadHelper
 from musify.processors.match import ItemMatcher
 from musify.processors.search import RemoteItemSearcher
-from musify.types import UnitCollection
 from musify.utils import to_collection
 
 from musify_cli.config.library.remote import RemoteLibraryConfig

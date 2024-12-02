@@ -1,14 +1,20 @@
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-from random import choice
+from random import choice, randrange
 
 import pytest
 from musify.field import TagFields
+from musify.libraries.core.collection import MusifyCollection
+from musify.libraries.local.collection import BasicLocalCollection
 from musify.libraries.local.library import LocalLibrary
 from musify.libraries.local.track.field import LocalTrackField
 from musify.logger import MusifyLogger
+from pytest_mock import MockerFixture
 
+from mocks.core import LibraryMock
+from mocks.remote import RemoteLibraryMock, SpotifyLibraryMock, SpotifyTrackMock, RemoteTrackMock, RemoteAlbumMock, \
+    RemoteArtistMock, SpotifyAlbumMock, SpotifyArtistMock, SpotifyPlaylistMock, RemotePlaylistMock
 from musify_cli import MODULE_ROOT
 from musify_cli.config.core import Paths, Logging, MUSIFY_ROOT, AIOREQUESTFUL_ROOT, MusifyConfig, \
     ReportPlaylistDifferences, ReportMissingTags
@@ -17,7 +23,7 @@ from musify_cli.config.library.local import LocalLibraryConfig, LocalPaths, Loca
 from musify_cli.config.library.remote import SpotifyAPIConfig, SpotifyLibraryConfig, APICacheConfig, local_caches
 from musify_cli.config.library.types import LoadTypesLocal, LoadTypesRemote, EnrichTypesRemote
 from musify_cli.log.handlers import CurrentTimeRotatingFileHandler
-from tests.utils import path_resources
+from tests.utils import path_resources, random_str, random_tracks
 
 path_core_config = path_resources.joinpath("test_config.yml")
 
@@ -125,15 +131,101 @@ class TestPaths:
 
 
 class TestReportPlaylistDifferences:
-    @pytest.mark.skip(reason="Test not yet implemented")
-    def test_playlist_differences(self, model: ReportPlaylistDifferences):
-        pass  # TODO
+
+    library_mock: type[RemoteLibraryMock] = SpotifyLibraryMock
+    playlist_mock: type[RemotePlaylistMock] = SpotifyPlaylistMock
+    track_mock: type[RemoteTrackMock] = SpotifyTrackMock
+    album_mock: type[RemoteAlbumMock] = SpotifyAlbumMock
+    artist_mock: type[RemoteArtistMock] = SpotifyArtistMock
+
+    @pytest.fixture
+    def model(self) -> ReportPlaylistDifferences:
+        return ReportPlaylistDifferences(
+            enabled=True
+        )
+
+    @pytest.fixture
+    def source(self) -> LibraryMock:
+        library = self.library_mock()
+
+        playlists = [self.playlist_mock({}) for _ in range(randrange(5, 10))]
+        library.playlists.update({pl.name: pl for pl in playlists})
+
+        return library
+
+    @pytest.fixture
+    def reference(self) -> LibraryMock:
+        library = self.library_mock()
+
+        playlists = [self.playlist_mock({}) for _ in range(randrange(5, 10))]
+        library.playlists.update({pl.name: pl for pl in playlists})
+
+        return library
+
+    async def test_does_not_run_when_disabled(
+            self, model: ReportPlaylistDifferences, source: LibraryMock, reference: LibraryMock, mocker: MockerFixture
+    ):
+        model.enabled = False
+        mock = mocker.patch("musify_cli.config.core.report_playlist_differences")
+        await model.run(source=source, reference=reference)
+        mock.assert_not_called()
+
+    async def test_run_report(
+            self, model: ReportPlaylistDifferences, source: LibraryMock, reference: LibraryMock, mocker: MockerFixture
+    ):
+        mock = mocker.patch("musify_cli.config.core.report_playlist_differences")
+        await model.run(source=source, reference=reference)
+        mock.assert_called_once()
 
 
 class TestReportMissingTags:
-    @pytest.mark.skip(reason="Test not yet implemented")
-    def test_missing_tags(self, model: ReportMissingTags):
-        pass  # TODO
+    @pytest.fixture
+    def model(self) -> ReportMissingTags:
+        return ReportMissingTags(
+            enabled=True,
+            tags=(
+                LocalTrackField.TITLE,
+                LocalTrackField.ARTIST,
+                LocalTrackField.ALBUM,
+                LocalTrackField.TRACK_NUMBER,
+                LocalTrackField.TRACK_TOTAL,
+            ),
+            match_all=choice([True, False]),
+            filter=["collection1", "collection2"],
+        )
+
+    @pytest.fixture
+    def collections(self, model: ReportMissingTags) -> list[MusifyCollection]:
+        expected_names = next(iter(model.filter.comparers)).expected
+        collections = [
+            BasicLocalCollection(name=choice([random_str(), *expected_names]), tracks=random_tracks())
+            for _ in range(randrange(5, 10))
+        ]
+
+        return collections
+
+    async def test_does_not_run_when_disabled(
+            self, model: ReportMissingTags, collections: list[MusifyCollection], mocker: MockerFixture
+    ):
+        model.enabled = False
+        mock = mocker.patch("musify_cli.config.core.report_missing_tags")
+        await model.run(collections)
+        mock.assert_not_called()
+
+    async def test_run_report(
+            self, model: ReportMissingTags, collections: list[MusifyCollection], mocker: MockerFixture
+    ):
+        mock = mocker.patch("musify_cli.config.core.report_missing_tags")
+        await model.run(collections)
+
+        mock.assert_called_once()
+        expected_collections = [
+            coll for coll in collections if coll.name in next(iter(model.filter.comparers)).expected
+        ]
+        assert expected_collections
+        assert mock.call_args.kwargs["collections"] == expected_collections
+        assert mock.call_args.kwargs["tags"] == model.tags
+        assert mock.call_args.kwargs["match_all"] == model.match_all
 
 
 class TestConfig:
@@ -182,7 +274,7 @@ class TestConfig:
                         client_id=model.libraries.remote.api.client_id,
                         client_secret=model.libraries.remote.api.client_secret,
                         token_file_path=tmp_path.joinpath("token.json"),
-                        cache = APICacheConfig(
+                        cache=APICacheConfig(
                             type=choice([cache.type for cache in local_caches]),
                             db=tmp_path.joinpath("cache_file"),
                         )
@@ -243,8 +335,6 @@ class TestConfig:
         assert config.backup.key == "test key"
 
         assert config.reports.playlist_differences.enabled
-        values = ["a", "b", "c", 1, 2, 3, "you", "and", "me"]
-        assert config.reports.playlist_differences.filter(values) == ["a", "b", "c"]
         assert not config.reports.missing_tags.enabled
         assert not config.reports.missing_tags.filter.ready
         assert config.reports.missing_tags.tags == (

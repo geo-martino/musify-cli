@@ -9,9 +9,10 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any
 
+from aiorequestful.types import UnitCollection
 from musify.libraries.core.object import Library
 from musify.logger import MusifyLogger
-from musify.types import UnitCollection, MusifyEnum
+from musify.types import MusifyEnum
 from musify.utils import get_user_input
 
 from musify_cli.config.library import LibraryConfig

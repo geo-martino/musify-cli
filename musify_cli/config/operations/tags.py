@@ -1,11 +1,12 @@
+from collections.abc import Collection
 from functools import partial
-from typing import Collection, Annotated
+from typing import Annotated
 
 from aiorequestful.types import UnitCollection
 from musify.field import TagField, Field, Fields, TagFields
 from musify.libraries.local.track.field import LocalTrackField
 from musify.utils import to_collection
-from pydantic import BeforeValidator, PlainValidator, PlainSerializer
+from pydantic import BeforeValidator, PlainSerializer
 
 from musify_cli.exception import ParserError
 

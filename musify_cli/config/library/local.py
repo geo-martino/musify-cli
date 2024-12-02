@@ -1,7 +1,7 @@
 import sys
 from abc import ABCMeta, abstractmethod
 from pathlib import Path, PureWindowsPath, PurePosixPath, PurePath
-from typing import Self, Annotated, Any, MutableMapping, ClassVar
+from typing import Self, ClassVar, Annotated
 
 from aiorequestful.types import UnitCollection
 from musify.file.path_mapper import PathMapper, PathStemMapper
@@ -239,7 +239,7 @@ class TagsConfig(Runner[dict[LocalTrack, SyncResultTrack]]):
         if updater is None:
             return {}
 
-        # assert dry_run
+        assert dry_run
         return await updater.run(collection=library, dry_run=dry_run)
 
 

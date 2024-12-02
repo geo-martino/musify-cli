@@ -13,10 +13,9 @@ def matcher() -> ItemMatcher:
 
 @pytest.fixture
 def spotify_factory() -> RemoteObjectFactory:
-    factory = SpotifyObjectFactory()
-    factory.playlist = SpotifyPlaylistMock
-    factory.track = SpotifyTrackMock
-    factory.album = SpotifyAlbumMock
-    factory.artist = SpotifyArtistMock
-
-    return factory
+    return SpotifyObjectFactory(
+        playlist=SpotifyPlaylistMock,
+        track=SpotifyTrackMock,
+        album=SpotifyAlbumMock,
+        artist=SpotifyArtistMock,
+    )

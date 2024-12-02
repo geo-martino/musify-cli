@@ -1,17 +1,12 @@
-import logging
 from pathlib import Path
 
 import pytest
-from musify.logger import MusifyLogger
 
-from musify_cli import MODULE_ROOT
 from musify_cli.config.core import MusifyConfig, Reports, Paths, Backup, PrePost
 from musify_cli.config.library import LibrariesConfig
 from musify_cli.config.library.local import LocalLibraryConfig, LocalPaths
 from musify_cli.config.library.remote import SpotifyLibraryConfig, SpotifyAPIConfig
-from musify_cli.exception import ParserError
 from musify_cli.manager import MusifyProcessor
-from tests.utils import path_txt, path_logging_config
 
 
 class TestMusifyProcessor:
@@ -97,10 +92,6 @@ class TestMusifyProcessor:
 
     @pytest.mark.skip(reason="Test not yet implemented")
     def test_pull_tags(self, manager: MusifyProcessor):
-        pass  # TODO
-
-    @pytest.mark.skip(reason="Test not yet implemented")
-    def test_sync_remote(self, manager: MusifyProcessor):
         pass  # TODO
 
     @pytest.mark.skip(reason="Test not yet implemented")

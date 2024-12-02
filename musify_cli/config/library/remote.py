@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Literal, ClassVar
 
 from aiorequestful.cache.backend import ResponseCache, SQLiteCache, CACHE_TYPES, CACHE_CLASSES
-from aiorequestful.timer import Timer, GeometricCountTimer, StepCeilingTimer
+from aiorequestful.timer import GeometricCountTimer, StepCeilingTimer
 from aiorequestful.types import UnitSequence
 from musify.libraries.core.object import Playlist
 from musify.libraries.remote.core.api import RemoteAPI
@@ -23,7 +23,7 @@ from musify.processors.check import RemoteItemChecker
 from musify.processors.download import ItemDownloadHelper
 from musify.processors.match import ItemMatcher
 from musify.processors.search import RemoteItemSearcher
-from musify.utils import get_max_width, align_string, to_collection
+from musify.utils import get_max_width, align_string
 from pydantic import BaseModel, NonNegativeFloat, Field, PositiveInt, confloat, computed_field, SecretStr, conint, \
     field_validator
 
@@ -101,7 +101,9 @@ class RemoteNewMusicConfig(Runner[tuple[RemotePlaylist, SyncResultRemotePlaylist
         default=datetime.now().date(),
     )
 
-    async def run(self, library: RemoteLibrary, dry_run: bool = True) -> tuple[RemotePlaylist, SyncResultRemotePlaylist]:
+    async def run(
+            self, library: RemoteLibrary, dry_run: bool = True
+    ) -> tuple[RemotePlaylist, SyncResultRemotePlaylist]:
         """
         Create a new music playlist for followed artists with music released between ``start`` and ``end``.
 

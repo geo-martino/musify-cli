@@ -332,6 +332,7 @@ class TestSpotifyAPIConfig:
                 client_secret="",
             )
 
+
 class TestSpotifyLibraryConfig:
     @pytest.fixture
     def model(self) -> SpotifyLibraryConfig:

@@ -1,11 +1,12 @@
-from typing import Mapping, TypeVar, Annotated
+from collections.abc import Mapping
+from typing import TypeVar, Annotated
 
 from aiorequestful.types import UnitSequence
 from musify.base import MusifyObject
 from musify.field import Fields
 from musify.processors.compare import Comparer
 from musify.processors.filter import FilterComparers
-from pydantic import GetPydanticSchema, PlainSerializer
+from pydantic import GetPydanticSchema
 from pydantic_core import core_schema
 
 from musify_cli.config.operations.signature import get_default_args

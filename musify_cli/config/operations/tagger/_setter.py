@@ -3,11 +3,11 @@ from collections.abc import Mapping, Sequence, Iterable
 from string import Formatter
 from typing import Any
 
+from aiorequestful.types import UnitCollection
 from musify.libraries.local.track import LocalTrack
 from musify.libraries.local.track.field import LocalTrackField as Tag
 from musify.printer import PrettyPrinter
 from musify.processors.sort import ItemSorter
-from musify.types import UnitCollection
 from musify.utils import to_collection
 
 from musify_cli.config.operations.tagger._getter import Getter, getter_from_config

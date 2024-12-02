@@ -4,12 +4,15 @@ from random import choice
 import pytest
 from musify.libraries.local.library import LIBRARY_CLASSES
 from musify.libraries.remote import REMOTE_SOURCES
-from pydantic import ValidationError
+from pydantic import ValidationError, TypeAdapter
 
 from musify_cli.config.library import LIBRARY_TYPES, LibrariesConfig, LibraryTarget
+from musify_cli.config.library._combined import create_library_config, LocalLibraryType, RemoteLibraryType
 from musify_cli.config.library.local import LOCAL_LIBRARY_CONFIG, LocalLibraryConfig, LocalPaths
 from musify_cli.config.library.remote import REMOTE_LIBRARY_CONFIG, RemoteLibraryConfig, SpotifyAPIConfig, \
     SpotifyLibraryConfig
+from musify_cli.exception import ParserError
+from utils import random_str
 
 
 def test_all_libraries_supported():
@@ -22,14 +25,70 @@ def test_all_libraries_supported():
     assert expected_local | expected_remote == LIBRARY_TYPES
 
 
-@pytest.mark.skip(reason="Test not yet implemented")
-def test_create_library_config():
-    pass  # TODO
+def test_create_local_library_config(tmp_path: Path):
+    library_type = "Local"
+    config = {
+        "name": random_str(),
+        "type": library_type,
+        "paths": {
+            "library": tmp_path
+        }
+    }
+    library = create_library_config(config, config_map=LOCAL_LIBRARY_CONFIG)
+    assert library.type == library_type
+
+    annotation = TypeAdapter(LocalLibraryType)
+    assert annotation.validate_python(config).type == library_type
 
 
-@pytest.mark.skip(reason="Test not yet implemented")
-def test_create_library_annotations():
-    pass  # TODO
+def test_create_local_library_config_fails(tmp_path: Path):
+    config = {
+        "name": random_str(),
+        "type": "i am not a valid library type",
+        "paths": {
+            "library": tmp_path
+        }
+    }
+    with pytest.raises(ParserError):
+        create_library_config(config, config_map=LOCAL_LIBRARY_CONFIG)
+
+    annotation = TypeAdapter(LocalLibraryType)
+    with pytest.raises(ValidationError):
+        annotation.validate_python(config)
+
+
+def test_create_remote_library_config():
+    library_type = "Spotify"
+    config = {
+        "name": random_str(),
+        "type": library_type,
+        "api": {
+            "client_id": "<CLIENT ID>",
+            "client_secret": "<CLIENT SECRET>",
+        }
+    }
+    library = create_library_config(config, config_map=REMOTE_LIBRARY_CONFIG)
+    assert library.type == library_type
+
+    annotation = TypeAdapter(RemoteLibraryType)
+    assert annotation.validate_python(config).type == library_type
+
+
+def test_create_remote_library_config_fails(tmp_path: Path):
+    config = {
+        "name": random_str(),
+        "type": "i am not a valid library type",
+        "api": {
+            "client_id": "<CLIENT ID>",
+            "client_secret": "<CLIENT SECRET>",
+        }
+    }
+    with pytest.raises(ParserError):
+        create_library_config(config, config_map=REMOTE_LIBRARY_CONFIG)
+
+    annotation = TypeAdapter(RemoteLibraryType)
+    with pytest.raises(ValidationError):
+        annotation.validate_python(config)
 
 
 class TestLibraries:

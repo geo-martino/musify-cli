@@ -9,15 +9,10 @@
   <component name="ChangeListManager">
     <list default="true" id="9b2127b7-24ea-430c-8f59-a341ad0474f1" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/config/library/remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/remote.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/config/library/conftest.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/library/conftest.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/config/library/test_combined.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/library/test_combined.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/config/library/test_remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/library/test_remote.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/config/library/test_types.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/config/test_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/config/test_core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/manager/library/test_local.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/library/test_local.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/manager/library/test_remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager/library/test_remote.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/mocks/local.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/mocks/local.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/mocks/remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/mocks/remote.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -54,34 +49,34 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python tests.Run all tests.executor": "Run",
-    "Python tests.pytest for config.library.test_local.TestTags.executor": "Run",
-    "Python tests.pytest for config.library.test_local.TestUpdater.executor": "Run",
-    "Python tests.pytest for config.library.test_remote.TestNewMusic.executor": "Run",
-    "Python tests.pytest for config.library.test_remote.TestRemotePlaylistsSync.executor": "Run",
-    "Python tests.pytest for manager.library.test_remote.TestSpotifyLibraryManager.test_context_manager.executor": "Run",
-    "Python tests.pytest for manager.test_core.TestMusifyManager.executor": "Run",
-    "Python tests.pytest for parser.test_core.test_core.executor": "Run",
-    "Python tests.pytest for tests.manager.library.test_local.TestLocalLibraryManager.executor": "Run",
-    "Python tests.pytest for tests.manager.library.test_remote.TestSpotifyLibraryManager.executor": "Run",
-    "Python tests.pytest for tests.parser.executor": "Run",
-    "Python tests.pytest in library.executor": "Run",
-    "Python tests.pytest in parser.executor": "Run",
-    "Python tests.pytest in test_core.py.executor": "Run",
-    "Python tests.pytest in test_local.py.executor": "Run",
-    "Python tests.pytest in test_remote.py.executor": "Run",
-    "Python.__main__.executor": "Run",
-    "Python._core.executor": "Run",
-    "Python._library.executor": "Run",
-    "Python._loader.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "add-tagger",
-    "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python tests.Run all tests.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for config.library.test_local.TestTags.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for config.library.test_local.TestUpdater.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for config.library.test_remote.TestNewMusic.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for config.library.test_remote.TestRemotePlaylistsSync.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for manager.library.test_remote.TestSpotifyLibraryManager.test_context_manager.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for manager.test_core.TestMusifyManager.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for parser.test_core.test_core.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for tests.manager.library.test_local.TestLocalLibraryManager.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for tests.manager.library.test_remote.TestSpotifyLibraryManager.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for tests.parser.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest in library.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest in parser.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest in test_core.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest in test_local.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest in test_remote.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python.__main__.executor&quot;: &quot;Run&quot;,
+    &quot;Python._core.executor&quot;: &quot;Run&quot;,
+    &quot;Python._library.executor&quot;: &quot;Run&quot;,
+    &quot;Python._loader.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;add-tagger&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/musify_cli" />

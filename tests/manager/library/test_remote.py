@@ -14,7 +14,6 @@ from musify_cli.config.library.remote import RemoteLibraryConfig, SpotifyAPIConf
     APIHandlerConfig, APIHandlerRetry, APIHandlerWait, RemoteItemCheckerConfig, RemoteItemDownloadConfig, \
     RemotePlaylistsConfig, RemotePlaylistsSync, SpotifyLibraryConfig
 from musify_cli.config.library.types import LoadTypesRemote, EnrichTypesRemote
-from musify_cli.exception import ParserError
 from musify_cli.manager.library import RemoteLibraryManager
 from tests.manager.library.testers import LibraryManagerTester
 

@@ -1,5 +1,3 @@
-from typing import Any
-
 import pytest
 from musify.libraries.collection import BasicCollection
 from musify.processors.filter import FilterComparers

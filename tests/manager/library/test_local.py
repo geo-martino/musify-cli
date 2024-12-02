@@ -75,10 +75,6 @@ class TestLocalLibraryManager[L: LocalLibrary, C: LocalLibraryConfig](LibraryMan
     def test_get_tags_to_restore_from_user(self, manager_mock: LocalLibraryManager[L, C]):
         pass  # TODO
 
-    @pytest.mark.skip(reason="Test not yet implemented")
-    def test_get_tags_to_restore_from_user(self, manager_mock: LocalLibraryManager[L, C]):
-        pass  # TODO
-
     ###########################################################################
     ## Operations
     ###########################################################################

@@ -137,7 +137,9 @@ class TestLocalPaths:
         return type_map[model_type.source]
 
     @pytest.fixture
-    def library_paths(self, model_type: type[LocalLibraryConfig], tmp_path: Path, musicbee_folder: Path) -> dict[str, Any]:
+    def library_paths(
+            self, model_type: type[LocalLibraryConfig], tmp_path: Path, musicbee_folder: Path
+    ) -> dict[str, Any]:
         paths_map = {
             LocalLibraryConfig.source: TestLocalLibraryPaths.get_valid_paths(tmp_path),
             MusicBeeConfig.source: TestMusicBeePaths.get_valid_paths(musicbee_folder),

@@ -1,12 +1,11 @@
 from abc import ABCMeta
 from datetime import datetime
 from random import choice, randrange
-from typing import Any, Collection, Iterable
+from typing import Any
 
-from musify.base import MusifyItem
 from musify.libraries.remote.core.api import RemoteAPI
-from musify.libraries.remote.core.library import RemoteLibrary, SyncPlaylistsType
-from musify.libraries.remote.core.object import PLAYLIST_SYNC_KINDS, SyncResultRemotePlaylist, RemoteTrack, \
+from musify.libraries.remote.core.library import RemoteLibrary
+from musify.libraries.remote.core.object import SyncResultRemotePlaylist, RemoteTrack, \
     RemotePlaylist, RemoteAlbum, RemoteArtist
 from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.libraries.remote.spotify.factory import SpotifyObjectFactory

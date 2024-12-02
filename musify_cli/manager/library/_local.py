@@ -3,6 +3,7 @@ from collections.abc import Collection
 from functools import cached_property
 from pathlib import Path
 
+from aiorequestful.types import UnitCollection
 from musify.libraries.core.collection import MusifyCollection
 from musify.libraries.core.object import Track
 from musify.libraries.local.library import LocalLibrary
@@ -12,7 +13,6 @@ from musify.libraries.local.track.field import LocalTrackField
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
 from musify.logger import STAT
 from musify.processors.base import Filter
-from musify.types import UnitCollection
 from musify.utils import to_collection, get_user_input
 
 from musify_cli.config.library.local import LocalLibraryConfig
