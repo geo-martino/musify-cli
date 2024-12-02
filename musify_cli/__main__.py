@@ -29,10 +29,6 @@ def setup() -> tuple[MusifyConfig, dict[str, MusifyConfig]]:
 
     LOGGER.debug(f"Loading config from: {parsed_args.config}")
     base, functions = MusifyConfig.from_file(parsed_args.config)
-    print(base.model_dump_yaml())
-    for func in functions.values():
-        print(func.model_dump_yaml())
-        print("---------------------")
 
     if func_names := parsed_args.functions:
         func_names = {name.replace("-", "_") for name in func_names}
