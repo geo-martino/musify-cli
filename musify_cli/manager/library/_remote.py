@@ -34,8 +34,7 @@ class RemoteLibraryManager[L: RemoteLibrary, C: RemoteLibraryConfig](LibraryMana
         self.types_enriched: dict[LoadTypesRemote, set[EnrichTypesRemote]] = {}
 
     async def __aenter__(self) -> Self:
-        if self.initialised:
-            await self.api.__aenter__()
+        await self.api.__aenter__()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
