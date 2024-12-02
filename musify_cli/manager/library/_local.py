@@ -109,8 +109,6 @@ class LocalLibraryManager[L: LocalLibrary, C: LocalLibraryConfig](LibraryManager
 
         self.logger.print_line(STAT)
         if LoadTypesLocal.TRACKS in loaded:
-            for track in self.library.tracks:
-                print(track)
             self.library.log_tracks()
         if LoadTypesLocal.PLAYLISTS in loaded:
             self.library.log_playlists()
