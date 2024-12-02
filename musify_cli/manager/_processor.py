@@ -107,7 +107,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
                 )
             self.remote = self._create_remote_library_manager(remote_library_config)
         else:
-            self.remote.config = remote_library_config.get(remote_library_config.type)
+            self.remote.config = remote_library_config
 
         if (local_library_config := self.config.libraries.local).name != self.local.name:
             if self.local.initialised:
@@ -117,7 +117,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
                 )
             self.local = self._create_local_library_manager(local_library_config)
         else:
-            self.local.config = local_library_config.get(local_library_config.type)
+            self.local.config = local_library_config
 
     def _create_remote_library_manager(self, config: LocalLibraryConfig) -> RemoteLibraryManager:
         return RemoteLibraryManager(config=config, dry_run=self.dry_run)
