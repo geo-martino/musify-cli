@@ -31,8 +31,8 @@ def setup() -> tuple[MusifyConfig, dict[str, MusifyConfig]]:
     base, functions = MusifyConfig.from_file(parsed_args.config)
 
     if func_names := parsed_args.functions:
-        func_names = {name.replace("-", "_") for name in func_names}
-        functions = {name: conf for name, conf in functions.items() if name in func_names}
+        functions = {name.replace("-", "_"): base for name in func_names}
+        functions |= {name: conf for name, conf in functions.items() if name in func_names}
     check_config_is_valid(functions.values())
 
     base.logging.configure_additional_loggers(__name__)
