@@ -43,6 +43,11 @@ class RemoteLibraryManager[L: RemoteLibrary, C: RemoteLibraryConfig](LibraryMana
             await self.api.__aexit__(exc_type, exc_val, exc_tb)
 
     @cached_property
+    def library(self) -> L:
+        """The initialised library"""
+        return self.config.create(api=self.api)
+
+    @cached_property
     def api(self) -> RemoteAPI:
         """The initialised remote API for this remote library type"""
         self.initialised = True

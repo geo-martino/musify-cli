@@ -422,8 +422,10 @@ class RemoteLibraryConfig[L: RemoteLibrary, A: APIConfig](LibraryConfig[RemoteLi
         """The initialised remote data wrangler for this remote library type"""
         raise NotImplementedError
 
-    def create(self):
-        return self._library_cls(api=self.api.create(), playlist_filter=self.playlists.filter)
+    def create(self, api: RemoteAPI | None = None):
+        if api is None:
+            api = self.api.create()
+        return self._library_cls(api=api, playlist_filter=self.playlists.filter)
 
 
 class SpotifyLibraryConfig(RemoteLibraryConfig[SpotifyLibrary, SpotifyAPIConfig]):

@@ -41,10 +41,10 @@ class LibraryManager[L: Library, C: LibraryConfig](ABC):
         return self.config.source
 
     @cached_property
+    @abstractmethod
     def library(self) -> L:
         """The initialised library"""
-        self.initialised = True
-        return self.config.create()
+        raise NotImplementedError
 
     ###########################################################################
     ## Backup/Restore - Utilities
