@@ -168,7 +168,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
     @dynamicprocessormethod
     async def backup_remote(self) -> None:
         """Backup data for the local library"""
-        await self.local.backup(self.paths.backup.parent, key=self.config.backup.key)
+        await self.remote.backup(self.paths.backup.parent, key=self.config.backup.key)
 
     @dynamicprocessormethod
     async def restore_local(self) -> None:
