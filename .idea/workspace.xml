@@ -8,15 +8,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9b2127b7-24ea-430c-8f59-a341ad0474f1" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/musify-cli.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/musify-cli.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/musify_cli/config/core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/config/library/_combined.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/_combined.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/config/library/_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/_core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/config/library/local.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/local.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/config/library/remote.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/config/library/remote.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/mocks/core.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/mocks/core.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

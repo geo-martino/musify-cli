@@ -425,12 +425,3 @@ class MusifyConfig(BaseModel):
         """Generates a JSON representation of the model using ``yaml.safe_dump``."""
         data = json.loads(self.model_dump_json(exclude={"logging"}))
         return yaml.safe_dump(data, indent=2, default_flow_style=False, allow_unicode=True, sort_keys=False)
-
-
-if __name__ == "__main__":
-    path = "/Volumes/Projects/musify/config/main.yml"
-    config, functions = MusifyConfig.from_file(path)
-
-    for name, func in functions.items():
-        print(name)
-        print(func)
