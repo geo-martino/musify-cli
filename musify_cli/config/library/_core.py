@@ -6,7 +6,8 @@ from typing import Any, ClassVar
 from musify.libraries.core.object import Library
 from musify.logger import MusifyLogger
 from musify.processors.filter import FilterComparers
-from pydantic import BaseModel, Field, computed_field
+from musify.utils import classproperty
+from pydantic import BaseModel, Field, computed_field, class_validators, ConfigDict
 
 from musify_cli.config.operations.filters import Filter
 
@@ -42,6 +43,7 @@ class PlaylistsConfig(BaseModel):
 
 
 class LibraryConfig[T: Library](Instantiator[T], metaclass=ABCMeta):
+    model_config = ConfigDict(ignored_types=(classproperty,))
 
     _library_cls: ClassVar[type[Library]] = Library
 
@@ -58,9 +60,8 @@ class LibraryConfig[T: Library](Instantiator[T], metaclass=ABCMeta):
         """The source type of the library"""
         return self.source
 
-    # noinspection PyPropertyDefinition
-    @classmethod
-    @property
+    # noinspection PyMethodParameters
+    @classproperty
     def source(cls) -> str:
         """The source type of the library"""
         return str(cls._library_cls.source)

@@ -4,6 +4,7 @@ import os
 import shutil
 from abc import ABCMeta
 from collections.abc import Iterable
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Self, ClassVar
@@ -401,8 +402,12 @@ class MusifyConfig(BaseModel):
 
         functions: dict[str, Self] = {}
         for name, func_map in functions_map.items():
-            base_map = base.model_dump()
+            base_map = deepcopy(config_map)
+            if func_target := func_map.get("libraries", {}).get("target"):
+                base_map["libraries"]["target"] |= func_target
+            base_map = MusifyConfig(**base_map).model_dump()
             cls._drop_config_keys(base_map)
+
             conf_map = merge_maps(base_map, func_map, extend=False, overwrite=True)
             functions[name] = MusifyConfig(**conf_map)
 
@@ -420,3 +425,12 @@ class MusifyConfig(BaseModel):
         """Generates a JSON representation of the model using ``yaml.safe_dump``."""
         data = json.loads(self.model_dump_json(exclude={"logging"}))
         return yaml.safe_dump(data, indent=2, default_flow_style=False, allow_unicode=True, sort_keys=False)
+
+
+if __name__ == "__main__":
+    path = "/Volumes/Projects/musify/config/main.yml"
+    config, functions = MusifyConfig.from_file(path)
+
+    for name, func in functions.items():
+        print(name)
+        print(func)

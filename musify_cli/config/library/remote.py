@@ -23,7 +23,7 @@ from musify.processors.check import RemoteItemChecker
 from musify.processors.download import ItemDownloadHelper
 from musify.processors.match import ItemMatcher
 from musify.processors.search import RemoteItemSearcher
-from musify.utils import get_max_width, align_string
+from musify.utils import classproperty
 from pydantic import BaseModel, NonNegativeFloat, Field, PositiveInt, confloat, computed_field, SecretStr, conint, \
     field_validator
 
@@ -432,9 +432,8 @@ class SpotifyLibraryConfig(RemoteLibraryConfig[SpotifyLibrary, SpotifyAPIConfig]
 
     _library_cls: ClassVar[type[SpotifyLibrary]] = SpotifyLibrary
 
-    # noinspection PyPropertyDefinition
-    @classmethod
-    @property
+    # noinspection PyMethodParameters
+    @classproperty
     def source(cls) -> str:
         """The source type of the library"""
         return str(cls._library_cls.source)

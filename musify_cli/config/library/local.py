@@ -10,8 +10,8 @@ from musify.libraries.local.library import LocalLibrary, MusicBee
 from musify.libraries.local.track import LocalTrack, SyncResultTrack
 from musify.libraries.local.track.field import LocalTrackField
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
-from musify.utils import to_collection
-from pydantic import BaseModel, computed_field, model_validator, BeforeValidator, Field, DirectoryPath
+from musify.utils import classproperty, to_collection
+from pydantic import BaseModel, computed_field, model_validator, BeforeValidator, Field, DirectoryPath, ConfigDict
 
 from musify_cli.config.library._core import LibraryConfig, Instantiator, Runner
 from musify_cli.config.operations.signature import get_default_args
@@ -22,9 +22,10 @@ from musify_cli.exception import ParserError
 
 class LocalLibraryPathsParser[T: Path | tuple[Path, ...] | None](BaseModel, metaclass=ABCMeta):
     """Base class for parsing and validating library paths config, giving platform appropriate paths."""
-    # noinspection PyPropertyDefinition
-    @classmethod
-    @property
+    model_config = ConfigDict(ignored_types=(classproperty,))
+
+    # noinspection PyMethodParameters
+    @classproperty
     def _platform_key(cls) -> str:
         platform_map = {"win32": "win", "linux": "lin", "darwin": "mac"}
         return platform_map[sys.platform]
@@ -91,9 +92,8 @@ class LocalLibraryPaths(LocalLibraryPathsParser[tuple[Path, ...]]):
         default=()
     )
 
-    # noinspection PyPropertyDefinition
-    @classmethod
-    @property
+    # noinspection PyMethodParameters
+    @classproperty
     def source(cls) -> str:
         return str(LocalLibrary.source)
 
@@ -124,9 +124,8 @@ class MusicBeePaths(LocalLibraryPathsParser[Path]):
         default=None
     )
 
-    # noinspection PyPropertyDefinition
-    @classmethod
-    @property
+    # noinspection PyMethodParameters
+    @classproperty
     def source(cls) -> str:
         return str(MusicBee.source)
 
@@ -276,9 +275,8 @@ class LocalLibraryConfig[L: LocalLibrary, P: LocalLibraryPathsParser](LibraryCon
             remote_wrangler=wrangler,
         )
 
-    # noinspection PyPropertyDefinition
-    @classmethod
-    @property
+    # noinspection PyMethodParameters
+    @classproperty
     def source(cls) -> str:
         """The source type of the library"""
         return str(cls._library_cls.source)
@@ -288,14 +286,13 @@ class MusicBeeConfig(LocalLibraryConfig[MusicBee, MusicBeePaths]):
 
     _library_cls: ClassVar[type[MusicBee]] = MusicBee
 
-    # noinspection PyPropertyDefinition
-    @classmethod
-    @property
+    # noinspection PyMethodParameters
+    @classproperty
     def source(cls) -> str:
         """The source type of the library"""
         return str(cls._library_cls.source)
 
-    def create(self, wrangler: RemoteDataWrangler):
+    def create(self, wrangler: RemoteDataWrangler | None = None):
         return self._library_cls(
             musicbee_folder=self.paths.library,
             playlist_filter=self.playlists.filter,
