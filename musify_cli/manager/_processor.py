@@ -84,7 +84,6 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
     def set_processor(self, name: str, config: MusifyConfig = None) -> Callable[[], None]:
         """Set the processor to use from the given name"""
-        name = name.replace("-", "_")
         self._set_processor_name(name)
 
         if config is not None:
