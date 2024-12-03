@@ -75,12 +75,7 @@ class ConditionalGetter(TagGetter):
     @classmethod
     def from_dict(cls, config: Mapping[str, Any]):
         when = config.get("when", {})
-        conditional_field_str: str | None = when.pop("field", None)
-        conditional_field = next(iter(TagFields.from_name(conditional_field_str))) if conditional_field_str else None
-
         filter_ = get_comparers_filter(when)
-        for comparer in filter_.comparers:
-            comparer.field = conditional_field
 
         field_str = config.get("field")
         field = next(iter(TagFields.from_name(field_str))) if field_str else None
