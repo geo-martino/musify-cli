@@ -41,7 +41,7 @@ def serialise_tags(fields: UnitCollection[TagField]) -> list[str]:
 
 
 Tags = Annotated[
-    Fields | TagFields | tuple[TagFields, ...],
+    TagFields | tuple[TagFields, ...] | Fields,
     BeforeValidator(partial(get_tags, cls=TagFields)),
     PlainSerializer(serialise_tags, when_used="json-unless-none"),
 ]

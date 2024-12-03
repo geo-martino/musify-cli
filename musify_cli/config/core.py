@@ -313,7 +313,7 @@ reports_missing_tags_default_args = get_default_args(report_missing_tags)
 
 
 class ReportMissingTags(ReportBase[dict[str, dict[MusifyItem, tuple[str, ...]]]]):
-    tags: Tags | LocalTrackFields = Field(
+    tags: LocalTrackFields | Tags = Field(
         description=f"The tags to check. Accepted tags: {LOCAL_TRACK_TAG_NAMES}",
         default=reports_missing_tags_default_args.get("tags", LocalTrackField.ALL),
     )
