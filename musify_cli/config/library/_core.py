@@ -7,7 +7,7 @@ from musify.libraries.core.object import Library
 from musify.logger import MusifyLogger
 from musify.processors.filter import FilterComparers
 from musify.utils import classproperty
-from pydantic import BaseModel, Field, computed_field, class_validators, ConfigDict
+from pydantic import BaseModel, Field, computed_field, ConfigDict
 
 from musify_cli.config.operations.filters import Filter
 
