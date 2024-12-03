@@ -46,7 +46,9 @@ class TagGetter(Getter):
 
     @classmethod
     def _get_leading_zeros_from_config(cls, config: Mapping[str, Any]) -> int | TagField | None:
-        return config.get("leading_zeros")
+        if isinstance(leading_zeros := config.get("leading_zeros"), int) or leading_zeros is None:
+            return leading_zeros
+        return TagFields.from_name(leading_zeros)[0]
 
     def __init__(self, field: TagField | None, leading_zeros: int | TagField = None):
         super().__init__(field)

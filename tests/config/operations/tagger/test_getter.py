@@ -65,14 +65,17 @@ class TestTagGetter(TagGetterTester):
         config = {"field": "name"}
         getter = TagGetter.from_dict(config)
         assert getter.field == TagFields.NAME
+        assert getter.leading_zeros is None
 
-        config = {"field": "track_number"}
+        config = {"field": "track_number", "leading_zeros": "track_total"}
         getter = TagGetter.from_dict(config)
         assert getter.field == TagFields.TRACK_NUMBER
+        assert getter.leading_zeros == TagFields.TRACK_TOTAL
 
-        config = {"field": "year"}
+        config = {"field": "year", "leading_zeros": 24}
         getter = TagGetter.from_dict(config)
         assert getter.field == TagFields.YEAR
+        assert getter.leading_zeros == 24
 
     def test_get(self, track: LocalTrack):
         getter = TagGetter(TagFields.TITLE)
