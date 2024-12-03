@@ -102,7 +102,12 @@ class ConditionalGetter(TagGetter):
 
     def get[T: MusifyItem](self, item: T) -> Any:
         if self.field == TagFields.DISC_NUMBER:
-            print(item.disc_number, self.condition)
+            print(
+                item.disc_number,
+                next(iter(self.condition.comparers)).compare(item),
+                self.condition.ready,
+                self.condition,
+            )
             print(self.condition.process([item]))
         if not self.condition.process([item]):
             return None
