@@ -101,9 +101,10 @@ class Tagger[T: MusifyItemSettable](PrettyPrinter):
                 filtered_items = rule.filter(items)
             matched.update(set(filtered_items))
 
-            for item in filtered_items:
-                collection = next(iter(coll for coll in collections if item in coll), ())
-                rule.set_tags(item, collection)
+            for setter in rule.setters:
+                for item in filtered_items:
+                    collection = next(iter(coll for coll in collections if item in coll), ())
+                    setter.set(item, collection)
 
     def as_dict(self):
         return {"rules": self.rules}
