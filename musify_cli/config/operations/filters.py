@@ -41,6 +41,7 @@ def get_comparers_filter[T](
     filter_ = FilterComparers(comparers=comparers, match_all=match_all)
     if not all(comparer.field is not None for comparer in to_collection(comparers)):
         filter_.transform = lambda value: value.name if isinstance(value, MusifyObject) else value
+
     return filter_
 
 

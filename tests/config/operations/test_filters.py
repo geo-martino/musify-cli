@@ -1,11 +1,13 @@
 import pytest
 from musify.libraries.collection import BasicCollection
+from musify.libraries.local.track.field import LocalTrackField
 from musify.processors.filter import FilterComparers
 from musify.utils import to_collection
 from pydantic import TypeAdapter
 
 from musify_cli.config.operations.filters import get_comparers_filter, Filter, MultiType
 from musify_cli.config.operations.signature import get_default_args
+from utils import random_track
 
 
 class TestFilter:
@@ -65,21 +67,26 @@ class TestFilter:
         config = {
             "match_all": match_all,
             "contains": "value 1",
+            "field": "path",
             "in range": [20, 40],
             "starts with": "prefix",
         }
         filter_ = get_comparers_filter(config)
 
+        field = config.pop("field")
         assert filter_.match_all == config.pop("match_all")
-        self.assert_filter_transform(filter_)
+
+        track = random_track()
+        assert filter_.transform(track) == track
 
         assert len(filter_.comparers) == len(config)
         iterator = zip(filter_.comparers.items(), config.items())
         for ((comparer, (combine, sub_filter)), (condition, expected)) in iterator:
             assert comparer.condition == condition.replace(" ", "_")
             assert comparer.expected == to_collection(expected, list)
+            assert comparer.field == LocalTrackField.from_name(field)[0]
             assert not combine
             assert not sub_filter.ready
 
-        assert filter_ == annotation.validate_python(config | {"match_all": match_all})
+        assert filter_ == annotation.validate_python(config | {"match_all": match_all, "field": field})
         self.assert_annotation_dump(annotation=annotation, config=config | {"match_all": match_all})
