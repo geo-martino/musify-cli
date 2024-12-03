@@ -66,7 +66,9 @@ async def main(processor: MusifyProcessor, config: dict[str, MusifyConfig]) -> N
     for i, (name, cfg) in enumerate(config.items(), 1):
         print_function_header(name, processor)
 
+        print("entering")
         async with processor:
+            print('entered')
             processor.set_processor(name, cfg)
 
             await processor.run_pre()
