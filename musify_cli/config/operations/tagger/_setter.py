@@ -139,7 +139,7 @@ class Incremental(GroupedSetter):
     ):
         super().__init__(field=field, group_by=group_by)
         if not isinstance(sort_by, ItemSorter):
-            sort_by = ItemSorter(to_collection(sort_by or field))
+            sort_by = ItemSorter(to_collection(sort_by or field), ignore_words=())
 
         self.sort_by = sort_by
         self.start = start
