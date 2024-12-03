@@ -106,6 +106,7 @@ class ConditionalGetter(TagGetter):
                 item.disc_number,
                 next(iter(self.condition.comparers)).compare(item),
                 self.condition.ready,
+                self.condition.transform,
                 self.condition,
             )
             print(self.condition.process([item]))
