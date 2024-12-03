@@ -295,6 +295,10 @@ class ReportBase[T](Runner[T], metaclass=ABCMeta):
         description="When true, trigger this report",
         default=False,
     )
+    filter: Filter = Field(
+        description="A filter to apply for this report",
+        default_factory=FilterComparers,
+    )
 
 
 class ReportPlaylistDifferences(ReportBase[dict[str, dict[str, tuple[MusifyItem, ...]]]]):
@@ -316,10 +320,6 @@ class ReportMissingTags(ReportBase[dict[str, dict[MusifyItem, tuple[str, ...]]]]
     match_all: bool = Field(
         description="When True, consider a track as having missing tags only if it is missing all the given tags",
         default=reports_missing_tags_default_args.get("match_all"),
-    )
-    filter: Filter = Field(
-        description="A filter to apply for this report",
-        default_factory=FilterComparers,
     )
 
     async def run(self, collections: Iterable[MusifyCollection]):
