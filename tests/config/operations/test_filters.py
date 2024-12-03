@@ -23,8 +23,13 @@ class TestFilter:
         assert filter_.transform(obj) == obj.name
         assert filter_.transform(obj.name) == obj.name
 
-    def assert_annotation_dump(self, annotation: TypeAdapter, config: MultiType[str]):
+    @staticmethod
+    def assert_annotation_dump(annotation: TypeAdapter, config: MultiType[str]):
         assert annotation.dump_json(annotation.validate_python(config))
+
+    def test_get_comparers_filter_no_config(self, annotation: TypeAdapter):
+        filter_ = get_comparers_filter(None)
+        assert not filter_.ready
 
     def test_get_comparers_filter_string(self, annotation: TypeAdapter):
         config = "test_value"

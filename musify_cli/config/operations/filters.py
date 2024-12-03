@@ -17,7 +17,7 @@ MultiType = UnitSequence[UT] | Mapping[str, UnitSequence[UT]]
 
 
 def get_comparers_filter[T](
-        config: MultiType[T] | FilterComparers[T | MusifyObject]
+        config: MultiType[T] | FilterComparers[T | MusifyObject] | None
 ) -> FilterComparers[T | MusifyObject]:
     """Generate the :py:class:`FilterComparers` object from the ``config``"""
     if isinstance(config, FilterComparers):
@@ -25,7 +25,9 @@ def get_comparers_filter[T](
 
     match_all = get_default_args(FilterComparers)["match_all"]
 
-    if isinstance(config, Mapping):
+    if config is None:
+        comparers = []
+    elif isinstance(config, Mapping):
         field_str = config.get("field")
         field = next(iter(Fields.from_name(field_str))) if field_str is not None else None
         comparers = [

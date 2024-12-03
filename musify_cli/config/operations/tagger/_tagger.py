@@ -67,7 +67,7 @@ class Tagger[T: MusifyItemSettable](PrettyPrinter):
             if isinstance(rule_set, FilteredSetter):
                 setter = rule_set
             else:
-                if (filter_config := rule_set["filter"]) == "unmatched":
+                if (filter_config := rule_set.get("filter")) == "unmatched":
                     condition = None
                 else:
                     condition = get_comparers_filter(filter_config)
