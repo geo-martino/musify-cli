@@ -375,7 +375,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         await self.local.load(types=[LoadTypesLocal.TRACKS, LoadTypesLocal.PLAYLISTS])
         await self.remote.load(types=[LoadTypesRemote.PLAYLISTS])
 
-        source = config.filter(self.local.library.playlists.values()),
+        source = config.filter(self.local.library.playlists.values())
         reference = config.filter(self.remote.library.playlists.values())
         return report_playlist_differences(source=source, reference=reference)
 
