@@ -6,10 +6,11 @@ from collections.abc import Mapping, Iterable
 from functools import partial
 from typing import Self, Annotated, Any
 
+from musify.libraries.local.library import LocalLibrary
 from pydantic import BaseModel, Field, BeforeValidator, model_validator
 
 from musify_cli.config.library._core import LibraryConfig
-from musify_cli.config.library.local import LOCAL_LIBRARY_CONFIG, LocalLibraryConfig, MusicBeeConfig
+from musify_cli.config.library.local import LOCAL_LIBRARY_CONFIG, LocalLibraryConfig, MusicBeeConfig, LocalLibraryPaths
 from musify_cli.config.library.remote import REMOTE_LIBRARY_CONFIG, SpotifyLibraryConfig
 from musify_cli.exception import ParserError
 
@@ -32,7 +33,7 @@ def create_library_config[T: LibraryConfig](kwargs: Any, config_map: Iterable[ty
 
 
 type LocalLibraryType = Annotated[
-    LocalLibraryConfig | MusicBeeConfig,
+    LocalLibraryConfig[LocalLibrary, LocalLibraryPaths] | MusicBeeConfig,
     BeforeValidator(partial(create_library_config, config_map=LOCAL_LIBRARY_CONFIG))
 ]
 type RemoteLibraryType = Annotated[
