@@ -23,7 +23,7 @@ from musify.processors.check import RemoteItemChecker
 from musify.processors.download import ItemDownloadHelper
 from musify.processors.match import ItemMatcher
 from musify.processors.search import RemoteItemSearcher
-from musify.utils import classproperty
+from musify.utils import classproperty, get_max_width, align_string
 from pydantic import BaseModel, NonNegativeFloat, Field, PositiveInt, confloat, computed_field, SecretStr, conint, \
     field_validator
 

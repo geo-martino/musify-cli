@@ -6,6 +6,7 @@ from musify.base import MusifyObject
 from musify.field import Fields
 from musify.processors.compare import Comparer
 from musify.processors.filter import FilterComparers
+from musify.utils import to_collection
 from pydantic import GetPydanticSchema
 from pydantic_core import core_schema
 
@@ -38,7 +39,8 @@ def get_comparers_filter[T](
         comparers = Comparer(condition="is in", expected=config)
 
     filter_ = FilterComparers(comparers=comparers, match_all=match_all)
-    filter_.transform = lambda value: value.name if isinstance(value, MusifyObject) else value
+    if not all(comparer.field is not None for comparer in to_collection(comparers)):
+        filter_.transform = lambda value: value.name if isinstance(value, MusifyObject) else value
     return filter_
 
 

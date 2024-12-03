@@ -238,7 +238,6 @@ class TagsConfig(Runner[dict[LocalTrack, SyncResultTrack]]):
         if updater is None:
             return {}
 
-        assert dry_run
         return await updater.run(collection=library, dry_run=dry_run)
 
 
