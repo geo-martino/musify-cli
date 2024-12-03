@@ -31,7 +31,7 @@ def setup() -> tuple[MusifyConfig, dict[str, MusifyConfig]]:
     base, functions = MusifyConfig.from_file(parsed_args.config)
 
     if func_names := parsed_args.functions:
-        func_names = {name.replace("-", "_") for name in func_names}
+        func_names = (name.replace("-", "_") for name in func_names)
         functions = {name: functions.get(name, base) for name in func_names}
     check_config_is_valid(functions.values())
 

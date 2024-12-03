@@ -208,7 +208,7 @@ class UpdaterConfig(Runner[dict[LocalTrack, SyncResultTrack]]):
             collection = BasicLocalCollection(name="saver", tracks=[track for coll in collection for track in coll])
 
         self._logger.info(
-            f"\33[1;95m ->\33[1;97m Updating tags for {item_log}:"
+            f"\33[1;95m ->\33[1;97m Updating tags for {item_log}: "
             f"\33[0;90m{', '.join(t.name.lower() for t in to_collection(self.tags))}\33[0m"
         )
 
