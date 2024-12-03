@@ -34,12 +34,20 @@ class TestTagger:
 
         filter_ = FilterDefinedList(values="i am an album name")
         filter_.transform = lambda tr: tr.album
-        filtered_setter = FilteredSetter(filter=filter_, setters=value_setters)
+        filtered_setter_values = FilteredSetter(filter=filter_, setters=value_setters)
 
-        tagger = Tagger(rules=[filtered_setter])
+        unmatched_track_value = 9200
+        filtered_setter_unmatched = FilteredSetter(
+            filter=None, setters=[Value(field=LocalTrackField.TRACK, value=unmatched_track_value)]
+        )
+
+        tagger = Tagger(rules=[filtered_setter_values, filtered_setter_unmatched])
         tagger.set_tags(tracks, ())
 
         for track in tracks:
+            if track not in tracks_group:
+                assert track.track_number == unmatched_track_value
+
             for field, value in values_expected.items():
                 if track in tracks_group:
                     assert track[field] == value

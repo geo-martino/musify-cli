@@ -18,7 +18,7 @@ from musify_cli.config.operations.tagger._setter import Setter, setter_from_conf
 @dataclass
 class FilteredSetter[T: MusifyItemSettable](PrettyPrinter):
     """Stores the settings to apply setters to a limited set of filtered items based on a configured filter."""
-    filter: Filter[T] = field(default_factory=FilterDefinedList)
+    filter: Filter[T] | None = field(default_factory=FilterDefinedList)
     setters: Collection[Setter] = ()
 
     def set_tags(self, item: T, collection: Collection[T]) -> None:
@@ -67,7 +67,11 @@ class Tagger[T: MusifyItemSettable](PrettyPrinter):
             if isinstance(rule_set, FilteredSetter):
                 setter = rule_set
             else:
-                condition = get_comparers_filter(rule_set["filter"])
+                if (filter_config := rule_set["filter"]) == "unmatched":
+                    condition = None
+                else:
+                    condition = get_comparers_filter(filter_config)
+
                 setters = [
                     setter_from_config(next(iter(LocalTrackField.from_name(fld))), rule_config)
                     for fld, rule_config in rule_set.items() if fld not in ["filter", "field"]
@@ -89,8 +93,13 @@ class Tagger[T: MusifyItemSettable](PrettyPrinter):
         :param collections: The collections the given items belong to.
             Each item must to exactly one collection for this function to work as expected.
         """
+        matched = set()
         for rule in self.rules:
-            filtered_items = rule.filter(items)
+            if rule.filter is None:
+                filtered_items = [item for item in items if item not in matched]
+            else:
+                filtered_items = rule.filter(items)
+            matched.update(set(filtered_items))
 
             for item in filtered_items:
                 collection = next(iter(coll for coll in collections if item in coll), ())
