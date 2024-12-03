@@ -31,9 +31,8 @@ def get_tags[T: TagField](tags: TagConfigType[T], cls: type[T] = LocalTrackField
     if not values or (isinstance(tags, Field) and tags.value == Fields.ALL):
         return tuple(cls.all(only_tags=True))
 
-    tags = cls.to_tags(cls.from_name(*values))
     order = cls.all()
-    return tuple(sorted(cls.from_name(*tags), key=lambda x: order.index(x)))
+    return tuple(sorted(cls.from_name(*values), key=lambda x: order.index(x)))
 
 
 def serialise_tags(fields: UnitCollection[TagField]) -> list[str]:
