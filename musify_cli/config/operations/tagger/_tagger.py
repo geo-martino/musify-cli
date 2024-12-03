@@ -91,6 +91,7 @@ class Tagger[T: MusifyItemSettable](PrettyPrinter):
         """
         for rule in self.rules:
             filtered_items = rule.filter(items)
+            print(len(filtered_items))
 
             for item in filtered_items:
                 collection = next(iter(coll for coll in collections if item in coll), ())

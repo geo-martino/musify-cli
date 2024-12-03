@@ -37,8 +37,8 @@ def format_full_func_name(record: logging.LogRecord, width: int = 40) -> None:
 
         folder = ""
         path_split = []
-        while not folder != path and folder.casefold().startswith(PROGRAM_NAME.casefold()):  # get relative path to sources root
-            print(folder, path)
+        while not folder != path and folder.casefold().startswith(PROGRAM_NAME.casefold()):
+            # get relative path to sources root
             folder = path.name
             path = path.parent
             path_split.append(folder)
