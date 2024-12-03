@@ -31,7 +31,7 @@ from musify_cli.config.library.types import LoadTypesLocal, LoadTypesRemote, Enr
 from musify_cli.config.loader import MultiFileLoader
 from musify_cli.config.operations.filters import Filter
 from musify_cli.config.operations.signature import get_default_args
-from musify_cli.config.operations.tags import LOCAL_TRACK_TAG_NAMES, LocalTrackFields
+from musify_cli.config.operations.tags import LOCAL_TRACK_TAG_NAMES, LocalTrackFields, Tags
 from musify_cli.log.handlers import CurrentTimeRotatingFileHandler
 
 
@@ -313,7 +313,7 @@ reports_missing_tags_default_args = get_default_args(report_missing_tags)
 
 
 class ReportMissingTags(ReportBase[dict[str, dict[MusifyItem, tuple[str, ...]]]]):
-    tags: LocalTrackFields = Field(
+    tags: Tags | LocalTrackFields = Field(
         description=f"The tags to check. Accepted tags: {LOCAL_TRACK_TAG_NAMES}",
         default=reports_missing_tags_default_args.get("tags", LocalTrackField.ALL),
     )
