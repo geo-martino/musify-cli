@@ -150,13 +150,9 @@ class LocalLibraryManager[L: LocalLibrary, C: LocalLibraryConfig](LibraryManager
 
         if results:
             self.logger.print_line(STAT)
-        # self.library.log_save_tracks_result(results)
+        self.library.log_save_tracks_result(results, log_values=True)
         log_prefix = "Would have set" if self.dry_run else "Set"
         self.logger.info(f"\33[92m{log_prefix} tags for {len(results)} tracks \33[0m")
-
-        for track, result in results.items():
-            print(track.path)
-            print([f"{field.name}={track[field]}" for field in result.updated])
 
         self.logger.debug("Set tag rules: DONE")
 
