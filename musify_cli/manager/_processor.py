@@ -244,7 +244,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
             return
 
         await self.remote.library.extend([track for album in albums for track in album], allow_duplicates=False)
-        await self.remote.library.enrich_tracks(features=True, albums=True, artists=True)
+        await self.remote.library.enrich_tracks(features=False, albums=True, artists=True)
 
         self.local.merge_tracks(self.remote.library)
         results = await self.local.save_tracks(collections=albums)
