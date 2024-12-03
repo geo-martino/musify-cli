@@ -175,14 +175,18 @@ class Min(GroupedValueSetter):
 
     def set[T: LocalTrack](self, item: T, collection: Iterable[T]):
         items = self._group_items(item=item, collection=collection)
-        item[self.field] = min(it[self.field] for it in items)
+        values = {it[self.field] for it in items}
+        if values:
+            item[self.field] = min(values)
 
 
 class Max(GroupedValueSetter):
 
     def set[T: LocalTrack](self, item: T, collection: Iterable[T]):
         items = self._group_items(item=item, collection=collection)
-        item[self.field] = max(it[self.field] for it in items)
+        values = {it[self.field] for it in items}
+        if values:
+            item[self.field] = max(values)
 
 
 class Template(Setter):

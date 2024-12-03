@@ -248,6 +248,15 @@ class GroupedValueSetterTester(GroupedSetterTester, metaclass=ABCMeta):
         assert setter.value_of == LocalTrackField.TRACK_TOTAL
         assert sorted(setter.group_by) == sorted(group_fields)
 
+    @staticmethod
+    def test_no_values(setter: GroupedValueSetter, track: LocalTrack, tracks: list[LocalTrack]):
+        for track in tracks:
+            track[setter.field] = None
+
+        value = track[setter.field]
+        setter.set(track, tracks)
+        assert track[setter.field] == value
+
 
 class TestMin(GroupedValueSetterTester):
     @pytest.fixture
