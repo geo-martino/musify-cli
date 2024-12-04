@@ -1,50 +1,33 @@
-from abc import ABCMeta, abstractmethod
-from collections.abc import Collection
-from datetime import datetime
+from collections.abc import Iterable
+from functools import cached_property
 from pathlib import Path
 from typing import AsyncContextManager, Self
 
-from aiorequestful.cache.backend import CACHE_CLASSES, ResponseCache, SQLiteCache
-from aiorequestful.timer import GeometricCountTimer, StepCeilingTimer
-from jsonargparse import Namespace
-from musify.libraries.core.object import Playlist
+from aiorequestful.types import UnitCollection
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.factory import RemoteObjectFactory
 from musify.libraries.remote.core.library import RemoteLibrary
-from musify.libraries.remote.core.object import SyncResultRemotePlaylist, RemoteAlbum
+from musify.libraries.remote.core.object import RemoteAlbum, RemotePlaylist
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
-from musify.libraries.remote.spotify.api import SpotifyAPI
-from musify.libraries.remote.spotify.factory import SpotifyObjectFactory
-from musify.libraries.remote.spotify.library import SpotifyLibrary
-from musify.libraries.remote.spotify.wrangle import SpotifyDataWrangler
 from musify.logger import STAT
 from musify.processors.check import RemoteItemChecker
+from musify.processors.download import ItemDownloadHelper
 from musify.processors.match import ItemMatcher
 from musify.processors.search import RemoteItemSearcher
-from musify.types import UnitCollection
-from musify.utils import get_max_width, align_string, to_collection
+from musify.utils import to_collection
 
-from musify_cli.exception import ParserError
-from musify_cli.manager._paths import PathsManager
+from musify_cli.config.library.remote import RemoteLibraryConfig
+from musify_cli.config.library.types import LoadTypesRemote, EnrichTypesRemote
+from musify_cli.config.operations.filters import Filter
 from musify_cli.manager.library._core import LibraryManager
-from musify_cli.parser import LoadTypesRemote, EnrichTypesRemote
 
 
-class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMeta):
+class RemoteLibraryManager[L: RemoteLibrary, C: RemoteLibraryConfig](LibraryManager[L, C], AsyncContextManager):
     """Instantiates and manages a :py:class:`RemoteLibrary` and related objects from a given ``config``."""
 
-    def __init__(self, name: str, config: Namespace, paths: PathsManager, dry_run: bool = True):
-        super().__init__(name=name, config=config, dry_run=dry_run)
-
-        self._paths: PathsManager = paths
-
-        self._library: RemoteLibrary | None = None
-        self._api: RemoteAPI | None = None
-
-        # utilities
-        self._cache: ResponseCache | None = None
-        self._factory: RemoteObjectFactory | None = None
-        self._wrangler: RemoteDataWrangler | None = None
+    def __init__(self, config: C, dry_run: bool = True):
+        super().__init__(config=config, dry_run=dry_run)
 
         self.types_loaded: set[LoadTypesRemote] = set()
         self.extended: bool = False
@@ -56,67 +39,33 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.check.close()
-        await self.api.__aexit__(exc_type, exc_val, exc_tb)
+        if self.initialised:
+            await self.api.__aexit__(exc_type, exc_val, exc_tb)
 
-    @property
-    def source(self) -> str:
-        return self.wrangler.source
+    @cached_property
+    def library(self) -> L:
+        """The initialised library"""
+        return self.config.create(api=self.api)
 
-    @property
-    @abstractmethod
-    def library(self) -> RemoteLibrary:
-        """The initialised remote library"""
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
+    @cached_property
     def api(self) -> RemoteAPI:
         """The initialised remote API for this remote library type"""
-        raise NotImplementedError
+        self.initialised = True
+        return self.config.api.create()
 
-    def _set_handler(self, api: RemoteAPI) -> None:
-        config: Namespace = self.config.api.handler
-        if not self.config.api.handler:
-            return
-
-        if config_retry := config.get("retry"):
-            api.handler.retry_timer = GeometricCountTimer(**config_retry)
-        if config_wait := config.get("wait"):
-            api.handler.wait_timer = StepCeilingTimer(**config_wait)
-
-    @property
-    def cache(self) -> ResponseCache | None:
-        """The initialised cache to use with the remote API for this remote library type"""
-        if self._cache is None:
-            if (config := self.config.api.cache) is None:
-                return
-
-            cls = next((cls for cls in CACHE_CLASSES if cls.type == config.type), None)
-            if not cls:
-                return
-
-            local_caches = [SQLiteCache]
-            db = config.db
-            if cls in local_caches and not Path(config.db).is_absolute():
-                db = self._paths.cache.joinpath(db)
-
-            self._cache = cls.connect(value=db, expire=config.expire_after)
-
-        return self._cache
-
-    @property
-    @abstractmethod
+    @cached_property
     def factory(self) -> RemoteObjectFactory:
         """The remote object factory for this remote library type"""
-        raise NotImplementedError
+        factory = self.config.factory
+        factory.api = self.api
+        return factory
 
-    @property
-    @abstractmethod
+    @cached_property
     def wrangler(self) -> RemoteDataWrangler:
         """The initialised remote data wrangler for this remote library type"""
-        raise NotImplementedError
+        return self.config.wrangler
 
-    @property
+    @cached_property
     def match(self) -> ItemMatcher:
         """The initialised item matcher for this remote library type"""
         return ItemMatcher()
@@ -124,20 +73,37 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
     @property
     def check(self) -> RemoteItemChecker:
         """The initialised remote item checker for this remote library type"""
-        return RemoteItemChecker(
-            matcher=self.match,
-            object_factory=self.factory,
-            interval=self.config.check.interval,
-            allow_karaoke=self.config.check.allow_karaoke,
-        )
+        return self.config.check.create(factory=self.factory, matcher=self.match)
 
     @property
     def search(self) -> RemoteItemSearcher:
         """The initialised remote item searcher for this remote library type"""
-        return RemoteItemSearcher(
-            matcher=self.match,
-            object_factory=self.factory,
+        return self.config.search.create(factory=self.factory, matcher=self.match)
+
+    @property
+    def download(self) -> ItemDownloadHelper:
+        """The initialised remote download helper for this remote library type"""
+        return self.config.download.create()
+
+    ###########################################################################
+    ## Backup/Restore
+    ###########################################################################
+    async def _load_library_for_backup(self) -> None:
+        await self.load(types=[LoadTypesRemote.PLAYLISTS, LoadTypesRemote.SAVED_TRACKS])
+
+    async def _restore_library(self, path: Path) -> None:
+        await self.load(types=[LoadTypesRemote.SAVED_TRACKS, LoadTypesRemote.PLAYLISTS])
+
+        self.logger.info(
+            f"\33[1;95m ->\33[1;97m Restoring {self.source} playlists from backup: {path.name} \33[0m"
         )
+
+        backup = self._load_json(path)
+        await self.library.restore_playlists(backup["playlists"])
+        results = await self.library.sync(kind="refresh", reload=False, dry_run=self.dry_run)
+
+        self.library.log_sync(results)
+        self.logger.debug(f"Restore {self.source}: DONE")
 
     ###########################################################################
     ## Operations
@@ -149,7 +115,6 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
             return selected and can_be_loaded
 
         types = to_collection(types)
-
         if types and self.types_loaded.intersection(types) == set(types) and not force:
             return
         elif not types and (force or not self.types_loaded):
@@ -158,34 +123,34 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
             return
 
         loaded = set()
-        if _should_load(LoadTypesRemote.playlists):
+        if _should_load(LoadTypesRemote.PLAYLISTS):
             await self.library.load_playlists()
-            self.types_loaded.add(LoadTypesRemote.playlists)
-            loaded.add(LoadTypesRemote.playlists)
-        if _should_load(LoadTypesRemote.saved_tracks):
+            self.types_loaded.add(LoadTypesRemote.PLAYLISTS)
+            loaded.add(LoadTypesRemote.PLAYLISTS)
+        if _should_load(LoadTypesRemote.SAVED_TRACKS):
             await self.library.load_tracks()
-            self.types_loaded.add(LoadTypesRemote.saved_tracks)
-            loaded.add(LoadTypesRemote.saved_tracks)
-        if _should_load(LoadTypesRemote.saved_albums):
+            self.types_loaded.add(LoadTypesRemote.SAVED_TRACKS)
+            loaded.add(LoadTypesRemote.SAVED_TRACKS)
+        if _should_load(LoadTypesRemote.SAVED_ALBUMS):
             await self.library.load_saved_albums()
-            self.types_loaded.add(LoadTypesRemote.saved_albums)
-            loaded.add(LoadTypesRemote.saved_albums)
-        if _should_load(LoadTypesRemote.saved_artists):
+            self.types_loaded.add(LoadTypesRemote.SAVED_ALBUMS)
+            loaded.add(LoadTypesRemote.SAVED_ALBUMS)
+        if _should_load(LoadTypesRemote.SAVED_ARTISTS):
             await self.library.load_saved_artists()
-            self.types_loaded.add(LoadTypesRemote.saved_artists)
-            loaded.add(LoadTypesRemote.saved_artists)
+            self.types_loaded.add(LoadTypesRemote.SAVED_ARTISTS)
+            loaded.add(LoadTypesRemote.SAVED_ARTISTS)
 
         if not loaded:
             return
 
         self.logger.print_line(STAT)
-        if LoadTypesRemote.playlists in loaded:
+        if LoadTypesRemote.PLAYLISTS in loaded:
             self.library.log_playlists()
-        if LoadTypesRemote.saved_tracks in loaded:
+        if LoadTypesRemote.SAVED_TRACKS in loaded:
             self.library.log_tracks()
-        if LoadTypesRemote.saved_albums in loaded:
+        if LoadTypesRemote.SAVED_ALBUMS in loaded:
             self.library.log_albums()
-        if LoadTypesRemote.saved_artists in loaded:
+        if LoadTypesRemote.SAVED_ARTISTS in loaded:
             self.library.log_artists()
         self.logger.print_line()
 
@@ -219,143 +184,98 @@ class RemoteLibraryManager(LibraryManager, AsyncContextManager, metaclass=ABCMet
             can_be_loaded = force or enrich_type not in self.types_enriched.get(load_type, [])
             return selected and can_be_loaded
 
-        if _loaded(LoadTypesRemote.saved_tracks) and (force or not _enriched(LoadTypesRemote.saved_tracks)):
-            artists = _should_enrich(LoadTypesRemote.saved_tracks, EnrichTypesRemote.artists)
-            albums = _should_enrich(LoadTypesRemote.saved_tracks, EnrichTypesRemote.albums)
+        if _loaded(LoadTypesRemote.SAVED_TRACKS) and (force or not _enriched(LoadTypesRemote.SAVED_TRACKS)):
+            artists = _should_enrich(LoadTypesRemote.SAVED_TRACKS, EnrichTypesRemote.ARTISTS)
+            albums = _should_enrich(LoadTypesRemote.SAVED_TRACKS, EnrichTypesRemote.ALBUMS)
             await self.library.enrich_tracks(artists=artists, albums=albums)
 
-            types_enriched = self.types_enriched.get(LoadTypesRemote.saved_tracks, set())
+            types_enriched = self.types_enriched.get(LoadTypesRemote.SAVED_TRACKS, set())
             if artists:
-                types_enriched.add(EnrichTypesRemote.artists)
+                types_enriched.add(EnrichTypesRemote.ARTISTS)
             if albums:
-                types_enriched.add(EnrichTypesRemote.albums)
-            self.types_enriched[LoadTypesRemote.saved_tracks] = types_enriched
-        if _loaded(LoadTypesRemote.saved_albums) and (force or not _enriched(LoadTypesRemote.saved_albums)):
+                types_enriched.add(EnrichTypesRemote.ALBUMS)
+            self.types_enriched[LoadTypesRemote.SAVED_TRACKS] = types_enriched
+        if _loaded(LoadTypesRemote.SAVED_ALBUMS) and (force or not _enriched(LoadTypesRemote.SAVED_ALBUMS)):
             await self.library.enrich_saved_albums()
-            self.types_enriched[LoadTypesRemote.saved_albums] = set()
-        if _loaded(LoadTypesRemote.saved_artists) and (force or not _enriched(LoadTypesRemote.saved_artists)):
-            tracks = _should_enrich(LoadTypesRemote.saved_artists, EnrichTypesRemote.tracks)
+            self.types_enriched[LoadTypesRemote.SAVED_ALBUMS] = set()
+        if _loaded(LoadTypesRemote.SAVED_ARTISTS) and (force or not _enriched(LoadTypesRemote.SAVED_ARTISTS)):
+            tracks = _should_enrich(LoadTypesRemote.SAVED_ARTISTS, EnrichTypesRemote.TRACKS)
             await self.library.enrich_saved_artists(tracks=tracks)
 
-            types_enriched = self.types_enriched.get(LoadTypesRemote.saved_artists, set())
+            types_enriched = self.types_enriched.get(LoadTypesRemote.SAVED_ARTISTS, set())
             if tracks:
-                types_enriched.add(EnrichTypesRemote.tracks)
-            self.types_enriched[LoadTypesRemote.saved_artists] = types_enriched
+                types_enriched.add(EnrichTypesRemote.TRACKS)
+            self.types_enriched[LoadTypesRemote.SAVED_ARTISTS] = types_enriched
 
-    def _filter_playlists[T: Playlist](self, playlists: Collection[T]) -> Collection[T]:
-        """
-        Returns a filtered set of the given ``playlists`` according to the config for this library.
+    ###########################################################################
+    ## Operations
+    ###########################################################################
+    async def print(self) -> None:
+        """Pretty print data from API getting input from user"""
+        await self.api.print_collection()
 
-        :param playlists: The playlists to be filtered.
-        :return: Filtered playlists.
-        """
-        tag_filter = self.config.playlists.sync.filter
-        self.logger.info(
-            f"\33[1;95m ->\33[1;97m Filtering playlists and tracks from {len(playlists)} playlists\n"
-            f"\33[0;90m    Filter out tags: {tag_filter} \33[0m"
+    async def run_download_helper(self, playlist_filter: Filter = None) -> None:
+        """Run the :py:class:`ItemDownloadHelper`"""
+        self.logger.debug("Download helper: START")
+
+        responses = self.api.user_playlist_data
+        playlists: list[RemotePlaylist] = list(map(
+            lambda response: self.factory.playlist(response, skip_checks=True), responses.values()
+        ))
+        if playlist_filter:
+            playlists = playlist_filter(playlists)
+
+        await self.api.get_items(playlists, kind=RemoteObjectType.PLAYLIST)
+
+        self.download(playlists)
+
+        self.logger.debug("Download helper: DONE")
+
+    async def create_new_music_playlist(self) -> None:
+        """Create a playlist of new music released by user's followed artists"""
+        self.logger.debug("New music playlist: START")
+
+        await self._load_followed_artist_albums()
+        name, results = await self.config.new_music.run(self.library.albums, dry_run=self.dry_run)
+
+        self.logger.print_line(STAT)
+        self.library.log_sync({name: results})
+        log_prefix = "Would have added" if self.dry_run else "Added"
+        self.logger.info(f"\33[92m{log_prefix} {results.added} new tracks to playlist: '{name}' \33[0m")
+
+        self.logger.debug("New music playlist: DONE")
+
+    async def _load_followed_artist_albums(self) -> None:
+        """Load all followed artists and all their albums to the library, refreshing if necessary."""
+        load_albums = any([
+            LoadTypesRemote.SAVED_ARTISTS not in self.types_loaded,
+            EnrichTypesRemote.ALBUMS not in self.types_enriched.get(LoadTypesRemote.SAVED_ARTISTS, [])
+        ])
+        if load_albums:
+            await self.load(types=[LoadTypesRemote.SAVED_ARTISTS])
+            await self.library.enrich_saved_artists(types=("album", "single"))
+
+        albums_to_extend = [
+            album for artist in self.library.artists for album in artist.albums
+            if len(album.tracks) < album.track_total
+        ]
+        await self._extend_albums(albums_to_extend)
+
+        # log load results
+        if load_albums or albums_to_extend:
+            self.logger.print_line(STAT)
+            self.library.log_artists()
+            self.logger.print_line()
+
+    async def _extend_albums(self, albums: Iterable[RemoteAlbum]) -> None:
+        """Extend responses of given ``albums`` to include all available tracks for each album."""
+        kind = RemoteObjectType.ALBUM
+        key = self.api.collection_item_map[kind]
+
+        await self.logger.get_asynchronous_iterator(
+            (self.api.extend_items(album.response, kind=kind, key=key, leave_bar=False) for album in albums),
+            desc="Getting album tracks",
+            unit="albums"
         )
-
-        pl_filtered: Collection[T] = self.playlist_filter(playlists) if self.playlist_filter is not None else playlists
-
-        max_width = get_max_width([pl.name for pl in pl_filtered])
-        for pl in pl_filtered:
-            initial_count = len(pl)
-            tracks = []
-            for track in pl.tracks:
-                keep = True
-
-                for tag, values in tag_filter.items():
-                    item_val = str(track[tag])
-
-                    if any(v.strip().casefold() in item_val.strip().casefold() for v in values):
-                        keep = False
-                        break
-
-                if keep:
-                    tracks.append(track)
-
-            pl.clear()
-            pl.extend(tracks)
-
-            self.logger.debug(
-                f"{align_string(pl.name, max_width=max_width)} | Filtered out {initial_count - len(pl):>3} items"
-            )
-
-        self.logger.print_line()
-        return pl_filtered
-
-    async def sync(self, playlists: Collection[Playlist]) -> dict[str, SyncResultRemotePlaylist]:
-        """
-        Sync the given ``playlists`` with the instantiated remote library.
-
-        :param playlists: The playlists to be synchronised.
-        :return: Map of playlist name to the results of the sync as a :py:class:`SyncResultRemotePlaylist` object.
-        """
-        playlists = self._filter_playlists(playlists=playlists)
-        return await self.library.sync(
-            playlists=playlists,
-            kind=self.config.playlists.sync.kind,
-            reload=self.config.playlists.sync.reload,
-            dry_run=self.dry_run
-        )
-
-    def filter_artist_albums_by_date(self, start: datetime.date, end: datetime.date) -> list[RemoteAlbum]:
-        """Returns all loaded artist albums that are within the given ``start`` and ``end`` dates inclusive"""
-        def match_date(alb: RemoteAlbum) -> bool:
-            """Match start and end dates to the release date of the given ``alb``"""
-            if alb.date:
-                return start <= alb.date <= end
-            if alb.month:
-                return start.year <= alb.year <= end.year and start.month <= alb.month <= end.month
-            if alb.year:
-                return start.year <= alb.year <= end.year
-            return False
-
-        return [album for artist in self.library.artists for album in artist.albums if match_date(album)]
-
-
-class SpotifyLibraryManager(RemoteLibraryManager):
-    """Instantiates and manages a generic :py:class:`SpotifyLibrary` and related objects from a given ``config``."""
-
-    @property
-    def library(self) -> SpotifyLibrary:
-        if self._library is None:
-            self._library = SpotifyLibrary(api=self.api, playlist_filter=self.playlist_filter or ())
-            self.initialised = True
-
-        return self._library
-
-    @property
-    def api(self) -> SpotifyAPI:
-        if self._api is None:
-            if not self.config.api.client_id or not self.config.api.client_secret:
-                raise ParserError("Cannot create API object without client ID and client secret")
-
-            token_file_path = Path(self.config.api.token_file_path)
-            if not token_file_path.is_absolute():
-                token_file_path = self._paths.token.joinpath(token_file_path)
-
-            self._api = SpotifyAPI(
-                client_id=self.config.api.client_id,
-                client_secret=self.config.api.client_secret,
-                scope=self.config.api.scope,
-                cache=self.cache,
-                token_file_path=token_file_path,
-            )
-            self.initialised = True
-
-            self._set_handler(self._api)
-
-        return self._api
-
-    @property
-    def factory(self) -> SpotifyObjectFactory:
-        if self._factory is None:
-            self._factory = SpotifyObjectFactory(api=self.api)
-        return self._factory
-
-    @property
-    def wrangler(self) -> SpotifyDataWrangler:
-        if self._wrangler is None:
-            self._wrangler = SpotifyDataWrangler()
-        return self._wrangler
+        for album in albums:
+            album.refresh(skip_checks=False)

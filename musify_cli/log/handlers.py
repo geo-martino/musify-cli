@@ -4,10 +4,12 @@ All logging handlers specific to this package.
 import logging.handlers
 import os
 import shutil
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
 from musify.processors.time import TimeMapper
+
 from musify_cli.log import LOGGING_DT_FORMAT
 
 
@@ -16,9 +18,9 @@ class CurrentTimeRotatingFileHandler(logging.handlers.BaseRotatingHandler):
     Handles log file and directory rotation based on log file/folder name.
 
     :param filename: The full path to the log file.
-        Optionally, include a '{}' part in the path to format in the current datetime.
+        Optionally, include a '{}' part in the path to format in the given execution time.
         When None, defaults to '{}.log'
-    :param encoding: When not None, it is used to open the file with that encoding.
+    :param dt: The execution time of the program to use when building the full path to the log file.
     :param when: The timespan for 'interval' which is used together to calculate the timedelta.
         Accepts same values as :py:class:`TimeMapper`.
     :param interval: The multiplier for ``when``.
@@ -35,19 +37,23 @@ class CurrentTimeRotatingFileHandler(logging.handlers.BaseRotatingHandler):
             self,
             filename: str | Path | None = None,
             encoding: str | None = None,
+            dt: datetime | None = None,
             when: str | None = None,
             interval: int | None = None,
             count: int | None = None,
             delay: bool = False,
             errors: str | None = None
     ):
-        self.dt = datetime.now()
-
-        dt_str = self.dt.strftime(LOGGING_DT_FORMAT)
+        self.dt = dt if dt is not None else datetime.now()
         if not filename:
             filename = "{}.log"
 
-        self.filename = Path(str(filename).format(dt_str) if "{}" in str(filename) else filename)
+        if "{}" in str(filename):
+            dt_str = self.dt.strftime(LOGGING_DT_FORMAT)
+            self.filename = Path(str(filename).format(dt_str))
+        else:
+            self.filename = Path(filename)
+
         self.filename.parent.mkdir(parents=True, exist_ok=True)
 
         self.delta = TimeMapper(when.lower())(interval) if when and interval else None
@@ -56,7 +62,12 @@ class CurrentTimeRotatingFileHandler(logging.handlers.BaseRotatingHandler):
         self.removed: list[datetime] = []  # datetime on the files that were removed
         self.rotator(unformatted=str(filename), formatted=self.filename)
 
-        super().__init__(filename=self.filename, mode="w", encoding=encoding, delay=delay, errors=errors)
+        if "PYTEST_VERSION" in os.environ:  # don't create log file when executing tests
+            filename = Path(tempfile.gettempdir(), self.filename)
+        else:
+            filename = self.filename
+
+        super().__init__(filename=filename, mode="w", encoding=encoding, delay=delay, errors=errors)
 
     # noinspection PyPep8Naming
     @staticmethod

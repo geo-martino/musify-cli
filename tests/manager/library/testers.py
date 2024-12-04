@@ -2,9 +2,10 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from random import shuffle, sample
 
-from jsonargparse import Namespace
+import pytest
 from musify.types import MusifyEnum
 
+from musify_cli.config.library import LibraryConfig
 # noinspection PyProtectedMember
 from musify_cli.manager.library._core import LibraryManager
 
@@ -18,7 +19,7 @@ class LibraryManagerTester[T: LibraryManager](ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def config(self, tmp_path: Path) -> Namespace:
+    def config(self, tmp_path: Path) -> LibraryConfig:
         """
         Yields a valid :py:class:`Namespace` representing the config
         for the current remote source as a pytest.fixture.
@@ -26,7 +27,7 @@ class LibraryManagerTester[T: LibraryManager](ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def manager(self, config: Namespace) -> T:
+    def manager(self, config: LibraryConfig) -> T:
         """Yields a valid :py:class:`LibraryManager` for the current remote source as a pytest.fixture."""
         raise NotImplementedError
 
@@ -39,6 +40,46 @@ class LibraryManagerTester[T: LibraryManager](ABC):
         raise NotImplementedError
 
     @staticmethod
+    @pytest.mark.skip(reason="Test not yet implemented")
+    async def test_save_json(manager_mock: T):
+        pass  # TODO
+
+    @staticmethod
+    @pytest.mark.skip(reason="Test not yet implemented")
+    async def test_load_json(manager_mock: T):
+        pass  # TODO
+
+    @staticmethod
+    @pytest.mark.skip(reason="Test not yet implemented")
+    async def test_get_library_backup_name(manager_mock: T):
+        pass  # TODO
+
+    @staticmethod
+    @pytest.mark.skip(reason="Test not yet implemented")
+    async def test_backup(manager_mock: T):
+        pass  # TODO
+
+    @staticmethod
+    @pytest.mark.skip(reason="Test not yet implemented")
+    async def test_restore(manager_mock: T):
+        pass  # TODO
+
+    @staticmethod
+    @pytest.mark.skip(reason="Test not yet implemented")
+    async def test_get_available_backup_groups(manager_mock: T):
+        pass  # TODO
+
+    @staticmethod
+    @pytest.mark.skip(reason="Test not yet implemented")
+    async def test_get_restore_dir_from_user(manager_mock: T):
+        pass  # TODO
+
+    @staticmethod
+    @pytest.mark.skip(reason="Test not yet implemented")
+    async def test_get_restore_key_from_user(manager_mock: T):
+        pass  # TODO
+
+    @staticmethod
     async def test_load_with_types(manager_mock: T, load_types: type[MusifyEnum]):
         library = manager_mock.library
         assert not library.load_calls
@@ -49,11 +90,11 @@ class LibraryManagerTester[T: LibraryManager](ABC):
 
         await manager_mock.load(types=types[0])
         assert manager_mock.types_loaded == {types[0]}
-        assert library.load_calls == [types[0].name.lower()]
+        assert library.load_calls == [types[0].name]
 
         await manager_mock.load(types=types[1:])
         assert manager_mock.types_loaded == set(types)
-        expected_calls = [types[0].name.lower()] + [t.name.lower() for t in load_types.all() if t != types[0]]
+        expected_calls = [types[0].name] + [t.name for t in load_types.all() if t != types[0]]
         assert library.load_calls == expected_calls
 
         # does not call any load methods twice
@@ -64,7 +105,7 @@ class LibraryManagerTester[T: LibraryManager](ABC):
         # does call load methods twice on force
         await manager_mock.load(types=types, force=True)
         assert manager_mock.types_loaded == set(types)
-        expected_calls += [enum.name.lower() for enum in load_types.all()]
+        expected_calls += [enum.name for enum in load_types.all()]
         assert library.load_calls == expected_calls
 
     @staticmethod
@@ -75,26 +116,26 @@ class LibraryManagerTester[T: LibraryManager](ABC):
 
         await manager_mock.load()
         assert manager_mock.types_loaded == set(load_types.all())
-        assert library.load_calls == ["all"]
+        assert library.load_calls == ["ALL"]
 
         # does not call any load methods twice
         await manager_mock.load()
         assert manager_mock.types_loaded == set(load_types.all())
-        assert library.load_calls == ["all"]
+        assert library.load_calls == ["ALL"]
 
         types = sample(load_types.all(), k=2)
         await manager_mock.load(types=types)
         assert manager_mock.types_loaded == set(load_types.all())
-        assert library.load_calls == ["all"]
+        assert library.load_calls == ["ALL"]
 
         # does call load methods twice on force
         await manager_mock.load(force=True)
         assert manager_mock.types_loaded == set(load_types.all())
-        assert library.load_calls == ["all"] * 2
+        assert library.load_calls == ["ALL"] * 2
 
         await manager_mock.load(types=types, force=True)
         assert manager_mock.types_loaded == set(load_types.all())
-        assert library.load_calls == ["all"] * 2 + [t.name.lower() for t in sorted(types, key=lambda t: t.value)]
+        assert library.load_calls == ["ALL"] * 2 + [t.name for t in sorted(types, key=lambda t: t.value)]
 
     @staticmethod
     async def test_load_all_after_types(manager_mock: T, load_types: type[MusifyEnum]):
@@ -107,14 +148,14 @@ class LibraryManagerTester[T: LibraryManager](ABC):
 
         await manager_mock.load(types=types[0])
         assert manager_mock.types_loaded == {types[0]}
-        assert library.load_calls == [types[0].name.lower()]
+        assert library.load_calls == [types[0].name]
 
         await manager_mock.load(types=types[1])
         assert manager_mock.types_loaded == set(types[:2])
-        expected_calls = [t.name.lower() for t in types[:2]]
+        expected_calls = [t.name for t in types[:2]]
         assert library.load_calls == expected_calls
 
         await manager_mock.load()
         assert manager_mock.types_loaded == set(types)
-        expected_calls += [t.name.lower() for t in load_types.all() if t not in types[:2]]
+        expected_calls += [t.name for t in load_types.all() if t not in types[:2]]
         assert library.load_calls == expected_calls

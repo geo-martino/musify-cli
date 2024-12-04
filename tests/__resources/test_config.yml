@@ -2,35 +2,37 @@
 execute: True
 
 logging:
+  include: test_logging.yml
   name: logger
 
 paths:
-  base: test_folder
   backup: test_backups
   cache: test_cache
   token: test_token
-  local_library: test_library_local
+  local_library_exports: test_library_local
 
-reload:
-  local:
-    types: ["tracks"]
-  remote:
-    types: ["saved_tracks", "saved_albums"]
-    extend: yes
-    enrich:
-      enabled: yes
-      types: ["tracks", "albums"]
+pre_post:
+  reload:
+    local:
+      types: ["tracks"]
+    remote:
+      types: ["saved_tracks", "saved_albums"]
+      extend: yes
+      enrich:
+        enabled: yes
+        types: ["tracks", "albums"]
 
-pause: this is a test message
+  pause: this is a test message
 
-filter:
-  is in: include me
-  is not in:
-    - exclude me
+  filter:
+    is in: include me
+    is not in:
+      - exclude me
 
 libraries:
-  local: local
-  remote: spotify
+  include: test_libraries.yml
+  target:
+    remote: spotify
 
 backup:
   key: test key
@@ -43,15 +45,3 @@ reports:
     enabled: False
     tags: [title, artist, this tag doesn't exist, album, track]
     match_all: True
-
-download:
-  urls:
-    - "https://www.google.com/search?q={}"
-    - "https://www.youtube.com/results?search_query={}"
-  fields: [album, artist]
-  interval: 1
-
-new_music:
-  name: New Music - 2023
-  start: 2023-01-01
-  end: 2023-12-31
