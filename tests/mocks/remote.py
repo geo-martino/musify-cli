@@ -14,7 +14,7 @@ from musify.libraries.remote.spotify.object import SpotifyTrack, SpotifyPlaylist
 
 from tests.mocks.core import LibraryMock
 from musify_cli.config.library.types import LoadTypesRemote
-from utils import random_str
+from tests.utils import random_str
 
 
 class RemoteTrackMock(RemoteTrack, metaclass=ABCMeta):

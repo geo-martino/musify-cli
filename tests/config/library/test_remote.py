@@ -16,7 +16,7 @@ from tests.mocks.remote import SpotifyLibraryMock, SpotifyPlaylistMock, SpotifyT
 from musify_cli.config.library.remote import APIConfig, SpotifyAPIConfig, RemoteNewMusicConfig, RemotePlaylistsSync, \
     RemoteItemCheckerConfig, RemoteItemSearcherConfig, RemoteItemDownloadConfig, APIHandlerRetry, APIHandlerWait, \
     APICacheConfig, local_caches, APIHandlerConfig, RemoteLibraryConfig, SpotifyLibraryConfig, RemotePlaylistsConfig
-from utils import random_str
+from tests.utils import random_str
 
 
 class TestRemoteItemCheckerConfig:

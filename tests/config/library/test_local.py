@@ -19,7 +19,7 @@ from musify_cli.config.library.local import LOCAL_LIBRARY_CONFIG, LocalLibraryPa
 from musify_cli.config.operations.tagger import FilteredSetter
 # noinspection PyProtectedMember
 from musify_cli.config.operations.tagger._setter import Value
-from utils import random_str, random_tracks
+from tests.utils import random_str, random_tracks
 
 
 class TestLocalLibraryPaths:
