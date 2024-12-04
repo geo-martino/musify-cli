@@ -8,8 +8,8 @@ from musify.libraries.remote.core.library import RemoteLibrary
 from musify.libraries.remote.spotify import SOURCE_NAME as SPOTIFY_SOURCE
 from musify.libraries.remote.spotify.library import SpotifyLibrary
 
-from mocks.remote import RemotePlaylistMock, RemoteTrackMock, RemoteLibraryMock, RemoteAlbumMock, RemoteArtistMock, \
-    SpotifyLibraryMock, SpotifyPlaylistMock, SpotifyAlbumMock, SpotifyTrackMock, SpotifyArtistMock
+from tests.mocks.remote import RemotePlaylistMock, RemoteTrackMock, RemoteLibraryMock, RemoteAlbumMock, \
+    RemoteArtistMock, SpotifyLibraryMock, SpotifyPlaylistMock, SpotifyAlbumMock, SpotifyTrackMock, SpotifyArtistMock
 from musify_cli.config.library.remote import RemoteLibraryConfig, SpotifyAPIConfig, APICacheConfig, \
     APIHandlerConfig, APIHandlerRetry, APIHandlerWait, RemoteItemCheckerConfig, RemoteItemDownloadConfig, \
     RemotePlaylistsConfig, RemotePlaylistsSync, SpotifyLibraryConfig

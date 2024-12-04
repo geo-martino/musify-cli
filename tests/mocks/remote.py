@@ -12,7 +12,7 @@ from musify.libraries.remote.spotify.factory import SpotifyObjectFactory
 from musify.libraries.remote.spotify.library import SpotifyLibrary
 from musify.libraries.remote.spotify.object import SpotifyTrack, SpotifyPlaylist, SpotifyAlbum, SpotifyArtist
 
-from mocks.core import LibraryMock
+from tests.mocks.core import LibraryMock
 from musify_cli.config.library.types import LoadTypesRemote
 from utils import random_str
 

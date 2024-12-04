@@ -5,7 +5,7 @@ from musify.libraries.local.library import LocalLibrary, MusicBee
 from musify.libraries.local.track import LocalTrack, SyncResultTrack, FLAC
 from musify.libraries.local.track.field import LocalTrackField as Tags
 
-from mocks.core import LibraryMock
+from tests.mocks.core import LibraryMock
 from musify_cli.config.library.types import LoadTypesLocal
 
 
