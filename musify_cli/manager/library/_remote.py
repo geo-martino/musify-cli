@@ -36,6 +36,7 @@ class RemoteLibraryManager[L: RemoteLibrary, C: RemoteLibraryConfig](LibraryMana
         self.extended: bool = False
         self.types_enriched: dict[LoadTypesRemote, set[EnrichTypesRemote]] = {}
 
+        # WORKAROUND: typing for some config objects does not work as expected without this here
         self.config: C = self.config
 
     async def __aenter__(self) -> Self:
