@@ -1,3 +1,6 @@
+"""
+Config objects relating to remote library operations.
+"""
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection
 from copy import copy

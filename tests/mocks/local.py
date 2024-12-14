@@ -12,7 +12,7 @@ from musify_cli.config.library.types import LoadTypesLocal
 class LocalTrackMock(FLAC):
 
     # noinspection PyMissingConstructor
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *_, **__):
         self.save_args: dict[str, Any] = {}
         self.merge_tracks_args: dict[str, Any] = {}
 

@@ -1,3 +1,6 @@
+"""
+Handles setting of tag values from items based on a set of configurable rules.
+"""
 from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence, Iterable
 from string import Formatter

@@ -122,6 +122,7 @@ def musicbee_folder(tmp_path: Path, library_folders: list[Path]) -> Path:
     with open(musicbee_folder.joinpath(MusicBee.xml_library_path), "w") as f:
         f.write("\n".join(xml_library))
 
+    # noinspection SpellCheckingInspection
     xml_settings = (
         "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
         "<ApplicationSettings xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "

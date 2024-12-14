@@ -1,3 +1,6 @@
+"""
+Handles getting of tag values from items based on a set of configurable rules.
+"""
 from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping
 from typing import Any, Self

@@ -1,5 +1,4 @@
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection, Iterable, Mapping
 from random import sample, choice
 from typing import Any
 
@@ -9,7 +8,6 @@ from musify.libraries.local.track import LocalTrack
 from musify.libraries.local.track.field import LocalTrackField
 from musify.processors.compare import Comparer
 from musify.processors.filter import FilterComparers, FilterDefinedList
-from tests.utils import random_str
 
 # noinspection PyProtectedMember
 from musify_cli.config.operations.tagger._getter import TagGetter
@@ -17,6 +15,7 @@ from musify_cli.config.operations.tagger._getter import TagGetter
 from musify_cli.config.operations.tagger._setter import SETTERS, setter_from_config, \
     Value, Clear, GroupedValueSetter, Min, Max, Join, Incremental, GroupedSetter, Template, Field, Setter
 from musify_cli.exception import ParserError
+from tests.utils import random_str
 
 
 def test_set_value_as_default_config():
@@ -49,7 +48,8 @@ class SetterTester(metaclass=ABCMeta):
     def conditional_tracks(self, conditional_track: LocalTrack, tracks: list[LocalTrack], **kwargs) -> list[LocalTrack]:
         return tracks + [conditional_track]
 
-    def test_condition_from_dict(self, setter: Setter, config: dict[str, Any]):
+    @staticmethod
+    def test_condition_from_dict(setter: Setter, config: dict[str, Any]):
         config["when"] = {"field": "track_number", "greater_than": 2}
         setter = setter.from_dict(field=LocalTrackField.TITLE, config=config)
         assert isinstance(setter.condition, FilterComparers)
@@ -59,8 +59,9 @@ class SetterTester(metaclass=ABCMeta):
         assert comparer.condition == "greater_than"
         assert comparer.expected == [2]
 
+    @staticmethod
     def test_conditional_set_no_condition(
-            self, setter: Setter, conditional_track: LocalTrack, conditional_tracks: list[LocalTrack]
+            setter: Setter, conditional_track: LocalTrack, conditional_tracks: list[LocalTrack]
     ):
         setter.condition = FilterDefinedList()
         original_value = conditional_track[setter.field]
@@ -68,8 +69,9 @@ class SetterTester(metaclass=ABCMeta):
         setter.set(conditional_track, conditional_tracks)
         assert conditional_track[setter.field] != original_value
 
+    @staticmethod
     def test_conditional_set_valid_condition(
-            self, setter: Setter, conditional_track: LocalTrack, conditional_tracks: list[LocalTrack]
+            setter: Setter, conditional_track: LocalTrack, conditional_tracks: list[LocalTrack]
     ):
         comparer = Comparer(condition="is_in", expected=["this", "or", "that"], field=TagFields.ARTIST)
         setter.condition = FilterComparers(comparer)
@@ -79,8 +81,9 @@ class SetterTester(metaclass=ABCMeta):
         setter.set(conditional_track, conditional_tracks)
         assert conditional_track[setter.field] != original_value
 
+    @staticmethod
     def test_conditional_set_invalid_condition(
-            self, setter: Setter, conditional_track: LocalTrack, conditional_tracks: list[LocalTrack]
+            setter: Setter, conditional_track: LocalTrack, conditional_tracks: list[LocalTrack]
     ):
         comparer = Comparer(condition="is_in", expected=["this", "or", "that"], field=TagFields.ARTIST)
         setter.condition = FilterComparers(comparer)

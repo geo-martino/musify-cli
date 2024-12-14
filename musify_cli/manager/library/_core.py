@@ -1,3 +1,6 @@
+"""
+Core base class for a library manager.
+"""
 import json
 import logging
 import logging.config

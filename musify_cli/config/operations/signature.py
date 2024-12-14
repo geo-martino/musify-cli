@@ -1,3 +1,6 @@
+"""
+Helpers for extracting signature information from various objects using ``inspect``.
+"""
 import inspect
 from collections.abc import Callable
 from typing import Any

@@ -1,3 +1,8 @@
+"""
+The processor for meta operations for the entire program.
+
+This is where functions that can be called via the CLI are defined as 'dynamic processor methods'.
+"""
 from __future__ import annotations
 
 import logging
@@ -56,6 +61,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
         # noinspection PyTypeChecker
         self.logger: MusifyLogger = logging.getLogger(__name__)
+        # noinspection SpellCheckingInspection
         sys.excepthook = self._handle_exception
 
         self.config = config

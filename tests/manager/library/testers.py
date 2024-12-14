@@ -5,12 +5,13 @@ from random import shuffle, sample
 import pytest
 from musify.types import MusifyEnum
 
+from mocks.local import LocalLibraryMock
 from musify_cli.config.library import LibraryConfig
 # noinspection PyProtectedMember
 from musify_cli.manager.library._core import LibraryManager
 
 
-class LibraryManagerTester[T: LibraryManager](ABC):
+class LibraryManagerTester[T: LibraryManager[LocalLibraryMock, LibraryConfig]](ABC):
     """Run generic tests for :py:class:`LibraryManager` implementations"""
 
     @abstractmethod
@@ -81,7 +82,8 @@ class LibraryManagerTester[T: LibraryManager](ABC):
 
     @staticmethod
     async def test_load_with_types(manager_mock: T, load_types: type[MusifyEnum]):
-        library = manager_mock.library
+        # noinspection PyTypeChecker
+        library: LocalLibraryMock = manager_mock.library
         assert not library.load_calls
         assert not manager_mock.types_loaded
 
@@ -110,7 +112,8 @@ class LibraryManagerTester[T: LibraryManager](ABC):
 
     @staticmethod
     async def test_load_all(manager_mock: T, load_types: type[MusifyEnum]):
-        library = manager_mock.library
+        # noinspection PyTypeChecker
+        library: LocalLibraryMock = manager_mock.library
         assert not library.load_calls
         assert not manager_mock.types_loaded
 
@@ -139,7 +142,8 @@ class LibraryManagerTester[T: LibraryManager](ABC):
 
     @staticmethod
     async def test_load_all_after_types(manager_mock: T, load_types: type[MusifyEnum]):
-        library = manager_mock.library
+        # noinspection PyTypeChecker
+        library: LocalLibraryMock = manager_mock.library
         assert not library.load_calls
         assert not manager_mock.types_loaded
 

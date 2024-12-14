@@ -8,7 +8,6 @@ from pydantic import TypeAdapter
 
 from musify_cli.config.operations.filters import get_comparers_filter, Filter, MultiType
 from musify_cli.config.operations.signature import get_default_args
-from utils import random_track
 
 
 class TestFilter:

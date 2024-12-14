@@ -1,3 +1,6 @@
+"""
+The local library manager.
+"""
 import os
 from collections.abc import Collection
 from functools import cached_property

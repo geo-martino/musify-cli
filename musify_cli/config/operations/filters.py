@@ -1,3 +1,6 @@
+"""
+Handles config relating to filters, including defining annotations to be used in Pydantic models.
+"""
 from collections.abc import Mapping
 from typing import TypeVar, Annotated
 

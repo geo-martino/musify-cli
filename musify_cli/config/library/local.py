@@ -1,3 +1,6 @@
+"""
+Config objects relating to local library operations.
+"""
 import sys
 from abc import ABCMeta, abstractmethod
 from pathlib import Path, PureWindowsPath, PurePosixPath, PurePath

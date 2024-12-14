@@ -1,3 +1,8 @@
+"""
+Meta config for the entire application.
+
+Stores config for libraries, as well as defining other key runtime configuration.
+"""
 import json
 import logging.config
 import os

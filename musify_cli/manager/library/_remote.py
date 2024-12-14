@@ -1,3 +1,6 @@
+"""
+The remote library manager.
+"""
 from collections.abc import Iterable
 from functools import cached_property
 from pathlib import Path

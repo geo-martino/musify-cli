@@ -1,6 +1,5 @@
 """
-Sets up and configures the parser for all arguments relating to :py:class:`Library` objects
-and their related objects/configuration.
+Meta config handling for operations across libraries.
 """
 from collections.abc import Mapping, Iterable
 from functools import partial

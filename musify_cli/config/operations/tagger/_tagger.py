@@ -1,3 +1,6 @@
+"""
+Unifies :py:class:`.Getter` and :py:class:`.Setter` handling for algorithmic setting of tags across many items.
+"""
 from collections.abc import Mapping, Collection
 from dataclasses import dataclass, field
 from typing import Any, Self
