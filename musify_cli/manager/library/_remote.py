@@ -33,6 +33,8 @@ class RemoteLibraryManager[L: RemoteLibrary, C: RemoteLibraryConfig](LibraryMana
         self.extended: bool = False
         self.types_enriched: dict[LoadTypesRemote, set[EnrichTypesRemote]] = {}
 
+        self.config: C = self.config
+
     async def __aenter__(self) -> Self:
         await self.api.__aenter__()
         return self
@@ -236,12 +238,12 @@ class RemoteLibraryManager[L: RemoteLibrary, C: RemoteLibraryConfig](LibraryMana
         self.logger.debug("New music playlist: START")
 
         await self._load_followed_artist_albums()
-        name, results = await self.config.new_music.run(self.library.albums, dry_run=self.dry_run)
+        pl, results = await self.config.new_music(self.library.albums, dry_run=self.dry_run)
 
         self.logger.print_line(STAT)
-        self.library.log_sync({name: results})
+        self.library.log_sync({pl: results})
         log_prefix = "Would have added" if self.dry_run else "Added"
-        self.logger.info(f"\33[92m{log_prefix} {results.added} new tracks to playlist: '{name}' \33[0m")
+        self.logger.info(f"\33[92m{log_prefix} {results.added} new tracks to playlist: '{pl.name}' \33[0m")
 
         self.logger.debug("New music playlist: DONE")
 

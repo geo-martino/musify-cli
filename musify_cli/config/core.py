@@ -95,7 +95,8 @@ class Logging(BaseModel):
 
     @model_validator(mode="after")
     def fix_ansi_codes_in_formatters(self) -> Self:
-        for formatter in self.formatters.values():  # ensure ANSI colour codes in format are recognised
+        """Reformat ANSI colour codes in formatter configurations"""
+        for formatter in self.formatters.values():
             if (format_key := "format") in formatter:
                 formatter[format_key] = formatter[format_key].replace(r"\33", "\33")
 
@@ -103,6 +104,7 @@ class Logging(BaseModel):
 
     @model_validator(mode="after")
     def add_key_loggers(self) -> Self:
+        """Add loggers for the key packages in this application"""
         if self.name and self.name in self.loggers:
             self.configure_additional_loggers(MODULE_ROOT, MUSIFY_ROOT, AIOREQUESTFUL_ROOT)
         return self
@@ -183,6 +185,7 @@ class Paths(BaseModel):
 
     @model_validator(mode="after")
     def join_paths_with_base(self) -> Self:
+        """Join the relative paths configured with the base path"""
         for name, path in self._paths.items():
             if not path.is_absolute():
                 self.__setattr__(name, DirectoryPath(self.base.joinpath(path)))
@@ -191,11 +194,13 @@ class Paths(BaseModel):
 
     @model_validator(mode="after")
     def extend_paths_with_execution_time(self) -> Self:
+        """Extend paths with the execution timestamp as an additional folder for paths which use it"""
         self.backup = self.backup.joinpath(self._dt_as_str)
         return self
 
     @model_validator(mode="after")
     def create_directories(self) -> Self:
+        """Create directories for all paths configured"""
         if "PYTEST_VERSION" in os.environ:  # don't create directories when executing tests
             return self
 
@@ -377,6 +382,7 @@ class MusifyConfig(BaseModel):
 
     @model_validator(mode="after")
     def make_api_paths_absolute(self) -> Self:
+        """Make the paths in the API config absolute according the configured base path"""
         api: APIConfig = self.libraries.remote.api
         if (token_file_path := api.token_file_path) and not token_file_path.is_absolute():
             api.token_file_path = self.paths.token.joinpath(token_file_path)
@@ -395,6 +401,7 @@ class MusifyConfig(BaseModel):
 
     @classmethod
     def from_file(cls, config_file_path: str | Path) -> tuple[Self, dict[str, Self]]:
+        """Create config from the config found in the given ``config_file_path``"""
         config_map = MultiFileLoader.load(config_file_path)
 
         functions_map: dict[str, dict[str, Any]] = config_map.pop("functions") if "functions" in config_map else {}

@@ -17,6 +17,7 @@ class Getter(PrettyPrinter, metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def from_dict(cls, config: Mapping[str, Any]):
+        """Create a new instance of this Getter type from the given ``config``"""
         raise NotImplementedError
 
     def __init__(self, field: TagField | None):
@@ -24,6 +25,7 @@ class Getter(PrettyPrinter, metaclass=ABCMeta):
 
     @abstractmethod
     def get[T: MusifyItem](self, item: T) -> Any:
+        """Get the value from the given ``item``"""
         raise NotImplementedError
 
     def as_dict(self):
@@ -33,6 +35,7 @@ class Getter(PrettyPrinter, metaclass=ABCMeta):
 class TagGetter(Getter):
     @classmethod
     def from_field(cls, field: str) -> Self:
+        """Create a new instance of this Getter type from the given ``field``"""
         field = next(iter(TagFields.from_name(field)))
         return cls(field)
 
@@ -132,6 +135,7 @@ GETTERS: list[type[Getter]] = [PathGetter]
 
 
 def getter_from_config(config: str | Mapping[str, Any]) -> Getter:
+    """Factory method to create an appropriate :py:class:`.Getter` object from the given ``config``"""
     if not isinstance(config, Mapping):
         return TagGetter.from_field(config)
 

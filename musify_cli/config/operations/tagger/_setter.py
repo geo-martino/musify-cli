@@ -21,6 +21,7 @@ class Setter(PrettyPrinter, metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def from_dict(cls, field: Tag, config: Mapping[str, Any]) -> Self:
+        """Create a new instance of this Setter type from the given ``config``"""
         raise NotImplementedError
 
     @classmethod
@@ -37,6 +38,7 @@ class Setter(PrettyPrinter, metaclass=ABCMeta):
 
     @abstractmethod
     def set[T: LocalTrack](self, item: T, collection: Iterable[T]) -> None:
+        """Set the value for the given ``item`` found within a given ``collection``"""
         raise NotImplementedError
 
     def as_dict(self):
@@ -233,6 +235,7 @@ class Max(GroupedValueSetter):
 class Template(Setter):
     @property
     def template(self) -> str:
+        """The template string to use when formatting the final string value"""
         return self._template
 
     @template.setter
@@ -285,6 +288,7 @@ SETTERS: list[type[Setter]] = [Clear, Min, Max, Join, Incremental, Template]
 
 
 def setter_from_config(field: Tag, config: Any | Mapping[str, Any]) -> Setter:
+    """Factory method to create an appropriate :py:class:`.Setter` object from the given ``config``"""
     if not isinstance(config, Mapping):
         return Value(field=field, value=config)
 

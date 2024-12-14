@@ -238,7 +238,7 @@ class TagsConfig(Runner[dict[LocalTrack, SyncResultTrack]]):
         if updater is None:
             return {}
 
-        return await updater.run(collection=library, dry_run=dry_run)
+        return await updater(collection=library, dry_run=dry_run)
 
 
 class LocalLibraryConfig[L: LocalLibrary, P: LocalLibraryPathsParser](LibraryConfig[L]):

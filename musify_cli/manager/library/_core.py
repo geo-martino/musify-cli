@@ -27,7 +27,7 @@ class LibraryManager[L: Library, C: LibraryConfig](ABC):
 
         self.initialised = False
 
-        self.config: C = config
+        self.config = config
         self.dry_run = dry_run
 
     @property
