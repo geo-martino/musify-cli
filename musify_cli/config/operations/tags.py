@@ -1,3 +1,6 @@
+"""
+Handles config relating to tags, including defining annotations to be used in Pydantic models.
+"""
 from collections.abc import Collection
 from functools import partial
 from typing import Annotated

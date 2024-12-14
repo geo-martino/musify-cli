@@ -26,7 +26,8 @@ class TestTags:
             LocalTrackField.COMPILATION,
         ]
 
-    def assert_annotation_dump(self, annotation: TypeAdapter, tag_fields: TagConfigType):
+    @staticmethod
+    def assert_annotation_dump(annotation: TypeAdapter, tag_fields: TagConfigType):
         assert annotation.dump_json(annotation.validate_python(tag_fields))
 
     def test_fails_on_incorrect_field_types(self, tag_fields: list[LocalTrackField]):

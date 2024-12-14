@@ -1,3 +1,6 @@
+"""
+Configures Pydantic types to use as annotations in models.
+"""
 from collections.abc import Collection
 from functools import partial
 from typing import Annotated

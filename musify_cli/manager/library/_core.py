@@ -1,3 +1,6 @@
+"""
+Core base class for a library manager.
+"""
 import json
 import logging
 import logging.config
@@ -27,7 +30,7 @@ class LibraryManager[L: Library, C: LibraryConfig](ABC):
 
         self.initialised = False
 
-        self.config: C = config
+        self.config = config
         self.dry_run = dry_run
 
     @property

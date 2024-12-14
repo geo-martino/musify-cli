@@ -7,6 +7,7 @@ from musify.libraries.remote import REMOTE_SOURCES
 from pydantic import ValidationError, TypeAdapter
 
 from musify_cli.config.library import LIBRARY_TYPES, LibrariesConfig, LibraryTarget
+# noinspection PyProtectedMember
 from musify_cli.config.library._combined import create_library_config, LocalLibraryType, RemoteLibraryType
 from musify_cli.config.library.local import LOCAL_LIBRARY_CONFIG, LocalLibraryConfig, LocalPaths
 from musify_cli.config.library.remote import REMOTE_LIBRARY_CONFIG, RemoteLibraryConfig, SpotifyAPIConfig, \

@@ -324,6 +324,7 @@ class TestLocalLibraryConfig:
         assert library.playlist_folder == model.paths.playlists
 
         assert id(library.playlist_filter) == id(model.playlists.filter)
+        assert isinstance(library.path_mapper, PathStemMapper)
         assert library.path_mapper.stem_map == model.paths.map
         assert library.remote_wrangler.source == wrangler.source
 
@@ -353,7 +354,9 @@ class TestMusicBeeConfig(TestLocalLibraryConfig):
         library = model.create(wrangler)
         assert isinstance(library, MusicBee)
 
+        # noinspection PyTestUnpassedFixture
         assert library.musicbee_folder == model.paths.library
         assert id(library.playlist_filter) == id(model.playlists.filter)
+        assert isinstance(library.path_mapper, PathStemMapper)
         assert library.path_mapper.stem_map == model.paths.map
         assert library.remote_wrangler.source == wrangler.source

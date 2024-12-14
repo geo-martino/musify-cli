@@ -1,3 +1,6 @@
+"""
+Handles loading of config from a config file (e.g. YAML or JSON).
+"""
 import json
 from collections.abc import Mapping
 from contextlib import contextmanager
