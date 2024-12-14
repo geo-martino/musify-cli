@@ -304,7 +304,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         """Run all main functions for synchronising remote playlists with a local library"""
         self.logger.debug(f"Sync {self.remote.source}: START")
 
-        await self.local.load(types=LoadTypesLocal.PLAYLISTS)
+        await self.local.load()
         await self.remote.load(types=LoadTypesRemote.PLAYLISTS)
 
         results = await self.remote.config.playlists.sync.run(
