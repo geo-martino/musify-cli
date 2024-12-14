@@ -309,7 +309,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
         results = await self.remote.config.playlists.sync.run(
             library=self.remote.library,
-            playlists=self.local.library.playlists.values(),
+            playlists=self.filter(self.local.library.playlists.values()),
             dry_run=self.dry_run,
         )
 
