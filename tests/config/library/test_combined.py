@@ -13,7 +13,7 @@ from musify_cli.config.library.local import LOCAL_LIBRARY_CONFIG, LocalLibraryCo
 from musify_cli.config.library.remote import REMOTE_LIBRARY_CONFIG, RemoteLibraryConfig, SpotifyAPIConfig, \
     SpotifyLibraryConfig
 from musify_cli.exception import ParserError
-from utils import random_str
+from tests.utils import random_str
 
 
 def test_all_libraries_supported():

@@ -10,12 +10,13 @@ from musify.libraries.remote.spotify.library import SpotifyLibrary
 from musify.processors.match import ItemMatcher
 from pydantic import ValidationError
 
-from mocks.remote import RemoteLibraryMock, RemotePlaylistMock, RemoteTrackMock, RemoteAlbumMock, RemoteArtistMock
-from mocks.remote import SpotifyLibraryMock, SpotifyPlaylistMock, SpotifyTrackMock, SpotifyArtistMock, SpotifyAlbumMock
+from tests.mocks.remote import RemoteLibraryMock, RemotePlaylistMock, RemoteTrackMock, RemoteAlbumMock, RemoteArtistMock
+from tests.mocks.remote import SpotifyLibraryMock, SpotifyPlaylistMock, SpotifyTrackMock, SpotifyArtistMock, \
+    SpotifyAlbumMock
 from musify_cli.config.library.remote import APIConfig, SpotifyAPIConfig, RemoteNewMusicConfig, RemotePlaylistsSync, \
     RemoteItemCheckerConfig, RemoteItemSearcherConfig, RemoteItemDownloadConfig, APIHandlerRetry, APIHandlerWait, \
     APICacheConfig, local_caches, APIHandlerConfig, RemoteLibraryConfig, SpotifyLibraryConfig, RemotePlaylistsConfig
-from utils import random_str
+from tests.utils import random_str
 
 
 class TestRemoteItemCheckerConfig:

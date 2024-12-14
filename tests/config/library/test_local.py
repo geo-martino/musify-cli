@@ -13,13 +13,13 @@ from musify.libraries.remote.spotify.wrangle import SpotifyDataWrangler
 from musify.utils import to_collection
 from pydantic import ValidationError
 
-from mocks.local import LocalLibraryMock, LocalTrackMock
+from tests.mocks.local import LocalLibraryMock, LocalTrackMock
 from musify_cli.config.library.local import LOCAL_LIBRARY_CONFIG, LocalLibraryPathsParser, LocalPaths, \
     LocalLibraryPaths, MusicBeePaths, LocalLibraryConfig, MusicBeeConfig, UpdaterConfig, TagsConfig
 from musify_cli.config.operations.tagger import FilteredSetter
 # noinspection PyProtectedMember
 from musify_cli.config.operations.tagger._setter import Value
-from utils import random_str, random_tracks
+from tests.utils import random_str, random_tracks
 
 
 class TestLocalLibraryPaths:

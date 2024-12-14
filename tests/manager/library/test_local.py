@@ -4,7 +4,7 @@ from random import randrange
 import pytest
 from musify.libraries.local.library import LocalLibrary, MusicBee
 
-from mocks.local import LocalLibraryMock, LocalTrackMock, MusicBeeMock
+from tests.mocks.local import LocalLibraryMock, LocalTrackMock, MusicBeeMock
 from musify_cli.config.library import PlaylistsConfig
 from musify_cli.config.library.local import LocalLibraryConfig, LocalPaths, UpdaterConfig, MusicBeeConfig, MusicBeePaths
 from musify_cli.config.library.types import LoadTypesLocal

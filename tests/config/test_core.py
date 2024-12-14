@@ -12,9 +12,9 @@ from musify.libraries.local.track.field import LocalTrackField
 from musify.logger import MusifyLogger
 from pytest_mock import MockerFixture
 
-from mocks.core import LibraryMock
-from mocks.remote import RemoteLibraryMock, SpotifyLibraryMock, SpotifyTrackMock, RemoteTrackMock, RemoteAlbumMock, \
-    RemoteArtistMock, SpotifyAlbumMock, SpotifyArtistMock, SpotifyPlaylistMock, RemotePlaylistMock
+from tests.mocks.core import LibraryMock
+from tests.mocks.remote import RemoteLibraryMock, SpotifyLibraryMock, SpotifyTrackMock, RemoteTrackMock, \
+    RemoteAlbumMock, RemoteArtistMock, SpotifyAlbumMock, SpotifyArtistMock, SpotifyPlaylistMock, RemotePlaylistMock
 from musify_cli import MODULE_ROOT
 from musify_cli.config.core import Paths, Logging, MUSIFY_ROOT, AIOREQUESTFUL_ROOT, MusifyConfig, \
     ReportPlaylistDifferences, ReportMissingTags

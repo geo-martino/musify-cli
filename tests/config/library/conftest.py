@@ -3,7 +3,7 @@ from musify.libraries.remote.core.factory import RemoteObjectFactory
 from musify.libraries.remote.spotify.factory import SpotifyObjectFactory
 from musify.processors.match import ItemMatcher
 
-from mocks.remote import SpotifyPlaylistMock, SpotifyTrackMock, SpotifyAlbumMock, SpotifyArtistMock
+from tests.mocks.remote import SpotifyPlaylistMock, SpotifyTrackMock, SpotifyAlbumMock, SpotifyArtistMock
 
 
 @pytest.fixture
