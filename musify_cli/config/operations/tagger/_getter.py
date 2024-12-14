@@ -6,6 +6,7 @@ from musify.base import MusifyItem
 from musify.field import TagField, TagFields
 from musify.libraries.local.base import LocalItem
 from musify.printer import PrettyPrinter
+from musify.processors.base import Filter
 from musify.processors.filter import FilterComparers
 
 from musify_cli.config.operations.filters import get_comparers_filter
@@ -89,7 +90,7 @@ class ConditionalGetter(TagGetter):
     def __init__(
             self,
             field: TagField | None = None,
-            condition: FilterComparers = None,
+            condition: Filter = None,
             value: str = "",
             leading_zeros: int | TagField = None
     ):

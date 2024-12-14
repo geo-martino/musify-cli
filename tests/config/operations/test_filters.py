@@ -1,5 +1,6 @@
 import pytest
 from musify.libraries.collection import BasicCollection
+from musify.libraries.local.track import LocalTrack
 from musify.libraries.local.track.field import LocalTrackField
 from musify.processors.filter import FilterComparers
 from musify.utils import to_collection
@@ -67,7 +68,7 @@ class TestFilter:
         assert filter_ == annotation.validate_python(config)
         self.assert_annotation_dump(annotation=annotation, config=config)
 
-    def test_get_comparers_filter_mapping(self, annotation: TypeAdapter):
+    def test_get_comparers_filter_mapping(self, track: LocalTrack, annotation: TypeAdapter):
         match_all = not get_default_args(FilterComparers)["match_all"]
         config = {
             "match_all": match_all,
@@ -81,7 +82,6 @@ class TestFilter:
         field = config.pop("field")
         assert filter_.match_all == config.pop("match_all")
 
-        track = random_track()
         assert filter_.transform(track) == track
 
         assert len(filter_.comparers) == len(config)
