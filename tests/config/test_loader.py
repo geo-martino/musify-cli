@@ -22,7 +22,8 @@ class TestMultiFileLoader:
             }
         }
 
-    def assert_load(self, data: dict[str, Any], path: Path) -> None:
+    @staticmethod
+    def assert_load(data: dict[str, Any], path: Path) -> None:
         """Assert the file at the given ``path`` returns the expected ``data``"""
         assert MultiFileLoader.load(path) == data
         assert MultiFileLoader.load(str(path)) == data

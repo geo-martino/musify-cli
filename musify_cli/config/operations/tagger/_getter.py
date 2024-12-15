@@ -1,3 +1,6 @@
+"""
+Handles getting of tag values from items based on a set of configurable rules.
+"""
 from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping
 from typing import Any, Self
@@ -6,6 +9,7 @@ from musify.base import MusifyItem
 from musify.field import TagField, TagFields
 from musify.libraries.local.base import LocalItem
 from musify.printer import PrettyPrinter
+from musify.processors.base import Filter
 from musify.processors.filter import FilterComparers
 
 from musify_cli.config.operations.filters import get_comparers_filter
@@ -16,6 +20,7 @@ class Getter(PrettyPrinter, metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def from_dict(cls, config: Mapping[str, Any]):
+        """Create a new instance of this Getter type from the given ``config``"""
         raise NotImplementedError
 
     def __init__(self, field: TagField | None):
@@ -23,6 +28,7 @@ class Getter(PrettyPrinter, metaclass=ABCMeta):
 
     @abstractmethod
     def get[T: MusifyItem](self, item: T) -> Any:
+        """Get the value from the given ``item``"""
         raise NotImplementedError
 
     def as_dict(self):
@@ -32,6 +38,7 @@ class Getter(PrettyPrinter, metaclass=ABCMeta):
 class TagGetter(Getter):
     @classmethod
     def from_field(cls, field: str) -> Self:
+        """Create a new instance of this Getter type from the given ``field``"""
         field = next(iter(TagFields.from_name(field)))
         return cls(field)
 
@@ -89,7 +96,7 @@ class ConditionalGetter(TagGetter):
     def __init__(
             self,
             field: TagField | None = None,
-            condition: FilterComparers = None,
+            condition: Filter = None,
             value: str = "",
             leading_zeros: int | TagField = None
     ):
@@ -131,6 +138,7 @@ GETTERS: list[type[Getter]] = [PathGetter]
 
 
 def getter_from_config(config: str | Mapping[str, Any]) -> Getter:
+    """Factory method to create an appropriate :py:class:`.Getter` object from the given ``config``"""
     if not isinstance(config, Mapping):
         return TagGetter.from_field(config)
 

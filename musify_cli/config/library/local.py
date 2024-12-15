@@ -1,3 +1,6 @@
+"""
+Config objects relating to local library operations.
+"""
 import sys
 from abc import ABCMeta, abstractmethod
 from pathlib import Path, PureWindowsPath, PurePosixPath, PurePath
@@ -238,7 +241,7 @@ class TagsConfig(Runner[dict[LocalTrack, SyncResultTrack]]):
         if updater is None:
             return {}
 
-        return await updater.run(collection=library, dry_run=dry_run)
+        return await updater(collection=library, dry_run=dry_run)
 
 
 class LocalLibraryConfig[L: LocalLibrary, P: LocalLibraryPathsParser](LibraryConfig[L]):

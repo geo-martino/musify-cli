@@ -1,3 +1,6 @@
+"""
+Handles config relating to filters, including defining annotations to be used in Pydantic models.
+"""
 from collections.abc import Mapping
 from typing import TypeVar, Annotated
 
@@ -54,7 +57,7 @@ Filter = Annotated[
             function=get_comparers_filter,
             schema=handler(MultiType[str] | object),
             serialization=core_schema.plain_serializer_function_ser_schema(
-                lambda fltr: fltr.json(),
+                lambda filter_: filter_.json(),
                 info_arg=False,
                 return_schema=core_schema.json_schema(),
                 when_used="json-unless-none"

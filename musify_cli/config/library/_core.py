@@ -1,3 +1,11 @@
+"""
+Core base classes for all config objects.
+
+Defines a config object as either an :py:class:`.Instantiator` of a new object,
+or a :py:class:`.Runner` of a specific method.
+
+Also defines core config objects related to common library configuration.
+"""
 import logging
 from abc import ABCMeta, ABC, abstractmethod
 from collections.abc import Awaitable

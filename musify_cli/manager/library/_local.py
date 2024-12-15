@@ -1,3 +1,6 @@
+"""
+The local library manager.
+"""
 import os
 from collections.abc import Collection
 from functools import cached_property
@@ -126,7 +129,7 @@ class LocalLibraryManager[L: LocalLibrary, C: LocalLibraryConfig](LibraryManager
         if collections is None:
             collections = self.library
 
-        return await self.config.updater.run(collection=collections, dry_run=self.dry_run)
+        return await self.config.updater(collection=collections, dry_run=self.dry_run)
 
     def merge_tracks(self, tracks: Collection[Track]) -> None:
         """
@@ -144,9 +147,7 @@ class LocalLibraryManager[L: LocalLibrary, C: LocalLibraryConfig](LibraryManager
         await self.load(types=LoadTypesLocal.TRACKS)
 
         # noinspection PyTypeChecker
-        results: dict[LocalTrack, SyncResultTrack] = await self.config.tags.run(
-            self.library, updater=self.config.updater, dry_run=self.dry_run
-        )
+        results = await self.config.tags(self.library, updater=self.config.updater, dry_run=self.dry_run)
 
         if results:
             self.logger.print_line(STAT)

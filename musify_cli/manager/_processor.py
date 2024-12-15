@@ -1,3 +1,8 @@
+"""
+The processor for meta operations for the entire program.
+
+This is where functions that can be called via the CLI are defined as 'dynamic processor methods'.
+"""
 from __future__ import annotations
 
 import logging
@@ -17,6 +22,7 @@ from musify.report import report_playlist_differences, report_missing_tags
 
 from musify_cli.config.core import MusifyConfig, Paths
 from musify_cli.config.library.local import LocalLibraryConfig
+from musify_cli.config.library.remote import RemoteLibraryConfig
 from musify_cli.config.library.types import LoadTypesLocal, LoadTypesRemote
 from musify_cli.exception import ParserError
 from musify_cli.manager.library import LocalLibraryManager
@@ -55,6 +61,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
 
         # noinspection PyTypeChecker
         self.logger: MusifyLogger = logging.getLogger(__name__)
+        # noinspection SpellCheckingInspection
         sys.excepthook = self._handle_exception
 
         self.config = config
@@ -96,7 +103,8 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         """Set a new config for this manager and all composite managers"""
         self.config = config
 
-        if (remote_library_config := self.config.libraries.remote).name != self.remote.name:
+        remote_library_config: RemoteLibraryConfig = self.config.libraries.remote
+        if remote_library_config.name != self.remote.name:
             if self.remote.initialised:
                 raise ParserError(
                     "New remote library given but the library manager has already been initialised | "
@@ -106,7 +114,8 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         else:
             self.remote.config = remote_library_config
 
-        if (local_library_config := self.config.libraries.local).name != self.local.name:
+        local_library_config: LocalLibraryConfig = self.config.libraries.local
+        if local_library_config.name != self.local.name:
             if self.local.initialised:
                 raise ParserError(
                     "New local library given but the library manager has already been initialised | "
@@ -116,7 +125,7 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         else:
             self.local.config = local_library_config
 
-    def _create_remote_library_manager(self, config: LocalLibraryConfig) -> RemoteLibraryManager:
+    def _create_remote_library_manager(self, config: RemoteLibraryConfig) -> RemoteLibraryManager:
         return RemoteLibraryManager(config=config, dry_run=self.dry_run)
 
     def _create_local_library_manager(self, config: LocalLibraryConfig) -> LocalLibraryManager:
@@ -307,9 +316,9 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         await self.local.load()
         await self.remote.load(types=LoadTypesRemote.PLAYLISTS)
 
-        results = await self.remote.config.playlists.sync.run(
+        results = await self.remote.config.playlists.sync(
             library=self.remote.library,
-            playlists=self.local.library.playlists.values(),
+            playlists=self.filter(self.local.library.playlists.values()),
             dry_run=self.dry_run,
         )
 

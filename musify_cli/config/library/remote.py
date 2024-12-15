@@ -1,3 +1,6 @@
+"""
+Config objects relating to remote library operations.
+"""
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection
 from copy import copy
@@ -270,6 +273,7 @@ class SpotifyAPIConfig(APIConfig[SpotifyAPI]):
     @field_validator("client_id", "client_secret", mode="after")
     @classmethod
     def validate_secrets(cls, value: SecretStr) -> SecretStr:
+        """Ensure the API has the correct secret credentials set."""
         if not value:
             raise ParserError("Cannot create API object without both client ID and client secret set")
         return value
