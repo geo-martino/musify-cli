@@ -215,7 +215,7 @@ class Min(GroupedValueSetter):
             return
 
         items = self._group_items(item=item, collection=collection)
-        values = {it[self.field] for it in items}
+        values = {value for it in items if (value := it[self.field]) is not None}
         if values:
             item[self.field] = min(values)
 
@@ -227,7 +227,7 @@ class Max(GroupedValueSetter):
             return
 
         items = self._group_items(item=item, collection=collection)
-        values = {it[self.field] for it in items}
+        values = {value for it in items if (value := it[self.field]) is not None}
         if values:
             item[self.field] = max(values)
 
