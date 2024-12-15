@@ -110,10 +110,7 @@ class GroupedSetter(Setter, metaclass=ABCMeta):
         return Tag.from_name(*fields) if fields else ()
 
     def _group_items[T: LocalTrack](self, item: T, collection: Iterable[T]) -> list[T]:
-        return [
-            it for it in collection
-            if all(it[field] == item[field] for field in self.group_by) and it[self.field] is not None
-        ]
+        return [it for it in collection if all(it[field] == item[field] for field in self.group_by)]
 
     def as_dict(self):
         return super().as_dict() | {"group_by": self.group_by}
