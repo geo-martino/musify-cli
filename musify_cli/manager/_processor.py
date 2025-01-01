@@ -15,6 +15,7 @@ from time import perf_counter
 from typing import Self, AsyncContextManager, Any
 
 from musify.base import MusifyItem
+from musify.libraries.collection import BasicCollection
 from musify.libraries.local.track.field import LocalTrackField
 from musify.logger import MusifyLogger, STAT
 from musify.processors.base import dynamicprocessormethod, DynamicProcessor
@@ -239,6 +240,8 @@ class MusifyProcessor(DynamicProcessor, AsyncContextManager):
         await self.local.load(types=LoadTypesLocal.TRACKS)
 
         albums = self.local.library.albums
+        tracks_with_no_album = [track for track in self.local.library if not track.album]
+        albums.append(BasicCollection(name="<unknown album>", items=tracks_with_no_album))
         [album.items.remove(track) for album in albums for track in album.items.copy() if track.has_uri is not None]
         albums = [album for album in albums if len(album.items) > 0]
 
