@@ -6,7 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="0edc279c-15a0-4062-a424-01315dc13089" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/musify_cli/manager/_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/musify_cli/manager/_processor.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

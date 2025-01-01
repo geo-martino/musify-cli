@@ -242,7 +242,7 @@ class RemoteLibraryManager[L: RemoteLibrary, C: RemoteLibraryConfig](LibraryMana
         self.logger.debug("New music playlist: START")
 
         await self._load_followed_artist_albums()
-        pl, results = await self.config.new_music(self.library.albums, dry_run=self.dry_run)
+        pl, results = await self.config.new_music(self.library, dry_run=self.dry_run)
 
         self.logger.print_line(STAT)
         self.library.log_sync({pl: results})
