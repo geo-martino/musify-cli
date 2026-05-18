@@ -16,11 +16,10 @@ from mytunes.local.album import LocalAlbumCollection
 from mytunes.local.artist import LocalArtistCollection
 from pytest_mock import MockerFixture
 
-from conftest import remote_library_name
 from mytunes_cli.operations.playlist.create import CreateRemotePlaylistOperation, NewMusicPlaylist
 from mytunes_cli.state import GlobalState
-from operations.testers import OperationTester
-from utils import split_list
+from tests.operations.testers import OperationTester
+from tests.utils import split_list
 
 
 class CreateRemotePlaylistTester(OperationTester, metaclass=ABCMeta):

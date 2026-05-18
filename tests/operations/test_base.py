@@ -9,7 +9,7 @@ from mytunes.local.track import LocalTrack
 
 from mytunes_cli.operations._base import RemoteAPIOperation, TagOperation, TAGS_SAVE
 from mytunes_cli.state import GlobalState
-from operations.testers import OperationTester
+from tests.operations.testers import OperationTester
 
 
 class TestRemoteAPIOperation(OperationTester, metaclass=ABCMeta):

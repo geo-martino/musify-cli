@@ -14,7 +14,7 @@ from pytest_mock import MockerFixture
 
 from mytunes_cli.operations._match import Match, CollectionCheck, CollectionSearch, ItemSearch, ItemCheck
 from mytunes_cli.state import GlobalState
-from operations.testers import OperationTester
+from tests.operations.testers import OperationTester
 
 
 class MatchTester(OperationTester, metaclass=ABCMeta):

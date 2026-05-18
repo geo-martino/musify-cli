@@ -10,7 +10,7 @@ from pytest_mock import MockerFixture
 
 from mytunes_cli.operations.playlist.match import LocalPlaylistMatch, LocalPlaylistSearch
 from mytunes_cli.state import GlobalState
-from operations.testers import OperationTester
+from tests.operations.testers import OperationTester
 
 
 class LocalPlaylistMatchTester(OperationTester, metaclass=ABCMeta):

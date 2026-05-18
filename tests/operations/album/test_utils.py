@@ -11,7 +11,7 @@ from pytest_mock import MockerFixture
 
 from mytunes_cli.operations.album.utils import AlbumDownload
 from mytunes_cli.state import GlobalState
-from operations.testers import OperationTester
+from tests.operations.testers import OperationTester
 
 
 class TestAlbumDownload(OperationTester):

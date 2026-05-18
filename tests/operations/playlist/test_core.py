@@ -12,10 +12,9 @@ from mytunes.local.library import LocalLibrary
 from mytunes.local.playlist import M3U, LocalPlaylist
 from pytest_mock import MockerFixture
 
-from conftest import remote_library_name
 from mytunes_cli.operations.playlist.core import SyncLocalAndRemotePlaylists, SyncLocalPlaylists, ExportLocalPlaylists
 from mytunes_cli.state import GlobalState
-from operations.testers import OperationTester
+from tests.operations.testers import OperationTester
 
 
 class TestExportLocalPlaylists(OperationTester):

@@ -8,7 +8,7 @@ from mytunes.processors.time import TimeMapper
 
 from mytunes_cli.operations.backup.utils import Clean
 from mytunes_cli.state import GlobalState
-from operations.testers import OperationTester
+from tests.operations.testers import OperationTester
 
 
 class TestClean(OperationTester):

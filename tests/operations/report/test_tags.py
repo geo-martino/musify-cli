@@ -9,7 +9,7 @@ from mytunes.local.track import LocalTrack
 
 from mytunes_cli.operations.report.tags import MissingTagReport
 from mytunes_cli.state import GlobalState
-from operations.report.testers import ReportOperationTester
+from tests.operations.report.testers import ReportOperationTester
 
 
 class TestMissingTagResult(ReportOperationTester):

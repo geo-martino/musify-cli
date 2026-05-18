@@ -5,7 +5,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from mytunes_cli.operations.report._base import ReportOperation
-from operations.testers import OperationTester
+from tests.operations.testers import OperationTester
 
 
 class ReportOperationTester(OperationTester, metaclass=ABCMeta):

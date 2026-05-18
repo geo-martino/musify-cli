@@ -8,7 +8,7 @@ from pytest_mock import MockerFixture
 
 from mytunes_cli.operations.track.utils import Download
 from mytunes_cli.state import GlobalState
-from operations.testers import OperationTester
+from tests.operations.testers import OperationTester
 
 
 class TestTrackDownload(OperationTester):

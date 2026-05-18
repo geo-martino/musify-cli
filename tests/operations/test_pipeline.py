@@ -12,8 +12,8 @@ from mytunes_cli.operations import Operation
 from mytunes_cli.operations.pipeline import Pipeline
 from mytunes_cli.printer import Printer
 from mytunes_cli.state import GlobalState
-from operations.testers import OperationTester
-from utils import patch_input
+from tests.operations.testers import OperationTester
+from tests.utils import patch_input
 
 
 class TestPipeline(OperationTester):

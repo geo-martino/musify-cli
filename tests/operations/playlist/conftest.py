@@ -9,7 +9,7 @@ from mytunes.local.playlist import LocalPlaylist
 from mytunes.local.playlist import M3U
 from yarl import URL
 
-from remote import SimpleURI
+from tests.remote import SimpleURI
 
 
 @pytest.fixture

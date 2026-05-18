@@ -14,8 +14,8 @@ from pytest_mock import MockerFixture
 from mytunes_cli.operations._base import TAGS_SAVE
 from mytunes_cli.operations.track.tags import PullTags, RuleTags
 from mytunes_cli.state import GlobalState
-from operations.testers import OperationTester
-from utils import split_list
+from tests.operations.testers import OperationTester
+from tests.utils import split_list
 
 
 class TestPullTags(OperationTester):

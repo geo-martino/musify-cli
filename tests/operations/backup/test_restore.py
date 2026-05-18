@@ -16,8 +16,8 @@ from pytest_mock import MockerFixture
 from mytunes_cli.log import DT_FORMAT
 from mytunes_cli.operations.backup.restore import _BaseRestore, RestoreLocalLibrary, RestoreRemoteLibrary
 from mytunes_cli.state import GlobalState
-from operations.testers import OperationTester
-from utils import patch_input
+from tests.operations.testers import OperationTester
+from tests.utils import patch_input
 
 
 class TestBaseRestore(OperationTester):

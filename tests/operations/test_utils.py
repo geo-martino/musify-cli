@@ -13,9 +13,9 @@ from pytest_mock import MockerFixture
 
 from mytunes_cli.operations.utils import Pause, Print
 from mytunes_cli.state import GlobalState
-from operations.testers import OperationTester
-from remote import SimpleURI
-from utils import patch_input
+from tests.operations.testers import OperationTester
+from tests.remote import SimpleURI
+from tests.utils import patch_input
 
 
 class TestPause(OperationTester):

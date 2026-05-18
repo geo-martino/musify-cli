@@ -7,7 +7,7 @@ from faker import Faker
 
 from mytunes_cli.operations.backup._base import _BaseOperation
 from mytunes_cli.state import GlobalState
-from operations.testers import OperationTester
+from tests.operations.testers import OperationTester
 
 
 class TestBaseOperation(OperationTester):

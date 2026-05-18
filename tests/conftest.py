@@ -15,7 +15,7 @@ from mytunes.local.track import LocalTrack
 
 from mytunes_cli.state import GlobalState
 from mytunes_cli.state.paths import GlobalPaths
-from remote import MockRemoteMutableLibrary, MockRemoteAPI, SimpleURI
+from tests.remote import MockRemoteMutableLibrary, MockRemoteAPI, SimpleURI
 
 
 @pytest.fixture

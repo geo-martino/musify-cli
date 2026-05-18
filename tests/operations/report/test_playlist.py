@@ -9,7 +9,7 @@ from pytest_mock import MockerFixture
 
 from mytunes_cli.operations.report.playlist import PlaylistDifferenceReport
 from mytunes_cli.state import GlobalState
-from operations.report.testers import ReportOperationTester
+from tests.operations.report.testers import ReportOperationTester
 
 
 class TestPlaylistDifferenceReport(ReportOperationTester):
