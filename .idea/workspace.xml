@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0edc279c-15a0-4062-a424-01315dc13089" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/musify-cli.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/musify-cli.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="0edc279c-15a0-4062-a424-01315dc13089" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -19,8 +15,33 @@
       <entry key="_/Users/george.marino/Desktop/Projects/musify-cli" value="2r2iJsbuG6jjF6pbd44a6sJPS0l" />
     </persistenceIdMap>
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="FlaskConsoleOptions" custom-start-script="import sys; print('Python %s on %s' % (sys.version, sys.platform)); sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo, NoAppException&#10;for module in [&quot;main.py&quot;, &quot;wsgi.py&quot;, &quot;app.py&quot;]:&#10;    try: locals().update(ScriptInfo(app_import_path=module, create_app=None).load_app().make_shell_context()); print(&quot;\nFlask App: %s&quot; % app.import_name); break&#10;    except NoAppException: pass">
+    <envs>
+      <env key="FLASK_APP" value="app" />
+    </envs>
+    <option name="myCustomStartScript" value="import sys; print('Python %s on %s' % (sys.version, sys.platform)); sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo, NoAppException&#10;for module in [&quot;main.py&quot;, &quot;wsgi.py&quot;, &quot;app.py&quot;]:&#10;    try: locals().update(ScriptInfo(app_import_path=module, create_app=None).load_app().make_shell_context()); print(&quot;\nFlask App: %s&quot; % app.import_name); break&#10;    except NoAppException: pass" />
+    <option name="myEnvs">
+      <map>
+        <entry key="FLASK_APP" value="app" />
+      </map>
+    </option>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="NamedScopeManager">
+    <scope name="src" pattern="file[musify-cli]:mytunes_cli//*" />
+    <scope name="tests" pattern="file[musify-cli]:tests//*" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
@@ -33,18 +54,77 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python tests.Python tests for _io.test_yaml.TestMultiFileLoader.test_includes_mapping.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for commands.test_base.TestSingleLibraryCommand.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for commands.test_base.TestSingleLibraryCommand.test_unknown.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for commands.test_utils.TestPrint.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for commands.test_utils.TestPrint.test_value.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for log.test_filter.test_file_filter.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for operations.playlists.test_core.TestSyncLocalPlaylists.test_normalise_playlist_paths.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for operations.playlists.test_core.TestSyncLocalPlaylists.test_remove_playlists.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for operations.report.test_playlist.TestPlaylistDifferenceReport.test_get_results_handles_missing_playlists.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for operations.test_backup.TestClean.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for operations.test_backup.TestClean.test_remove_too_many_backups.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for operations.test_pipeline.TestPipeline.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for operations.test_pipeline.TestPipeline.test_from_file.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for operations.test_playlists.TestNewMusicPlaylist.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for settings.test_main.TestSettings.test_set_state_management_for_immutable_libraries.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for settings.test_paths.TestApplicationPaths.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for settings.test_paths.TestApplicationPaths.test_remove_skips_non_empty_directories.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests in tests.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Run all tests.executor&quot;: &quot;Run&quot;,
+    &quot;Python.logging.executor&quot;: &quot;Run&quot;,
+    &quot;Python.utils.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
     &quot;ai.playground.ignore.import.keys.banner.in.settings&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/george.marino/Desktop/Projects/musify-cli&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;pydanticify&quot;,
+    &quot;last.edited.regexp&quot;: &quot;\\33[9m&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/george.marino/Desktop/Projects/mytunes-cli/tests/operations/album&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.intellij.pycharm.community.ide.impl.configuration.PythonContentEntriesConfigurable&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/tests/operations/album" />
+      <recent name="$PROJECT_DIR$/mytunes_cli/operations/albums" />
+      <recent name="$PROJECT_DIR$/tests/operations" />
+      <recent name="$PROJECT_DIR$/tests/settings" />
+      <recent name="$PROJECT_DIR$/mytunes_cli/io" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/tests/operations/backup" />
+      <recent name="$PROJECT_DIR$/tests/operations/track" />
+      <recent name="$PROJECT_DIR$/tests/operations/report" />
+      <recent name="$PROJECT_DIR$/mytunes_cli/operations/track" />
+      <recent name="$PROJECT_DIR$/mytunes_cli/operations/backup" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="Run all tests" type="tests" factoryName="Autodetect">
+      <module name="musify-cli" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="RUN_TOOL" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/tests&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -74,11 +154,52 @@
       <workItem from="1775240435107" duration="1667000" />
       <workItem from="1775354546876" duration="598000" />
       <workItem from="1775470278882" duration="15333000" />
+      <workItem from="1775995101829" duration="763000" />
+      <workItem from="1775995871890" duration="27876000" />
+      <workItem from="1776037587518" duration="31253000" />
+      <workItem from="1776186874445" duration="7946000" />
+      <workItem from="1776198595535" duration="70497000" />
+      <workItem from="1776357041397" duration="35462000" />
+      <workItem from="1776440293404" duration="616000" />
+      <workItem from="1776466059150" duration="605000" />
+      <workItem from="1776466722383" duration="32362000" />
+      <workItem from="1776556495989" duration="28844000" />
+      <workItem from="1776683377884" duration="15431000" />
+      <workItem from="1776712533272" duration="20868000" />
+      <workItem from="1776781688885" duration="5923000" />
+      <workItem from="1776787930743" duration="14371000" />
+      <workItem from="1776871933887" duration="278000" />
+      <workItem from="1776872247068" duration="3073000" />
+      <workItem from="1776896768021" duration="12557000" />
+      <workItem from="1776934226819" duration="8679000" />
+      <workItem from="1776952619341" duration="43410000" />
+      <workItem from="1777062163915" duration="6064000" />
+      <workItem from="1777072406430" duration="5756000" />
+      <workItem from="1777467556917" duration="1301000" />
+      <workItem from="1777471283553" duration="14797000" />
+      <workItem from="1777502467275" duration="20191000" />
+      <workItem from="1777577108833" duration="56174000" />
+      <workItem from="1778343913673" duration="7462000" />
+      <workItem from="1778497060668" duration="5798000" />
+      <workItem from="1778531477138" duration="601000" />
+      <workItem from="1778581510230" duration="1804000" />
+      <workItem from="1778585077258" duration="5000" />
+      <workItem from="1778588963800" duration="7913000" />
+      <workItem from="1778778396544" duration="3027000" />
+      <workItem from="1778838591775" duration="843000" />
+      <workItem from="1778856710714" duration="4487000" />
+      <workItem from="1779121180260" duration="2523000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/mytunes_cli$utils.coverage" NAME="utils Coverage Results" MODIFIED="1776208364623" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/mytunes_cli/commands" />
+    <SUITE FILE_PATH="coverage/mytunes_cli$.coverage" NAME=" Coverage Results" MODIFIED="1779123017978" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/mytunes_cli$core.coverage" NAME="core Coverage Results" MODIFIED="1777211956273" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/musify_cli/config" />
+    <SUITE FILE_PATH="coverage/mytunes_cli$logging.coverage" NAME="logging Coverage Results" MODIFIED="1777899269084" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/.venv/lib/python3.14/site-packages/rich" />
   </component>
   <component name="github-copilot-workspace">
     <instructionFileLocations>
