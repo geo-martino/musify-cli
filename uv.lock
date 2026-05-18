@@ -792,8 +792,8 @@ wheels = [
 
 [[package]]
 name = "mytunes"
-version = "1.2.5.post806+g5e900d6d"
-source = { git = "https://github.com/geo-martino/musify?branch=v2%2Fpydanticify#5e900d6d5c2be23e629bfc43f27e392cb8dc6c1e" }
+version = "1.2.5.post9+g61ce81e"
+source = { git = "https://github.com/geo-martino/mytunes?branch=v2%2Fpydanticify#61ce81e14d0abc5701fdad16ce0de68543c1e7e3" }
 dependencies = [
     { name = "aiofiles" },
     { name = "aiorequestful" },
@@ -838,7 +838,7 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "mytunes", extras = ["all"], git = "https://github.com/geo-martino/musify?branch=v2%2Fpydanticify" },
+    { name = "mytunes", extras = ["all"], git = "https://github.com/geo-martino/mytunes?branch=v2%2Fpydanticify" },
     { name = "pydantic-settings", specifier = "~=2.14.1" },
     { name = "pydantic-settings-logging", specifier = "~=0.1.1" },
     { name = "pyfiglet", specifier = "~=1.0" },

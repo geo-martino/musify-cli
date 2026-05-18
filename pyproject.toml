@@ -49,7 +49,7 @@ package = true
 
 # TODO: remove me on release
 [tool.uv.sources]
-mytunes = { git = "https://github.com/geo-martino/musify", branch = "v2/pydanticify" }
+mytunes = { git = "https://github.com/geo-martino/mytunes", branch = "v2/pydanticify" }
 
 [project.urls]
 "Source code" = "https://github.com/geo-martino/mytunes-cli"

@@ -12,7 +12,7 @@
   </component>
   <component name="CopilotPersistence">
     <persistenceIdMap>
-      <entry key="_/Users/george.marino/Desktop/Projects/musify-cli" value="2r2iJsbuG6jjF6pbd44a6sJPS0l" />
+      <entry key="_/Users/george.marino/Desktop/Projects/mytunes-cli" value="2r2iJsbuG6jjF6pbd44a6sJPS0l" />
     </persistenceIdMap>
   </component>
   <component name="FileTemplateManagerImpl">
@@ -37,8 +37,8 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="NamedScopeManager">
-    <scope name="src" pattern="file[musify-cli]:mytunes_cli//*" />
-    <scope name="tests" pattern="file[musify-cli]:tests//*" />
+    <scope name="src" pattern="file[mytunes-cli]:mytunes_cli//*" />
+    <scope name="tests" pattern="file[mytunes-cli]:tests//*" />
   </component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
@@ -108,7 +108,7 @@
   </component>
   <component name="RunManager">
     <configuration name="Run all tests" type="tests" factoryName="Autodetect">
-      <module name="musify-cli" />
+      <module name="mytunes-cli" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -198,7 +198,7 @@
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/mytunes_cli$utils.coverage" NAME="utils Coverage Results" MODIFIED="1776208364623" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/mytunes_cli/commands" />
     <SUITE FILE_PATH="coverage/mytunes_cli$.coverage" NAME=" Coverage Results" MODIFIED="1779123017978" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
-    <SUITE FILE_PATH="coverage/mytunes_cli$core.coverage" NAME="core Coverage Results" MODIFIED="1777211956273" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/musify_cli/config" />
+    <SUITE FILE_PATH="coverage/mytunes_cli$core.coverage" NAME="core Coverage Results" MODIFIED="1777211956273" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/mytunes_cli/config" />
     <SUITE FILE_PATH="coverage/mytunes_cli$logging.coverage" NAME="logging Coverage Results" MODIFIED="1777899269084" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/.venv/lib/python3.14/site-packages/rich" />
   </component>
   <component name="github-copilot-workspace">
