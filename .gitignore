@@ -71,7 +71,7 @@ instance/
 # Sphinx/other documentation
 docs/_build/
 docs/modules.rst
-docs/musify*.rst
+docs/mytunes*.rst
 .grip/
 
 # PyBuilder
@@ -142,3 +142,7 @@ cython_debug/
 _data/
 _logs/
 _config/
+
+/token.json
+/test.py
+/test_*.py
