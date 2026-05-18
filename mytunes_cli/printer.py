@@ -80,7 +80,7 @@ class Printer(HasGlobalState):
 
     @classmethod
     def print_logo(cls, fonts: Sequence[str] = LOGO_FONTS, colours: Collection[str] = LOGO_COLOURS) -> None:
-        """Pretty print the Musify logo in the centre of the terminal"""
+        """Pretty print the logo in the centre of the terminal"""
         width = get_console().width
 
         colours = list(colours)

@@ -1,5 +1,5 @@
 """
-Welcome to the Musify CLI
+Welcome to the MyTunes CLI
 """
 from pathlib import Path
 
