@@ -1,2 +1,2 @@
-# musify-cli
-CLI operations built on Musify package.
+# mytunes-cli
+CLI operations built on MyTunes package.

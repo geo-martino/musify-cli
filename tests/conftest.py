@@ -1,140 +1,111 @@
-import asyncio
-import logging.config
+from collections.abc import Generator
 from pathlib import Path
-from typing import Any
+from unittest.mock import patch, PropertyMock
 
 import pytest
-import yaml
-from aiorequestful.request import RequestHandler
-from musify.libraries.local.library import MusicBee
-from musify.libraries.local.track import LocalTrack
-from musify.libraries.remote.spotify.wrangle import SpotifyDataWrangler
-from musify.logger import MusifyLogger
-from pytest_mock import MockerFixture
+from faker import Faker
+from mytunes.core.library import Library, RemoteLibrary, RemoteMutableLibrary
+from mytunes.core.playlist import MutablePlaylist
+from mytunes.core.track import RemoteTrack
+from mytunes.core.user import RemoteUser
+from mytunes.local.album import LocalAlbumCollection
+from mytunes.local.folder import Folder
+from mytunes.local.library import LocalLibrary
+from mytunes.local.track import LocalTrack
 
-from musify_cli import MODULE_ROOT
-from tests.utils import random_track, random_tracks
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
-
-
-# noinspection PyUnusedLocal
-@pytest.hookimpl
-def pytest_configure(config: pytest.Config):
-    """Loads logging config"""
-    config_file = Path(__file__).parent.with_stem("logging").with_suffix(".yml")
-    if not config_file.is_file():
-        return
-
-    with open(config_file, "r", encoding="utf-8") as file:
-        log_config = yaml.full_load(file)
-
-    log_config.pop("compact", False)
-    MusifyLogger.disable_bars = True
-    MusifyLogger.compact = True
-
-    def remove_file_handler(c: dict[str, Any]) -> None:
-        """Remove all config for file handlers"""
-        for k, v in c.items():
-            if k == "handlers" and isinstance(v, list) and "file" in v:
-                v.pop(v.index("file"))
-            elif k == "handlers" and isinstance(v, dict) and "file" in v:
-                v.pop("file")
-            elif isinstance(v, dict):
-                remove_file_handler(v)
-
-    remove_file_handler(log_config)
-
-    for formatter in log_config["formatters"].values():  # ensure ANSI colour codes in format are recognised
-        formatter["format"] = formatter["format"].replace(r"\33", "\33")
-
-    log_config["loggers"][MODULE_ROOT] = log_config["loggers"]["test"]
-    logging.config.dictConfig(log_config)
-
-
-@pytest.fixture(scope="session")
-def spotify_wrangler() -> SpotifyDataWrangler:
-    """Yields a :py:class:`SpotifyDataWrangler` for testing Spotify data wrangling"""
-    return SpotifyDataWrangler()
-
-
-@pytest.fixture(autouse=True)
-async def requests_mock(mocker: MockerFixture) -> None:
-    mocker.patch.object(RequestHandler, "request", return_value={})
-    yield
-    mocker.stopall()
+from mytunes_cli.state import GlobalState
+from mytunes_cli.state.paths import GlobalPaths
+from remote import MockRemoteMutableLibrary, MockRemoteAPI, SimpleURI
 
 
 @pytest.fixture
-def track() -> LocalTrack:
-    return random_track()
-
-
-@pytest.fixture
-def tracks() -> list[LocalTrack]:
-    return random_tracks()
-
-
-@pytest.fixture
-def library_folders(tmp_path: Path) -> list[Path]:
-    """The library folders to use when generating the MusicBee settings file."""
-    library_folders = [tmp_path.joinpath("library_1"), tmp_path.joinpath("library_2")]
-    for path in library_folders:
-        path.mkdir(parents=True, exist_ok=True)
-    return library_folders
-
-
-# noinspection PyMethodOverriding
-@pytest.fixture
-def musicbee_folder(tmp_path: Path, library_folders: list[Path]) -> Path:
-    musicbee_folder = tmp_path.joinpath("library")
-    musicbee_folder.mkdir(parents=True, exist_ok=True)
-
-    playlists_folder = musicbee_folder.joinpath(MusicBee.playlists_path)
-    playlists_folder.mkdir(parents=True, exist_ok=True)
-
-    xml_library = (
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-        "<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" "
-        "\"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">",
-        "<plist version=\"1.0\">",
-        "<dict>",
-        "<key>Major Version</key><integer>3</integer>",
-        "<key>Minor Version</key><integer>5</integer>",
-        "<key>Application Version</key><string>3.5.8447.35892</string>",
-        f"<key>Music Folder</key><string>file://localhost/{musicbee_folder}</string>",
-        "<key>Library Persistent ID</key><string>3D76B2A6FD362901</string>",
-        "<key>Tracks</key>",
-        "<dict/>",
-        "<key>Playlists</key>",
-        "<array/>",
-        "</dict>",
-        "</plist>",
+def state(libraries: dict[str, Library], faker: Faker, tmp_path: Path) -> GlobalState:
+    return GlobalState(
+        paths=GlobalPaths(application=tmp_path),
+        libraries=libraries,
+        dry_run=faker.boolean(),
     )
-    with open(musicbee_folder.joinpath(MusicBee.xml_library_path), "w") as f:
-        f.write("\n".join(xml_library))
 
-    # noinspection SpellCheckingInspection
-    xml_settings = (
-        "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
-        "<ApplicationSettings xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
-        "xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">",
-        f"<Path>{musicbee_folder}</Path>",
-        "<OrganisationMonitoredFolders>",
-        f" <string>{library_folders[0]}</string>",
-        f" <string>{library_folders[1]}</string>",
-        "</OrganisationMonitoredFolders>",
-        "</ApplicationSettings>",
-    )
-    with open(musicbee_folder.joinpath(MusicBee.xml_settings_path), "w") as f:
-        f.write("\n".join(xml_settings))
 
-    return musicbee_folder
+@pytest.fixture
+def local_libraries(faker: Faker) -> dict[str, LocalLibrary]:
+    return {faker.name(): LocalLibrary() for _ in range(faker.random_int(1, 10))}
+
+
+@pytest.fixture
+def local_library_name(local_libraries: dict[str, LocalLibrary], faker: Faker) -> str:
+    return faker.random_element(local_libraries.keys())
+
+
+@pytest.fixture
+def local_library(local_library_name: str, local_libraries: dict[str, LocalLibrary]) -> LocalLibrary:
+    return local_libraries[local_library_name]
+
+
+@pytest.fixture
+def remote_libraries(faker: Faker) -> Generator[dict[str, RemoteMutableLibrary]]:
+    libraries = {
+        faker.name(): MockRemoteMutableLibrary(api=MockRemoteAPI())
+        for _ in range(faker.random_int(1, 10))
+    }
+
+    # need to patch out the user property for some logging purposes
+    user = RemoteUser(name=faker.name(), uri=SimpleURI.create_random(RemoteUser.type))
+    with patch.object(RemoteLibrary, "user", return_value=user, new_callable=PropertyMock):
+        yield libraries
+
+
+@pytest.fixture
+def remote_library_name(remote_libraries: dict[str, RemoteMutableLibrary], faker: Faker) -> str:
+    return faker.random_element(remote_libraries.keys())
+
+
+@pytest.fixture
+def remote_library(remote_library_name: str, remote_libraries: dict[str, RemoteMutableLibrary]) -> RemoteMutableLibrary:
+    return remote_libraries[remote_library_name]
+
+
+@pytest.fixture
+def libraries(local_libraries: dict[str, LocalLibrary], remote_libraries: dict[str, RemoteMutableLibrary]):
+    return local_libraries | remote_libraries
+
+
+@pytest.fixture
+def library_name(libraries: dict[str, Library], faker: Faker) -> str:
+    return faker.random_element(libraries.keys())
+
+
+@pytest.fixture
+def library(library_name: str, libraries: dict[str, Library]) -> Library:
+    return libraries[library_name]
+
+
+@pytest.fixture
+def local_tracks(faker: Faker) -> list[LocalTrack]:
+    return [
+        LocalTrack(name=faker.sentence().rstrip("."), path=faker.file_path(extension=".mp3"))
+        for _ in range(faker.random_int(10, 30))
+    ]
+
+
+@pytest.fixture
+def remote_tracks(faker: Faker) -> list[RemoteTrack]:
+    return [
+        RemoteTrack(name=faker.sentence().rstrip("."), uri=SimpleURI.create_random(RemoteTrack.type))
+        for _ in range(faker.random_int(10, 30))
+    ]
+
+
+@pytest.fixture
+def playlists(faker: Faker) -> list[MutablePlaylist]:
+    return [MutablePlaylist(name=faker.sentence().rstrip(".")) for _ in range(faker.random_int(10, 30))]
+
+
+@pytest.fixture
+def local_albums(faker: Faker) -> list[LocalAlbumCollection]:
+    return [LocalAlbumCollection(name=faker.sentence().rstrip(".")) for _ in range(faker.random_int(10, 30))]
+
+
+@pytest.fixture
+def folders(faker: Faker) -> list[Folder]:
+    return [Folder(name=faker.sentence().rstrip(".")) for _ in range(faker.random_int(10, 30))]
