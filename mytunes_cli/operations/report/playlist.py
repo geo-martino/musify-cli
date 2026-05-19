@@ -1,4 +1,5 @@
-from typing import Annotated, Sequence
+from collections.abc import Sequence
+from typing import Annotated
 
 from mytunes._types import DEFAULT_IF_NONE
 from mytunes.annotation import ResourceModel, TO_TUPLE

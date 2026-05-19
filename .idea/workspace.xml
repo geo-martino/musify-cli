@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0edc279c-15a0-4062-a424-01315dc13089" name="Changes" comment="" />
+    <list default="true" id="0edc279c-15a0-4062-a424-01315dc13089" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mytunes_cli/operations/track/tags.py" beforeDir="false" afterPath="$PROJECT_DIR$/mytunes_cli/operations/track/tags.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -52,44 +55,44 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;Python tests.Python tests for _io.test_yaml.TestMultiFileLoader.test_includes_mapping.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for commands.test_base.TestSingleLibraryCommand.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for commands.test_base.TestSingleLibraryCommand.test_unknown.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for commands.test_utils.TestPrint.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for commands.test_utils.TestPrint.test_value.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for log.test_filter.test_file_filter.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for operations.playlists.test_core.TestSyncLocalPlaylists.test_normalise_playlist_paths.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for operations.playlists.test_core.TestSyncLocalPlaylists.test_remove_playlists.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for operations.report.test_playlist.TestPlaylistDifferenceReport.test_get_results_handles_missing_playlists.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for operations.test_backup.TestClean.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for operations.test_backup.TestClean.test_remove_too_many_backups.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for operations.test_pipeline.TestPipeline.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for operations.test_pipeline.TestPipeline.test_from_file.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for operations.test_playlists.TestNewMusicPlaylist.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for settings.test_main.TestSettings.test_set_state_management_for_immutable_libraries.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for settings.test_paths.TestApplicationPaths.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for settings.test_paths.TestApplicationPaths.test_remove_skips_non_empty_directories.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests in tests.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Run all tests.executor&quot;: &quot;Run&quot;,
-    &quot;Python.logging.executor&quot;: &quot;Run&quot;,
-    &quot;Python.utils.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;ai.playground.ignore.import.keys.banner.in.settings&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;pydanticify&quot;,
-    &quot;last.edited.regexp&quot;: &quot;\\33[9m&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/george.marino/Desktop/Projects/mytunes-cli/tests/operations/album&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.intellij.pycharm.community.ide.impl.configuration.PythonContentEntriesConfigurable&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python tests.Python tests for _io.test_yaml.TestMultiFileLoader.test_includes_mapping.executor": "Run",
+    "Python tests.Python tests for commands.test_base.TestSingleLibraryCommand.executor": "Run",
+    "Python tests.Python tests for commands.test_base.TestSingleLibraryCommand.test_unknown.executor": "Run",
+    "Python tests.Python tests for commands.test_utils.TestPrint.executor": "Run",
+    "Python tests.Python tests for commands.test_utils.TestPrint.test_value.executor": "Run",
+    "Python tests.Python tests for log.test_filter.test_file_filter.executor": "Run",
+    "Python tests.Python tests for operations.playlists.test_core.TestSyncLocalPlaylists.test_normalise_playlist_paths.executor": "Run",
+    "Python tests.Python tests for operations.playlists.test_core.TestSyncLocalPlaylists.test_remove_playlists.executor": "Run",
+    "Python tests.Python tests for operations.report.test_playlist.TestPlaylistDifferenceReport.test_get_results_handles_missing_playlists.executor": "Run",
+    "Python tests.Python tests for operations.test_backup.TestClean.executor": "Run",
+    "Python tests.Python tests for operations.test_backup.TestClean.test_remove_too_many_backups.executor": "Run",
+    "Python tests.Python tests for operations.test_pipeline.TestPipeline.executor": "Run",
+    "Python tests.Python tests for operations.test_pipeline.TestPipeline.test_from_file.executor": "Run",
+    "Python tests.Python tests for operations.test_playlists.TestNewMusicPlaylist.executor": "Run",
+    "Python tests.Python tests for settings.test_main.TestSettings.test_set_state_management_for_immutable_libraries.executor": "Run",
+    "Python tests.Python tests for settings.test_paths.TestApplicationPaths.executor": "Run",
+    "Python tests.Python tests for settings.test_paths.TestApplicationPaths.test_remove_skips_non_empty_directories.executor": "Run",
+    "Python tests.Python tests in tests.executor": "Run",
+    "Python tests.Run all tests.executor": "Run",
+    "Python.logging.executor": "Run",
+    "Python.utils.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "ai.playground.ignore.import.keys.banner.in.settings": "true",
+    "git-widget-placeholder": "v2/pydanticify",
+    "last.edited.regexp": "\\33[9m",
+    "last_opened_file_path": "/Users/george.marino/Desktop/Projects/mytunes-cli/tests/operations/album",
+    "nodejs_package_manager_path": "npm",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "com.intellij.pycharm.community.ide.impl.configuration.PythonContentEntriesConfigurable",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/tests/operations/album" />
@@ -198,8 +201,9 @@
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/mytunes_cli$utils.coverage" NAME="utils Coverage Results" MODIFIED="1776208364623" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/mytunes_cli/commands" />
     <SUITE FILE_PATH="coverage/mytunes_cli$.coverage" NAME=" Coverage Results" MODIFIED="1779123017978" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
-    <SUITE FILE_PATH="coverage/mytunes_cli$core.coverage" NAME="core Coverage Results" MODIFIED="1777211956273" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/mytunes_cli/config" />
+    <SUITE FILE_PATH="coverage/mytunes_cli$core.coverage" NAME="core Coverage Results" MODIFIED="1777211956273" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/musify_cli/config" />
     <SUITE FILE_PATH="coverage/mytunes_cli$logging.coverage" NAME="logging Coverage Results" MODIFIED="1777899269084" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/.venv/lib/python3.14/site-packages/rich" />
+    <SUITE FILE_PATH="coverage/mytunes_cli$Run_all_tests.coverage" NAME="Run all tests Coverage Results" MODIFIED="1779140185491" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
   </component>
   <component name="github-copilot-workspace">
     <instructionFileLocations>

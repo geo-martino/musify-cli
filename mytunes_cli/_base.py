@@ -1,7 +1,8 @@
 import json
+from collections.abc import MutableMapping
 from functools import wraps
 from pathlib import Path
-from typing import ClassVar, MutableMapping, Any
+from typing import ClassVar, Any
 
 import yaml
 from mytunes import PROGRAM_NAME

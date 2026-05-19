@@ -57,6 +57,9 @@ class PullTags(RemoteToLocalOperation, TagOperation):
         else:
             raise APIError(f"Cannot run {self.operation_name!r}: API does not support loading tracks")
 
+        message = f"Loading {len(uris_to_load)} additional tracks for {self.library.source} library"
+        self._logger.info(message, header=2, new_line_start=True)
+
         self._tracks.extend(await api.get_many(tuple(uris_to_load), limit=self.source.concurrency))
 
     async def run(self) -> None:

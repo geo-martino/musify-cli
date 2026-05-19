@@ -1,8 +1,8 @@
 import os
 import re
+from collections.abc import Generator
 from datetime import datetime
 from pathlib import Path
-from typing import Generator
 
 from mytunes.processors.time import TimeMapper
 from pydantic import Field

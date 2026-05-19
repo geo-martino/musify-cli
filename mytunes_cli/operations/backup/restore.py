@@ -1,7 +1,8 @@
 from abc import abstractmethod
+from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Self, Sequence, Literal
+from typing import Annotated, Self, Literal
 
 import aiofiles
 import yaml
